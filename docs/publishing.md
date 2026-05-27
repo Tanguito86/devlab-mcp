@@ -11,6 +11,52 @@ pnpm changeset:publish   # Publish to npm
 pnpm -r pack:dry-run     # Preview package contents
 ```
 
+## First Publish (v1 Release)
+
+### Package Status
+
+| Package | npm name | Version | Published? |
+|---------|----------|---------|------------|
+| Shared | `@tanguito/devlab-shared` | 0.1.0 | ❌ Pending |
+| Android | `@tanguito/android-dev-mcp` | 1.2.0 | ✅ Published |
+| Browser | `@tanguito/browser-dev-mcp` | 1.0.0 | ❌ Pending |
+| Visual | `@tanguito/visual-regression-mcp` | 0.1.0 | ❌ Pending |
+
+### Exact Publish Commands
+
+**Prerequisites:**
+- npm auth token configured (`npm login` or `NPM_TOKEN` env var)
+- 2FA handled (use `--otp` flag or automation token)
+- All packages build and test cleanly (`pnpm build && pnpm test`)
+
+```bash
+# 1. Login to npm (one-time)
+npm login
+
+# 2. Publish shared first (dependency of other packages)
+pnpm --filter @tanguito/devlab-shared publish --access public
+
+# 3. Publish browser-dev-mcp
+pnpm --filter @tanguito/browser-dev-mcp publish --access public
+
+# 4. Publish visual-regression-mcp
+pnpm --filter @tanguito/visual-regression-mcp publish --access public
+```
+
+> **Note:** `@tanguito/android-dev-mcp` is already published. Do not re-publish unless version has changed.
+
+### WSL Users
+
+WSL users need Windows-side npm authentication:
+
+```bash
+# npm publish from WSL uses Windows npm binary (auth token in Windows credential manager)
+cmd.exe /c "npm publish --access public"
+
+# Or use npm login from WSL directly
+npm login
+```
+
 ## Workflow
 
 ### 1. Create a changeset (after making changes)
@@ -67,20 +113,13 @@ pnpm changeset version --dry-run
 Each package versions independently. Example scenario:
 
 ```
-browser-dev-mcp:  1.0.0 → 1.0.1  (bug fix, patch)
-android-dev-mcp:  1.2.0 → 1.3.0  (new tool, minor)
-shared:            0.1.0 → 0.1.0  (unchanged)
+browser-dev-mcp:       1.0.0 → 1.0.1  (bug fix, patch)
+android-dev-mcp:       1.2.0 → 1.3.0  (new tool, minor)
+visual-regression-mcp: 0.1.0 → 0.1.0  (unchanged)
+shared:                0.1.0 → 0.1.0  (unchanged)
 ```
 
 Changesets tracks this automatically. You only specify which packages changed when creating a changeset.
-
-## Package listing
-
-| Package | npm name | Current |
-|---------|----------|---------|
-| Shared | `@tanguito/devlab-shared` | 0.1.0 |
-| Android | `@tanguito/android-dev-mcp` | 1.2.0 |
-| Browser | `@tanguito/browser-dev-mcp` | 1.0.0 |
 
 ## Release notes
 
@@ -94,21 +133,9 @@ Changeset-generated CHANGELOGs use the summary you write when creating the chang
 "Fixed stuff"
 ```
 
-## Publishing from WSL
-
-WSL users need Windows-side npm authentication:
-
-```bash
-# npm publish from WSL uses Windows npm binary (auth token in Windows credential manager)
-cmd.exe /c "npm publish --access public"
-
-# Changesets publish uses the same mechanism
-pnpm changeset:publish
-```
-
 ## Not ready to publish?
 
-**Current status: foundation frozen. No npm publishing yet.**
+**Current status: foundation frozen. Publish-ready.**
 
 When ready:
 1. Ensure `NPM_TOKEN` is set in GitHub Secrets

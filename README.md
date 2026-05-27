@@ -1,6 +1,6 @@
 # DevLab MCP Suite
 
-Modular testing and automation MCP servers for Android devices, desktop browsers, canvas games, and PWAs.
+Modular testing and automation MCP servers for Android devices, desktop browsers, canvas games, and visual regression.
 
 ```
 DevLab MCP Suite
@@ -9,6 +9,26 @@ DevLab MCP Suite
 ├── @tanguito/visual-regression-mcp  ← Visual regression & pixel diff
 └── @tanguito/devlab-shared          ← Shared contracts and helpers
 ```
+
+## The Testing Triangle
+
+```
+             ┌──────────────────────┐
+             │   visual-regression   │  ← pixel-perfect diffs
+             │   screenshot compare  │
+             └──────────┬───────────┘
+                        │
+         ┌──────────────┴──────────────┐
+         │                             │
+  ┌──────┴──────┐              ┌───────┴──────┐
+  │  android     │              │   browser     │
+  │  device tests│              │   canvas/web  │
+  └──────────────┘              └──────────────┘
+
+browser-dev-mcp screenshot  →  visual-regression-mcp diff  →  markdown report
+```
+
+Three independent testing layers, same tool patterns, same evidence system, single monorepo.
 
 ## 5-Minute Quick Start
 
@@ -31,18 +51,24 @@ node examples/browser-hello-world/run-hello-world.js
 
 **You just ran a 5-step browser workflow: open → screenshot → console → errors → report.** Takes ~5 seconds.
 
-## Status
+## Package Table
 
-| Package | Version | Tests | npm |
-|---------|---------|-------|-----|
-| android-dev-mcp | 1.2.0 | 42 | `@tanguito/android-dev-mcp` |
-| browser-dev-mcp | 1.0.0 | 8 | `@tanguito/browser-dev-mcp` |
-| visual-regression-mcp | 0.1.0 | 8 | `@tanguito/visual-regression-mcp` |
-| devlab-shared | 0.1.0 | 9 | `@tanguito/devlab-shared` |
+| Package | Purpose | Version | Tests | npm | Status |
+|---------|---------|---------|-------|-----|--------|
+| `@tanguito/devlab-shared` | Types, schemas, helpers | 0.1.0 | 9 | `@tanguito/devlab-shared` | Pending publish |
+| `@tanguito/android-dev-mcp` | Device automation (ADB) | 1.2.0 | 42 | `@tanguito/android-dev-mcp` | ✅ Published |
+| `@tanguito/browser-dev-mcp` | Browser/canvas (Playwright) | 1.0.0 | 8 | `@tanguito/browser-dev-mcp` | Pending publish |
+| `@tanguito/visual-regression-mcp` | Screenshot diffing | 0.1.0 | 8 | `@tanguito/visual-regression-mcp` | Pending publish |
+
+**Total: 67 tests | 70 tools | 4 packages**
+
+> **Publishing:** `android-dev-mcp` is already on npm. `shared`, `browser`, and `visual-regression` are ready. See [publishing guide](docs/publishing.md) for exact commands.
 
 ## Case Study: Galaxy Raiders
 
-We validated browser-dev-mcp against a real 68-script HTML5 Canvas shmup with 5 bosses across 20 levels.
+We validated browser-dev-mcp and visual-regression-mcp against a real 68-script HTML5 Canvas shmup with 5 bosses across 20 levels.
+
+### Browser Testing
 
 | Metric | Result |
 |--------|--------|
@@ -52,6 +78,15 @@ We validated browser-dev-mcp against a real 68-script HTML5 Canvas shmup with 5 
 | Bosses validated | 5/5 (Crabtron, Serpentrix, Colossus, Lieutenant, Emperor) |
 | Screenshots | 13 real rendered canvas captures |
 | Leak test | 3/3 consecutive cycles clean |
+
+### Visual Regression
+
+```
+boss-lv5:   81 kB, 360×640, 0 changed pixels, ✅ PASS
+boss-lv20:  90 kB, 360×640, 0 changed pixels, ✅ PASS
+```
+
+**Pipeline:** browser-dev-mcp captures canvas screenshots → visual-regression-mcp diffs against baselines → markdown report with pass/fail.
 
 **[Read the full case study →](docs/case-study-galaxy-raiders.md)**
 
@@ -73,7 +108,7 @@ Key tools: `browser_open_url`, `browser_screenshot`, `browser_screenshot_canvas`
 
 ### visual-regression-mcp
 
-Visual regression testing — pixel comparison, diff generation, markdown reporting. 4 tools: `visual_compare_images`, `visual_create_baseline`, `visual_compare_folder`, `visual_generate_report`. Zero native dependencies.
+Visual regression testing — pixel comparison, diff generation, markdown reporting. 4 tools: `visual_compare_images`, `visual_create_baseline`, `visual_compare_folder`, `visual_generate_report`. Zero native dependencies — pure Node.js PNG parsing with zlib.
 
 ```bash
 pnpm --filter @tanguito/visual-regression-mcp build
@@ -96,7 +131,7 @@ pnpm --filter @tanguito/android-dev-mcp test
 
 ### devlab-shared
 
-Minimal shared contracts: textResponse, sanitizeName, validateSessionId, RegisterTool, WorkflowStep, StepResult, and base evidence types. Zero IO, zero runtime dependencies. 9 tests, full doctor check.
+Minimal shared contracts: textResponse, sanitizeName, validateSessionId, RegisterTool, WorkflowStep, StepResult, and base evidence types. Zero IO, zero runtime dependencies. 9 tests, full doctor check. **107 lines**.
 
 ```bash
 pnpm --filter @tanguito/devlab-shared build
@@ -129,7 +164,7 @@ node examples/galaxy-raiders/run-galaxy-smoke.js
 | `pnpm setup` | Detect environment, auto-install Chromium, suggest fixes |
 | `pnpm build` | Build all packages |
 | `pnpm test` | Run all 67 tests |
-| `pnpm doctor` | Health checks for all packages |
+| `pnpm doctor` | Health checks per package (use `pnpm --filter <pkg> run doctor`) |
 | `pnpm typecheck` | TypeScript type checking |
 | `pnpm clean` | Remove dist/ from all packages |
 | `pnpm pack:dry-run` | Preview npm package contents |
@@ -180,18 +215,19 @@ devlab-mcp/
   scripts/
     devlab-setup.js         # Environment detector + auto-fixer
   packages/
-    shared/                    # @tanguito/devlab-shared
-    android-dev-mcp/           # @tanguito/android-dev-mcp
-    browser-dev-mcp/           # @tanguito/browser-dev-mcp
-    visual-regression-mcp/     # @tanguito/visual-regression-mcp
+    shared/                    # @tanguito/devlab-shared (107 lines)
+    android-dev-mcp/           # @tanguito/android-dev-mcp (42 tools)
+    browser-dev-mcp/           # @tanguito/browser-dev-mcp (24 tools)
+    visual-regression-mcp/     # @tanguito/visual-regression-mcp (4 tools)
   examples/
     browser-hello-world/       # 5-step first workflow
     galaxy-raiders/            # Real canvas game smoke test
     galaxy-visual-regression/  # Pixel-diff boss screenshots
   docs/
-    architecture.md         # Suite architecture decisions
-    case-study-galaxy-raiders.md  # Full Galaxy Raiders validation
-    publishing.md           # How to version and publish
+    devlab-suite-v1-freeze.md      # v1 freeze document
+    architecture.md                # Suite architecture decisions
+    case-study-galaxy-raiders.md   # Full Galaxy Raiders validation
+    publishing.md                  # How to version and publish
 ```
 
 ## Architecture
@@ -203,6 +239,7 @@ devlab-mcp/
 - **Workflow-first** — declarative JSON test plans executed by MCP servers
 
 [Full architecture →](docs/architecture.md)
+[Freeze document →](docs/devlab-suite-v1-freeze.md)
 
 ## License
 
