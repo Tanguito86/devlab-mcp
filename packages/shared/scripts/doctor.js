@@ -4,12 +4,13 @@
 
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ok = [];
 const warn = [];
 const fail = [];
+const distIndexUrl = pathToFileURL(join(__dirname, "..", "dist", "index.js")).href;
 
 function check(label, pass, detail = "") {
   if (pass) { ok.push(label); } else { fail.push(`${label}  ${detail ? "→ " + detail : ""}`); }
@@ -46,7 +47,7 @@ for (const m of modules) {
 
 // 3. Import and verify exports
 try {
-  const mod = await import(join(__dirname, "..", "dist", "index.js"));
+  const mod = await import(distIndexUrl);
   check("exports sanitizeName", typeof mod.sanitizeName === "function");
   check("exports validateSessionId", typeof mod.validateSessionId === "function");
   check("exports textResponse", typeof mod.textResponse === "function");
@@ -57,7 +58,7 @@ try {
 
 // 4. Validate sanitizeName behavior
 try {
-  const mod = await import(join(__dirname, "..", "dist", "index.js"));
+  const mod = await import(distIndexUrl);
   const r1 = mod.sanitizeName("Hello World!");
   check("sanitizeName: Hello World! → hello-world", r1 === "hello-world");
   const r2 = mod.sanitizeName("");
@@ -70,7 +71,7 @@ try {
 
 // 5. Validate validateSessionId
 try {
-  const mod = await import(join(__dirname, "..", "dist", "index.js"));
+  const mod = await import(distIndexUrl);
   try { mod.validateSessionId("../bad"); check("validateSessionId rejects ../bad", false); } catch { check("validateSessionId rejects ../bad", true); }
   try { mod.validateSessionId(""); check("validateSessionId rejects empty", false); } catch { check("validateSessionId rejects empty", true); }
   try { mod.validateSessionId("safe_id-123"); check("validateSessionId accepts safe_id-123", true); } catch { check("validateSessionId accepts safe_id-123", false); }

@@ -2,6 +2,7 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -31,6 +32,17 @@ async function run(command, args = []) {
   });
 }
 
+function findAdb() {
+  const candidates = [
+    process.env.ADB,
+    process.env.ANDROID_HOME && join(process.env.ANDROID_HOME, "platform-tools", "adb.exe"),
+    process.env.ANDROID_SDK_ROOT && join(process.env.ANDROID_SDK_ROOT, "platform-tools", "adb.exe"),
+    process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, "Android", "Sdk", "platform-tools", "adb.exe")
+  ].filter(Boolean);
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? "adb";
+}
+
 let failures = 0;
 
 const major = Number(process.versions.node.split(".")[0]);
@@ -42,10 +54,11 @@ if (major >= 20) {
 }
 
 try {
-  const adbVersion = await run("adb", ["version"]);
+  const adb = findAdb();
+  const adbVersion = await run(adb, ["version"]);
   ok(`adb found (${adbVersion.stdout.split(/\r?\n/)[0]})`);
 
-  const devicesOutput = await run("adb", ["devices"]);
+  const devicesOutput = await run(adb, ["devices"]);
   const devices = devicesOutput.stdout
     .split(/\r?\n/)
     .slice(1)

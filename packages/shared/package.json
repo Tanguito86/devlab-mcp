@@ -20,7 +20,7 @@
     "test": "node --test tests/*.test.js",
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
     "doctor": "node scripts/doctor.js",
-    "pack:dry-run": "env COREPACK_ENABLE_STRICT=0 npm pack --dry-run"
+    "pack:dry-run": "npm pack --dry-run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
