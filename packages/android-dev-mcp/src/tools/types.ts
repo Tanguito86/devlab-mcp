@@ -1,14 +1,3 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-
-export type RegisterTool = (server: McpServer) => void;
-
-export function textResponse(text: string) {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text
-      }
-    ]
-  };
-}
+// Re-exported from shared for backward compatibility.
+// All android-dev-mcp tools import RegisterTool and textResponse from here.
+export { textResponse, type RegisterTool } from "@tanguito/devlab-shared";

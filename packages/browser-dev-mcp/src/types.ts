@@ -1,19 +1,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-export type RegisterTool = (server: McpServer) => void;
+// ── Re-exported from shared ──
+export { textResponse, type RegisterTool } from "@tanguito/devlab-shared";
+export type { WorkflowStep, Workflow, StepResult } from "@tanguito/devlab-shared";
 
-export function textResponse(text: string) {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text
-      }
-    ]
-  };
-}
-
-// ── Profile types ──
+// ── Browser-specific profile types ──
 
 export type BrowserProfile = {
   name: string;
@@ -24,21 +15,7 @@ export type BrowserProfile = {
   viewport?: { width: number; height: number };
 };
 
-// ── Workflow types ──
-
-export type WorkflowStep = {
-  tool: string;
-  args?: Record<string, unknown>;
-  description?: string;
-};
-
-export type Workflow = {
-  name: string;
-  description: string;
-  steps: WorkflowStep[];
-};
-
-// ── Evidence types ──
+// ── Browser-specific evidence types ──
 
 export type EvidenceEntry = {
   step: number;
@@ -61,17 +38,7 @@ export type SessionMetadata = {
   ok: boolean;
 };
 
-// ── Workflow execution result ──
-
-export type StepResult = {
-  index: number;
-  tool: string;
-  args: Record<string, unknown>;
-  ok: boolean;
-  durationMs: number;
-  output: string;
-  screenshot?: string;
-};
+// ── Browser-specific workflow execution ──
 
 export type WorkflowExecution = {
   profile: string;
@@ -82,5 +49,5 @@ export type WorkflowExecution = {
   start: string;
   end: string;
   durationMs: number;
-  steps: StepResult[];
+  steps: import("@tanguito/devlab-shared").StepResult[];
 };

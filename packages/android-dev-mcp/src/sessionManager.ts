@@ -3,6 +3,7 @@ import path from "node:path";
 import { getCurrentActivity } from "./activity.js";
 import { adb, type AdbOptions } from "./adb.js";
 import { captureScreenshot, captureUiDump, fileSize, timestampForPath } from "./inspection.js";
+import { sanitizeName, validateSessionId } from "@tanguito/devlab-shared";
 
 // ── Types ──
 
@@ -33,28 +34,7 @@ export type SessionAction = {
 
 const SESSIONS_DIR = "sessions";
 
-export function sanitizeName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64) || "session";
-}
-
-export function validateSessionId(sessionId: string): void {
-  if (!sessionId || typeof sessionId !== "string") {
-    throw new Error("sessionId is required and must be a string.");
-  }
-
-  if (sessionId.includes("..") || sessionId.includes("/") || sessionId.includes("\\")) {
-    throw new Error(`Invalid sessionId: "${sessionId}". Path traversal not allowed.`);
-  }
-
-  const safe = /^[a-zA-Z0-9_-]+$/.test(sessionId);
-  if (!safe) {
-    throw new Error(`Invalid sessionId: "${sessionId}". Only alphanumeric, hyphens, and underscores allowed.`);
-  }
-}
+export { sanitizeName, validateSessionId };
 
 function sessionDir(sessionId: string): string {
   return path.resolve(process.cwd(), SESSIONS_DIR, sessionId);

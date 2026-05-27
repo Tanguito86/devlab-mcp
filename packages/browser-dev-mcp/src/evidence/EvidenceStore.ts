@@ -1,29 +1,11 @@
 import { access, mkdir, readFile, writeFile, appendFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import type { EvidenceEntry, SessionMetadata } from "../types.js";
+import { sanitizeName, validateSessionId } from "@tanguito/devlab-shared";
 
 const SESSIONS_DIR = "sessions";
 
-export function sanitizeName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64) || "session";
-}
-
-export function validateSessionId(sessionId: string): void {
-  if (!sessionId || typeof sessionId !== "string") {
-    throw new Error("sessionId is required and must be a string.");
-  }
-  if (sessionId.includes("..") || sessionId.includes("/") || sessionId.includes("\\")) {
-    throw new Error(`Invalid sessionId: "${sessionId}". Path traversal not allowed.`);
-  }
-  const safe = /^[a-zA-Z0-9_-]+$/.test(sessionId);
-  if (!safe) {
-    throw new Error(`Invalid sessionId: "${sessionId}". Only alphanumeric, hyphens, underscores allowed.`);
-  }
-}
+export { sanitizeName, validateSessionId };
 
 export function timestampForPath(): string {
   return new Date().toISOString().replace(/:/g, "_").replace(/\..+/, "");
