@@ -2,15 +2,15 @@ node_modules/
 dist/
 *.tgz
 
-# Evidence / runtime artifacts (all packages)
-evidence/
-reports/
-screenshots/
-sessions/
-workflow-reports/
-captures/
-recordings/
-ui-dumps/
+# Evidence / runtime artifacts (root only)
+/evidence/
+/reports/
+/screenshots/
+/sessions/
+/workflow-reports/
+/captures/
+/recordings/
+/ui-dumps/
 
 # Per-package runtime artifacts
 packages/*/evidence/
