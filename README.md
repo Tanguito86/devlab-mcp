@@ -4,9 +4,10 @@ Modular testing and automation MCP servers for Android devices, desktop browsers
 
 ```
 DevLab MCP Suite
-├── @tanguito/android-dev-mcp   ← Android device automation (ADB)
-├── @tanguito/browser-dev-mcp   ← Desktop browser automation (Playwright)
-└── @tanguito/devlab-shared     ← Shared contracts and helpers
+├── @tanguito/android-dev-mcp        ← Android device automation (ADB)
+├── @tanguito/browser-dev-mcp        ← Desktop browser automation (Playwright)
+├── @tanguito/visual-regression-mcp  ← Visual regression & pixel diff
+└── @tanguito/devlab-shared          ← Shared contracts and helpers
 ```
 
 ## 5-Minute Quick Start
@@ -22,7 +23,7 @@ pnpm setup
 
 # 3. Build and test
 pnpm build
-pnpm test          # 59 tests: 42 android + 8 browser + 9 shared
+pnpm test          # 67 tests: 42 android + 8 browser + 8 visual + 9 shared
 
 # 4. Your first browser workflow
 node examples/browser-hello-world/run-hello-world.js
@@ -34,9 +35,10 @@ node examples/browser-hello-world/run-hello-world.js
 
 | Package | Version | Tests | npm |
 |---------|---------|-------|-----|
-| android-dev-mcp | 1.2.0 | 42 | ✅ `@tanguito/android-dev-mcp` |
-| browser-dev-mcp | 1.0.0 | 8 | ✅ `@tanguito/browser-dev-mcp` |
-| devlab-shared | 0.1.0 | 9 | ✅ `@tanguito/devlab-shared` |
+| android-dev-mcp | 1.2.0 | 42 | `@tanguito/android-dev-mcp` |
+| browser-dev-mcp | 1.0.0 | 8 | `@tanguito/browser-dev-mcp` |
+| visual-regression-mcp | 0.1.0 | 8 | `@tanguito/visual-regression-mcp` |
+| devlab-shared | 0.1.0 | 9 | `@tanguito/devlab-shared` |
 
 ## Case Study: Galaxy Raiders
 
@@ -69,6 +71,18 @@ Key tools: `browser_open_url`, `browser_screenshot`, `browser_screenshot_canvas`
 
 [Full README →](packages/browser-dev-mcp/README.md)
 
+### visual-regression-mcp
+
+Visual regression testing — pixel comparison, diff generation, markdown reporting. 4 tools: `visual_compare_images`, `visual_create_baseline`, `visual_compare_folder`, `visual_generate_report`. Zero native dependencies.
+
+```bash
+pnpm --filter @tanguito/visual-regression-mcp build
+pnpm --filter @tanguito/visual-regression-mcp test
+pnpm --filter @tanguito/visual-regression-mcp run doctor
+```
+
+[Full README →](packages/visual-regression-mcp/README.md)
+
 ### android-dev-mcp
 
 Android device automation via ADB. 42 tools for device inspection, app management, UI interaction, screenshots, logcat, and workflow execution.
@@ -96,8 +110,9 @@ pnpm --filter @tanguito/devlab-shared run doctor
 
 | Example | Time | What it does |
 |---------|------|-------------|
-| [browser-hello-world](examples/browser-hello-world/) | ~5s | Opens example.com, takes screenshot, collects console/errors |
+| [browser-hello-world](examples/browser-hello-world/) | ~5s | Opens test page, takes screenshot, collects console/errors |
 | [galaxy-raiders](examples/galaxy-raiders/) | ~15s | Loads Galaxy Raiders, starts game, captures canvas, jumps to boss |
+| [galaxy-visual-regression](examples/galaxy-visual-regression/) | ~2s | Pixel-diff Galaxy Raiders boss screenshots against baselines |
 
 ```bash
 # Hello World
@@ -113,7 +128,7 @@ node examples/galaxy-raiders/run-galaxy-smoke.js
 |---------|-------------|
 | `pnpm setup` | Detect environment, auto-install Chromium, suggest fixes |
 | `pnpm build` | Build all packages |
-| `pnpm test` | Run all 59 tests |
+| `pnpm test` | Run all 67 tests |
 | `pnpm doctor` | Health checks for all packages |
 | `pnpm typecheck` | TypeScript type checking |
 | `pnpm clean` | Remove dist/ from all packages |
@@ -165,12 +180,14 @@ devlab-mcp/
   scripts/
     devlab-setup.js         # Environment detector + auto-fixer
   packages/
-    shared/                 # @tanguito/devlab-shared
-    android-dev-mcp/        # @tanguito/android-dev-mcp
-    browser-dev-mcp/        # @tanguito/browser-dev-mcp
+    shared/                    # @tanguito/devlab-shared
+    android-dev-mcp/           # @tanguito/android-dev-mcp
+    browser-dev-mcp/           # @tanguito/browser-dev-mcp
+    visual-regression-mcp/     # @tanguito/visual-regression-mcp
   examples/
-    browser-hello-world/    # 5-step first workflow
-    galaxy-raiders/         # Real canvas game smoke test
+    browser-hello-world/       # 5-step first workflow
+    galaxy-raiders/            # Real canvas game smoke test
+    galaxy-visual-regression/  # Pixel-diff boss screenshots
   docs/
     architecture.md         # Suite architecture decisions
     case-study-galaxy-raiders.md  # Full Galaxy Raiders validation

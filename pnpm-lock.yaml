@@ -78,6 +78,28 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/visual-regression-mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@4.4.3)
+      '@tanguito/devlab-shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^4.1.13
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.12.4
+      tsx:
+        specifier: ^4.22.3
+        version: 4.22.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
 packages:
 
   '@babel/runtime@7.29.7':

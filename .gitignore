@@ -27,3 +27,7 @@ packages/*/ui-dumps/
 
 # Example runtime artifacts
 examples/*/evidence/
+examples/galaxy-visual-regression/actual/
+examples/galaxy-visual-regression/baseline/
+examples/galaxy-visual-regression/diffs/
+examples/galaxy-visual-regression/reports/
