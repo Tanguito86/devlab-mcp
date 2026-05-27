@@ -1,0 +1,116 @@
+{
+  "name": "galaxy-console-audit",
+  "description": "Deep console audit: capture all console entries (errors, warnings, logs) across multiple game states — menu, gameplay start, boss jump, pause/resume cycle",
+  "steps": [
+    {
+      "tool": "browser_open_url",
+      "args": { "url": "http://localhost:5173" },
+      "description": "Load Galaxy Raiders"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 3000 },
+      "description": "Wait for full load"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Console: menu load — capture all"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors: menu load"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ GALAXY_CONFIG.debug.showLevelSkipButton = true; return 'debug enabled'; })()" },
+      "description": "Enable debug"
+    },
+    {
+      "tool": "browser_press_key",
+      "args": { "key": "Enter" },
+      "description": "Start game"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2000 },
+      "description": "Wait for LV1"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Console: gameplay start"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors: gameplay start"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(5); return 'jumped LV5'; } return 'no hook'; })()" },
+      "description": "Jump to LV5 boss"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Console: boss LV5"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors: boss LV5"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(15); return 'jumped LV15'; } return 'no hook'; })()" },
+      "description": "Jump to LV15 boss"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Console: boss LV15"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors: boss LV15"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(20); return 'jumped LV20'; } return 'no hook'; })()" },
+      "description": "Jump to LV20 Emperor"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Console: boss LV20 Emperor"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors: boss LV20"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "audit-lv20-emperor" },
+      "description": "Screenshot: Emperor for visual audit"
+    }
+  ]
+}

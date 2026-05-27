@@ -1,0 +1,141 @@
+{
+  "name": "galaxy-boss-ladder",
+  "description": "Jump to all 5 boss levels (5=Crabtron, 10=Serpentrix, 15=Orbital Colossus, 19=Lieutenant, 20=Emperor) with screenshots and game state at each",
+  "steps": [
+    {
+      "tool": "browser_open_url",
+      "args": { "url": "http://localhost:5173" },
+      "description": "Load Galaxy Raiders"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2000 },
+      "description": "Wait for page load"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ GALAXY_CONFIG.debug.showLevelSkipButton = true; return 'debug enabled'; })()" },
+      "description": "Enable debug level skip"
+    },
+    {
+      "tool": "browser_press_key",
+      "args": { "key": "Enter" },
+      "description": "Start game"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2000 },
+      "description": "Wait for LV1 to begin"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(5); return 'jumped to LV5 Crabtron'; } return 'no debug hook'; })()" },
+      "description": "Jump to LV5 — Crabtron"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss spawn + intro"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "boss-lv5-crabtron" },
+      "description": "Screenshot: Crabtron boss LV5"
+    },
+    {
+      "tool": "browser_evaluate_game_state",
+      "args": { "expression": "(function(){ return { level: typeof level !== 'undefined' ? level : '?', state: typeof state !== 'undefined' ? state : '?', bossActive: typeof boss !== 'undefined' && boss ? boss.active : '?', enemies: typeof enemies !== 'undefined' ? enemies.length : '?', score: typeof score !== 'undefined' ? score : '?' }; })()" },
+      "description": "Game state at LV5 boss"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(10); return 'jumped to LV10 Serpentrix'; } return 'no debug hook'; })()" },
+      "description": "Jump to LV10 — Serpentrix"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss spawn"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "boss-lv10-serpentrix" },
+      "description": "Screenshot: Serpentrix boss LV10"
+    },
+    {
+      "tool": "browser_evaluate_game_state",
+      "args": { "expression": "(function(){ return { level: typeof level !== 'undefined' ? level : '?', state: typeof state !== 'undefined' ? state : '?', bossActive: typeof boss !== 'undefined' && boss ? boss.active : '?' }; })()" },
+      "description": "Game state at LV10"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(15); return 'jumped to LV15 Orbital Colossus'; } return 'no debug hook'; })()" },
+      "description": "Jump to LV15 — Orbital Colossus"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss spawn"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "boss-lv15-orbital" },
+      "description": "Screenshot: Orbital Colossus boss LV15"
+    },
+    {
+      "tool": "browser_evaluate_game_state",
+      "args": { "expression": "(function(){ return { level: typeof level !== 'undefined' ? level : '?' }; })()" },
+      "description": "Confirm LV15 jump"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(19); return 'jumped to LV19 Lieutenant'; } return 'no debug hook'; })()" },
+      "description": "Jump to LV19 — Lieutenant"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss spawn"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "boss-lv19-lieutenant" },
+      "description": "Screenshot: Lieutenant boss LV19"
+    },
+    {
+      "tool": "browser_evaluate_game_state",
+      "args": { "expression": "(function(){ return { level: typeof level !== 'undefined' ? level : '?', bossActive: typeof boss !== 'undefined' && boss ? boss.active : '?' }; })()" },
+      "description": "Game state at LV19"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(20); return 'jumped to LV20 Emperor'; } return 'no debug hook'; })()" },
+      "description": "Jump to LV20 — Emperor (final boss)"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss spawn"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "boss-lv20-emperor" },
+      "description": "Screenshot: Emperor boss LV20"
+    },
+    {
+      "tool": "browser_evaluate_game_state",
+      "args": { "expression": "(function(){ return { level: typeof level !== 'undefined' ? level : '?', state: typeof state !== 'undefined' ? state : '?', bossActive: typeof boss !== 'undefined' && boss ? boss.active : '?', score: typeof score !== 'undefined' ? score : '?' }; })()" },
+      "description": "Final game state at LV20"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "All console logs across boss jumps"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors across boss jumps"
+    }
+  ]
+}

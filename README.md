@@ -15,7 +15,7 @@ DevLab MCP Suite
 |---------|---------|-------|--------|
 | android-dev-mcp | 1.2.0 | 42 | ✅ Published |
 | browser-dev-mcp | 1.0.0 | 8 | ✅ Frozen (local) |
-| devlab-shared | 0.1.0 | 0 | ✅ Foundation |
+| devlab-shared | 0.1.0 | 9 | ✅ Foundation |
 
 **Not yet published to npm as a suite.** Each package is independently installable and testable.
 
@@ -29,7 +29,7 @@ pnpm install
 pnpm build
 
 # Run all tests
-pnpm test           # 50 tests: 42 android + 8 browser
+pnpm test           # 59 tests: 42 android + 8 browser + 9 shared
 
 # Health check
 pnpm --filter @tanguito/browser-dev-mcp run doctor
@@ -53,7 +53,7 @@ pnpm --filter @tanguito/android-dev-mcp test
 
 ### browser-dev-mcp
 
-Desktop browser automation via Playwright. 22 tools for navigation, screenshots, canvas game testing, JavaScript evaluation, keyboard/mouse input, and evidence capture.
+Desktop browser automation via Playwright. 24 tools for navigation, screenshots, canvas game testing, JavaScript evaluation, keyboard/mouse input (click, click_text, click_percent, type_text, press_key), and evidence capture.
 
 ```bash
 pnpm --filter @tanguito/browser-dev-mcp build
@@ -65,10 +65,12 @@ pnpm --filter @tanguito/browser-dev-mcp run doctor
 
 ### devlab-shared
 
-Minimal shared contracts: textResponse, sanitizeName, validateSessionId, RegisterTool, WorkflowStep, StepResult, and base evidence types. Zero IO, zero runtime dependencies.
+Minimal shared contracts: textResponse, sanitizeName, validateSessionId, RegisterTool, WorkflowStep, StepResult, and base evidence types. Zero IO, zero runtime dependencies. 9 tests, full doctor check.
 
 ```bash
 pnpm --filter @tanguito/devlab-shared build
+pnpm --filter @tanguito/devlab-shared test
+pnpm --filter @tanguito/devlab-shared run doctor
 ```
 
 ## Repository Structure

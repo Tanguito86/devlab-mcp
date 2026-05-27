@@ -54,7 +54,8 @@ test("workflow steps: known tool names", () => {
   const knownTools = [
     "browser_open_url", "browser_screenshot", "browser_screenshot_canvas",
     "browser_click", "browser_click_text", "browser_click_percent",
-    "browser_press_key", "browser_wait", "browser_wait_for_selector",
+    "browser_press_key", "browser_type_text",
+    "browser_wait", "browser_wait_for_selector",
     "browser_evaluate_js", "browser_get_console_logs", "browser_get_page_errors",
     "browser_wait_for_canvas_change"
   ];

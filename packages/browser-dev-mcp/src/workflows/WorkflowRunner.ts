@@ -116,6 +116,16 @@ async function execPressKey(
   return { output: `Pressed: ${key}` };
 }
 
+async function execTypeText(
+  session: BrowserSession,
+  args: Record<string, unknown>
+): Promise<StepExecutorResult> {
+  const text = readString(args, "text");
+  if (text === undefined) throw new Error("type_text requires text");
+  await session.typeText(text);
+  return { output: `Typed: "${text.slice(0, 80)}"` };
+}
+
 async function execWait(
   session: BrowserSession,
   args: Record<string, unknown>
@@ -179,6 +189,7 @@ const executors: Record<string, StepExecutor> = {
   browser_click_text: execClickText,
   browser_click_percent: execClickPercent,
   browser_press_key: execPressKey,
+  browser_type_text: execTypeText,
   browser_wait: execWait,
   browser_wait_for_selector: execWaitForSelector,
   browser_evaluate_js: execEvaluateJs,
