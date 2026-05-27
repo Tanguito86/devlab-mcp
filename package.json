@@ -10,6 +10,7 @@
     "clean": "pnpm -r clean",
     "doctor": "pnpm -r doctor",
     "pack:dry-run": "pnpm -r pack:dry-run",
+    "setup": "node scripts/devlab-setup.js",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"
