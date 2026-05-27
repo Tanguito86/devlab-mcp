@@ -1,0 +1,49 @@
+{
+  "apps": {
+    "myapp": {
+      "package": "com.example.myapp",
+      "activity": ".MainActivity",
+      "logTags": [
+        "MyApp"
+      ],
+      "workflows": {
+        "appSmoke": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 300
+            }
+          }
+        ],
+        "launchAndCapture": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "uiSnapshot": [
+          {
+            "tool": "android_screenshot",
+            "args": {}
+          },
+          {
+            "tool": "android_ui_dump",
+            "args": {}
+          }
+        ]
+      }
+    }
+  }
+}

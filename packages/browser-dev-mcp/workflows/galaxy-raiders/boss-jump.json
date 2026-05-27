@@ -1,0 +1,46 @@
+{
+  "name": "boss-jump",
+  "description": "Attempt debug hook jump to level 5, screenshot, collect game state and diagnostics",
+  "steps": [
+    {
+      "tool": "browser_open_url",
+      "args": {},
+      "description": "Navigate to Galaxy Raiders"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2000 },
+      "description": "Wait for page load"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(5); return 'jumped to LV5'; } return 'no debug hook available'; })()" },
+      "description": "Attempt jump to level 5 via debug hook, gracefully report if unavailable"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 3000 },
+      "description": "Wait for any level transition"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "name": "boss-lv5-attempt", "selector": "canvas" },
+      "description": "Capture canvas state after jump attempt"
+    },
+    {
+      "tool": "browser_evaluate_game_state",
+      "args": { "expression": "(function(){ return { currentLevel: window.currentLevel, gameState_keys: window.gameState ? Object.keys(window.gameState).slice(0,10) : [], hasGame: typeof window.game !== 'undefined' }; })()" },
+      "description": "Inspect available game state variables"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Collect console output"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Check for JS errors"
+    }
+  ]
+}

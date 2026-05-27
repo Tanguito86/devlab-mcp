@@ -1,0 +1,12 @@
+{
+  "apps": {
+    "myapp": {
+      "package": "com.example.myapp",
+      "activity": ".MainActivity",
+      "debugIntents": {
+        "openDebugPanel": "com.example.myapp.DEBUG_OPEN_PANEL",
+        "dumpState": "com.example.myapp.DEBUG_DUMP_STATE"
+      }
+    }
+  }
+}

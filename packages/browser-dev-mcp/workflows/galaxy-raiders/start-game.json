@@ -1,0 +1,46 @@
+{
+  "name": "start-game",
+  "description": "Start a game session: press Enter to begin, screenshot gameplay, collect logs and errors",
+  "steps": [
+    {
+      "tool": "browser_open_url",
+      "args": {},
+      "description": "Navigate to Galaxy Raiders"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2000 },
+      "description": "Wait for menu to load"
+    },
+    {
+      "tool": "browser_screenshot",
+      "args": { "name": "pre-start-menu" },
+      "description": "Menu before starting"
+    },
+    {
+      "tool": "browser_press_key",
+      "args": { "key": "Enter" },
+      "description": "Start game (Enter to begin)"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 3000 },
+      "description": "Wait for gameplay to initialize"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "name": "gameplay-start", "selector": "canvas" },
+      "description": "Capture gameplay canvas"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Collect console output"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Check for JS errors"
+    }
+  ]
+}

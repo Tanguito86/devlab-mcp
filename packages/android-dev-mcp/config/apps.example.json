@@ -1,0 +1,50 @@
+{
+  "apps": {
+    "standardApp": {
+      "_comment": "Standard Android app profile. Find package/activity with adb shell dumpsys window or cmd package resolve-activity.",
+      "package": "com.example.app",
+      "activity": ".MainActivity"
+    },
+    "appWithLogcat": {
+      "_comment": "Use logTags to filter android_read_logcat output.",
+      "package": "com.example.logs",
+      "activity": ".MainActivity",
+      "logTags": [
+        "ExampleApp",
+        "ExampleApp-Network"
+      ]
+    },
+    "appWithDebugIntents": {
+      "_comment": "Map short names to broadcast actions implemented by your app.",
+      "package": "com.example.debug",
+      "activity": ".MainActivity",
+      "debugIntents": {
+        "openDebugPanel": "com.example.debug.DEBUG_OPEN_PANEL",
+        "dumpState": "com.example.debug.DEBUG_DUMP_STATE"
+      }
+    },
+    "appWithWorkflows": {
+      "_comment": "Workflows are linear tool sequences. app and deviceId are inherited when run.",
+      "package": "com.example.workflow",
+      "activity": ".MainActivity",
+      "workflows": {
+        "appSmoke": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 300
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "galaxy-raiders",
+  "type": "web-canvas-game",
+  "defaultUrl": "http://localhost:5173",
+  "canvasSelector": "canvas",
+  "debugHooks": {
+    "jumpToLevel": "window.__GR_DEBUG_JUMP_TO_LEVEL",
+    "showSkipButton": "GALAXY_CONFIG.debug.showLevelSkipButton"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  }
+}

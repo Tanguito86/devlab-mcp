@@ -1,0 +1,13 @@
+{
+  "apps": {
+    "myapp": {
+      "package": "com.example.myapp",
+      "activity": ".MainActivity",
+      "logTags": [
+        "MyApp",
+        "MyApp-Network",
+        "MyApp-UI"
+      ]
+    }
+  }
+}

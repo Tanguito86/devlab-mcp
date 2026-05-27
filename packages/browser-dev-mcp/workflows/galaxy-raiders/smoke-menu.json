@@ -1,0 +1,31 @@
+{
+  "name": "smoke-menu",
+  "description": "Open Galaxy Raiders, screenshot the main menu, and collect console logs",
+  "steps": [
+    {
+      "tool": "browser_open_url",
+      "args": {},
+      "description": "Navigate to Galaxy Raiders dev server"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2000 },
+      "description": "Wait for page to render"
+    },
+    {
+      "tool": "browser_screenshot",
+      "args": { "name": "menu-smoke" },
+      "description": "Capture main menu screen"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Collect JS console output"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Check for uncaught errors"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#111827"/>
+  <rect x="40" y="40" width="880" height="460" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text x="70" y="85" fill="#93c5fd" font-family="Consolas, monospace" font-size="22">window_dump.xml</text>
+  <text x="70" y="135" fill="#e5e7eb" font-family="Consolas, monospace" font-size="18">&lt;node text="Play" resource-id="com.example:id/play"</text>
+  <text x="70" y="170" fill="#e5e7eb" font-family="Consolas, monospace" font-size="18">      class="android.widget.Button"</text>
+  <text x="70" y="205" fill="#e5e7eb" font-family="Consolas, monospace" font-size="18">      clickable="true" enabled="true"</text>
+  <text x="70" y="240" fill="#e5e7eb" font-family="Consolas, monospace" font-size="18">      bounds="[420,980][660,1080]" /&gt;</text>
+  <text x="70" y="310" fill="#86efac" font-family="Consolas, monospace" font-size="18">center=(540,1030)</text>
+  <text x="70" y="350" fill="#facc15" font-family="Consolas, monospace" font-size="18">Use android_find_ui or android_tap_resource</text>
+</svg>

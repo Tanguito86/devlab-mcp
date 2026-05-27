@@ -1,0 +1,30 @@
+{
+  "tool": "android_run_workflow",
+  "args": {
+    "app": "sampleApp",
+    "workflow": "appSmoke",
+    "deviceId": "SERIAL"
+  },
+  "response": {
+    "ok": true,
+    "reportDir": "workflow-reports/2026-05-21_18-20-30-sampleApp-appSmoke",
+    "durationMs": 8421,
+    "steps": [
+      {
+        "index": 0,
+        "tool": "android_launch_app",
+        "ok": true
+      },
+      {
+        "index": 1,
+        "tool": "android_capture_state",
+        "ok": true,
+        "paths": [
+          "workflow-reports/2026-05-21_18-20-30-sampleApp-appSmoke/captures/step-1/screenshot.png",
+          "workflow-reports/2026-05-21_18-20-30-sampleApp-appSmoke/captures/step-1/window_dump.xml",
+          "workflow-reports/2026-05-21_18-20-30-sampleApp-appSmoke/captures/step-1/metadata.json"
+        ]
+      }
+    ]
+  }
+}
