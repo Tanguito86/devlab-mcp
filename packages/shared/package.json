@@ -8,7 +8,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "scripts",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "dev": "tsx src/index.ts",
