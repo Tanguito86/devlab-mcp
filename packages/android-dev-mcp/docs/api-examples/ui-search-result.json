@@ -1,0 +1,22 @@
+{
+  "tool": "android_find_ui",
+  "args": {
+    "text": "Play",
+    "clickable": true
+  },
+  "response": {
+    "filters": "text=\"Play\", clickable=true",
+    "totalMatches": 1,
+    "matches": [
+      {
+        "index": 0,
+        "text": "Play",
+        "resourceId": "com.example:id/play_button",
+        "clickable": true,
+        "enabled": true,
+        "bounds": "[430,1110][650,1230]",
+        "center": [540, 1170]
+      }
+    ]
+  }
+}

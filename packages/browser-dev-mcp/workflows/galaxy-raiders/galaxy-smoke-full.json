@@ -1,0 +1,71 @@
+{
+  "name": "galaxy-smoke-full",
+  "description": "Full smoke test: load, enable debug, start game, take screenshots at menu/gameplay/fullscreen stages, collect logs/errors",
+  "steps": [
+    {
+      "tool": "browser_open_url",
+      "args": { "url": "http://localhost:5173" },
+      "description": "Load Galaxy Raiders"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 3000 },
+      "description": "Wait for full load (canvas + audio + sprites)"
+    },
+    {
+      "tool": "browser_screenshot",
+      "args": { "name": "smoke-menu" },
+      "description": "Screenshot: main menu"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Console logs after load"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors after load"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ GALAXY_CONFIG.debug.showLevelSkipButton = true; return 'debug enabled'; })()" },
+      "description": "Enable debug level skip"
+    },
+    {
+      "tool": "browser_press_key",
+      "args": { "key": "Enter" },
+      "description": "Press Enter to start game"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 3000 },
+      "description": "Wait for level 1 gameplay to settle"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "smoke-gameplay-lv1" },
+      "description": "Screenshot: gameplay LV1 canvas"
+    },
+    {
+      "tool": "browser_evaluate_game_state",
+      "args": { "expression": "(function(){ return { level: typeof level !== 'undefined' ? level : '?', state: typeof state !== 'undefined' ? state : '?', score: typeof score !== 'undefined' ? score : '?', lives: typeof lives !== 'undefined' ? lives : '?', enemies: typeof enemies !== 'undefined' ? enemies.length : '?' }; })()" },
+      "description": "Game state: level, state, score, lives, enemies"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Console logs after gameplay start"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors after gameplay start"
+    },
+    {
+      "tool": "browser_screenshot",
+      "args": { "name": "smoke-fullscreen" },
+      "description": "Screenshot: full page before close"
+    }
+  ]
+}

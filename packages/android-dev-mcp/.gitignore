@@ -1,0 +1,11 @@
+node_modules/
+dist/
+screenshots/
+ui-dumps/
+captures/
+recordings/
+reports/
+failure-reports/
+workflow-reports/
+npm-debug.log*
+*.tgz

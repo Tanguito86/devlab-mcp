@@ -1,0 +1,8 @@
+{
+  "apps": {
+    "myapp": {
+      "package": "com.example.myapp",
+      "activity": ".MainActivity"
+    }
+  }
+}

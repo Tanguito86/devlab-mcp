@@ -1,0 +1,33 @@
+node_modules/
+dist/
+*.tgz
+
+# Evidence / runtime artifacts (root only)
+/evidence/
+/reports/
+/screenshots/
+/sessions/
+/workflow-reports/
+/captures/
+/recordings/
+/ui-dumps/
+
+# Per-package runtime artifacts
+packages/*/evidence/
+packages/*/reports/
+packages/*/screenshots/
+packages/*/sessions/
+packages/*/workflow-reports/
+packages/*/captures/
+packages/*/recordings/
+packages/*/ui-dumps/
+
+# Env
+.env
+
+# Example runtime artifacts
+examples/*/evidence/
+examples/galaxy-visual-regression/actual/
+examples/galaxy-visual-regression/baseline/
+examples/galaxy-visual-regression/diffs/
+examples/galaxy-visual-regression/reports/

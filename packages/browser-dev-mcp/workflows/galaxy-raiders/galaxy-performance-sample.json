@@ -1,0 +1,101 @@
+{
+  "name": "galaxy-performance-sample",
+  "description": "Sample canvas rendering performance: FPS detection, render timing, canvas data URL size, consistency across multiple game states",
+  "steps": [
+    {
+      "tool": "browser_open_url",
+      "args": { "url": "http://localhost:5173" },
+      "description": "Load Galaxy Raiders"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 3000 },
+      "description": "Wait for full load"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "perf-menu" },
+      "description": "Menu canvas screenshot (size baseline)"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ var c = document.querySelector('canvas'); if(!c) return 'no canvas'; var data = c.toDataURL(); return { width: c.width, height: c.height, dataLen: data.length, aspect: (c.width/c.height).toFixed(2) }; })()" },
+      "description": "Canvas dimensions + data URL size at menu"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ GALAXY_CONFIG.debug.showLevelSkipButton = true; return 'debug enabled'; })()" },
+      "description": "Enable debug"
+    },
+    {
+      "tool": "browser_press_key",
+      "args": { "key": "Enter" },
+      "description": "Start game"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2000 },
+      "description": "Wait for LV1 gameplay"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ var c = document.querySelector('canvas'); if(!c) return 'no canvas'; var data = c.toDataURL(); return { dataLen: data.length, timestamp: Date.now() }; })()" },
+      "description": "Canvas data URL size at gameplay"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "perf-gameplay-lv1" },
+      "description": "Gameplay canvas screenshot"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ try { if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(15); return 'jumped LV15'; } return 'no hook'; } catch(e) { return 'error: '+e.message; } })()" },
+      "description": "Jump to boss level for heavy rendering test"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss + bullets"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ var c = document.querySelector('canvas'); if(!c) return 'no canvas'; var data = c.toDataURL(); return { dataLen: data.length, timestamp: Date.now(), enemies: typeof enemies !== 'undefined' ? enemies.length : '?', bullets: typeof enemyBullets !== 'undefined' ? enemyBullets.length : '?' }; })()" },
+      "description": "Canvas data URL size during boss combat"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "perf-boss-lv15" },
+      "description": "Boss combat canvas screenshot"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ if(window.__GR_DEBUG_JUMP_TO_LEVEL){ window.__GR_DEBUG_JUMP_TO_LEVEL(20); return 'jumped LV20'; } return 'no hook'; })()" },
+      "description": "Jump to LV20 for max rendering test"
+    },
+    {
+      "tool": "browser_wait",
+      "args": { "ms": 2500 },
+      "description": "Wait for boss + bullets at LV20"
+    },
+    {
+      "tool": "browser_evaluate_js",
+      "args": { "expression": "(function(){ var c = document.querySelector('canvas'); if(!c) return 'no canvas'; var data = c.toDataURL(); return { dataLen: data.length, timestamp: Date.now(), enemies: typeof enemies !== 'undefined' ? enemies.length : '?', bullets: typeof enemyBullets !== 'undefined' ? enemyBullets.length : '?' }; })()" },
+      "description": "Canvas data URL size at LV20 boss"
+    },
+    {
+      "tool": "browser_screenshot_canvas",
+      "args": { "selector": "canvas", "name": "perf-boss-lv20" },
+      "description": "LV20 boss canvas screenshot"
+    },
+    {
+      "tool": "browser_get_console_logs",
+      "args": {},
+      "description": "Console logs"
+    },
+    {
+      "tool": "browser_get_page_errors",
+      "args": {},
+      "description": "Page errors"
+    }
+  ]
+}

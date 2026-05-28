@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tgz
+/evidence/
+/reports/
+/screenshots/
+/sessions/
+/workflow-reports/
+.env

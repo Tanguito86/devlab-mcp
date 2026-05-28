@@ -1,0 +1,820 @@
+{
+  "apps": {
+    "sampleApp": {
+      "package": "com.example.myapp",
+      "activity": ".MainActivity",
+      "logTags": [
+        "MyApp"
+      ],
+      "workflows": {
+        "appSmoke": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 300
+            }
+          }
+        ],
+        "launchAndCapture": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "uiSnapshot": [
+          {
+            "tool": "android_screenshot",
+            "args": {}
+          },
+          {
+            "tool": "android_ui_dump",
+            "args": {}
+          }
+        ],
+        "logcatSnapshot": [
+          {
+            "tool": "android_clear_logcat",
+            "args": {}
+          },
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 300
+            }
+          }
+        ],
+        "installAndLaunch": [
+          {
+            "tool": "android_install_apk",
+            "args": {
+              "apkPath": "app/build/outputs/apk/debug/app-debug.apk"
+            }
+          },
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          }
+        ]
+      }
+    },
+    "demoDebugApp": {
+      "package": "com.example.debugapp",
+      "activity": ".MainActivity",
+      "logTags": [
+        "DemoDebugApp",
+        "DemoDebugApp-Network"
+      ],
+      "debugIntents": {
+        "openDebugPanel": "com.example.debugapp.DEBUG_OPEN_PANEL",
+        "dumpState": "com.example.debugapp.DEBUG_DUMP_STATE"
+      },
+      "workflows": {
+        "debugCapture": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "dumpState"
+            }
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 500
+            }
+          }
+        ]
+      }
+    },
+    "system": {
+      "package": "com.android.settings",
+      "activity": ".Settings",
+      "logTags": [
+        "Settings"
+      ],
+      "workflows": {
+        "systemUiSmoke": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_screenshot",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 200
+            }
+          }
+        ]
+      }
+    },
+    "soundbend": {
+      "package": "com.tanguitostudio.soundbend",
+      "activity": ".MainActivity",
+      "logTags": [
+        "SoundBend-SrcAudit",
+        "SoundBend-SrcMode",
+        "SoundBend-DSP",
+        "SoundBend-SRC",
+        "SoundBend-AudioTrack",
+        "SoundBend-BT",
+        "SoundBend.NavDebug",
+        "SoundBend.PlayerDebug",
+        "SoundBend.PCM",
+        "SoundBend.Pipeline"
+      ],
+      "debugIntents": {
+        "openEq": "com.tanguitostudio.soundbend.DEBUG_OPEN_EQ",
+        "dumpAudio": "com.tanguitostudio.soundbend.DEBUG_DUMP_AUDIO",
+        "setSrcMode": "com.tanguitostudio.soundbend.DEBUG_SET_SRC_MODE",
+        "completeOnboarding": "com.tanguitostudio.soundbend.DEBUG_COMPLETE_ONBOARDING",
+        "navigate": "com.tanguitostudio.soundbend.DEBUG_NAVIGATE",
+        "playFile": "com.tanguitostudio.soundbend.DEBUG_PLAY_FILE",
+        "pause": "com.tanguitostudio.soundbend.DEBUG_PAUSE",
+        "resume": "com.tanguitostudio.soundbend.DEBUG_RESUME",
+        "stop": "com.tanguitostudio.soundbend.DEBUG_STOP",
+        "seek": "com.tanguitostudio.soundbend.DEBUG_SEEK"
+      },
+      "workflows": {
+        "smoke": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_wait_for_ui",
+            "args": {
+              "text": "Reproduciendo",
+              "timeoutSec": 10
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 500
+            }
+          }
+        ],
+        "openEq": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "openEq"
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "captureAudioState": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "dumpAudio"
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 500
+            }
+          }
+        ],
+        "setSrcSystem": [
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "setSrcMode",
+              "extras": {
+                "mode": "SYSTEM"
+              }
+            }
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 200
+            }
+          }
+        ],
+        "setSrcInternal": [
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "setSrcMode",
+              "extras": {
+                "mode": "INTERNAL"
+              }
+            }
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 200
+            }
+          }
+        ],
+        "completeOnboarding": [
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "completeOnboarding"
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "navPlayer": [
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "navigate",
+              "extras": {
+                "screen": "player"
+              }
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "navEqualizer": [
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "navigate",
+              "extras": {
+                "screen": "equalizer"
+              }
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "navPresets": [
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "navigate",
+              "extras": {
+                "screen": "presets"
+              }
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "navAutoEq": [
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "navigate",
+              "extras": {
+                "screen": "autoeq"
+              }
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "navSettings": [
+          {
+            "tool": "android_send_debug_intent",
+            "args": {
+              "intent": "navigate",
+              "extras": {
+                "screen": "settings"
+              }
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "smokeNavigable": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_wait_for_ui",
+            "args": {
+              "text": "Ecualizador",
+              "timeoutSec": 15
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.NavDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_COMPLETE_ONBOARDING"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.NavDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_NAVIGATE -e screen player"
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.NavDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_NAVIGATE -e screen equalizer"
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.NavDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_NAVIGATE -e screen settings"
+            }
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 300
+            }
+          }
+        ],
+        "pcmInternalSrcSmoke": [
+          {
+            "tool": "android_launch_app",
+            "args": {}
+          },
+          {
+            "tool": "android_wait_for_ui",
+            "args": {
+              "text": "Ecualizador",
+              "timeoutSec": 15
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.NavDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_COMPLETE_ONBOARDING"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.NavDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_NAVIGATE -e screen player"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.SrcDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SET_SRC_MODE -e mode INTERNAL"
+            }
+          },
+          {
+            "tool": "android_clear_logcat",
+            "args": {}
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PLAY_FILE -e path /data/data/com.tanguitostudio.soundbend/files/test_audio/sb-44100.wav"
+            }
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 3000
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 500
+            }
+          }
+        ],
+        "pcmPlay44100": [
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PLAY_FILE -e path /data/data/com.tanguitostudio.soundbend/files/test_audio/sb-44100.wav"
+            }
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 200
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "pcmPlay48000": [
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PLAY_FILE -e path /data/data/com.tanguitostudio.soundbend/files/test_audio/sb-48000.wav"
+            }
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 200
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          }
+        ],
+        "seekStress": [
+          {
+            "tool": "android_clear_logcat",
+            "args": {}
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PLAY_FILE -e path /data/data/com.tanguitostudio.soundbend/files/test_audio/sb-44100.wav"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 1.5"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 200"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 1200"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 500"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 2200"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 800"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 3500"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 100"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 4500"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 620"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 2800"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 1"
+            }
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 3000
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 500
+            }
+          }
+        ],
+        "pauseResume": [
+          {
+            "tool": "android_clear_logcat",
+            "args": {}
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PLAY_FILE -e path /data/data/com.tanguitostudio.soundbend/files/test_audio/sb-44100.wav"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 1.5"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PAUSE"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 2"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_RESUME"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 0.8"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PAUSE"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 2"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_RESUME"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 0.8"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PAUSE"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 2"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_RESUME"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 0.8"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PAUSE"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 2"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_RESUME"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 0.8"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PAUSE"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 2"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_RESUME"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 2"
+            }
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 3000
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 500
+            }
+          }
+        ],
+        "playbackLifecycle": [
+          {
+            "tool": "android_clear_logcat",
+            "args": {}
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PLAY_FILE -e path /data/data/com.tanguitostudio.soundbend/files/test_audio/sb-44100.wav"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 1.5"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_PAUSE"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 1"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_RESUME"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 1"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_SEEK --ei positionMs 3000"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "sleep 1"
+            }
+          },
+          {
+            "tool": "android_run_shell",
+            "args": {
+              "command": "am broadcast -n com.tanguitostudio.soundbend/.debug.PlayerDebugReceiver -a com.tanguitostudio.soundbend.DEBUG_STOP"
+            }
+          },
+          {
+            "tool": "android_read_logcat",
+            "args": {
+              "lines": 2000
+            }
+          },
+          {
+            "tool": "android_capture_state",
+            "args": {}
+          },
+          {
+            "tool": "android_generate_report",
+            "args": {
+              "lines": 500
+            }
+          }
+        ]
+      }
+    }
+  }
+}

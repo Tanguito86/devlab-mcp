@@ -1,0 +1,25 @@
+{
+  "name": "devlab-mcp-suite",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DevLab MCP Suite — modular testing and automation MCP servers for Android, browsers, and beyond.",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r clean",
+    "doctor": "pnpm -r doctor",
+    "pack:dry-run": "pnpm -r pack:dry-run",
+    "setup": "node scripts/devlab-setup.js",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0"
+  }
+}

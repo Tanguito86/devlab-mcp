@@ -1,0 +1,37 @@
+{
+  "name": "@tanguito/devlab-shared",
+  "version": "0.1.0",
+  "description": "Shared types, schemas, and helpers for DevLab MCP Suite packages.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Tanguito86",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.js",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "doctor": "node scripts/doctor.js",
+    "pack:dry-run": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
