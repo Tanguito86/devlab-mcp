@@ -52,6 +52,9 @@ importers:
       '@types/node':
         specifier: ^24.10.1
         version: 24.12.4
+      three:
+        specifier: 0.185.1
+        version: 0.185.1
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -955,6 +958,9 @@ packages:
   term-size@2.2.1:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
+
+  three@0.185.1:
+    resolution: {integrity: sha512-5aojFCXKwnjBRZvUnt3WFfEcvUJgkN5LlijRFN95hMy8WVkG4I0QNcJE+OuWvuJ0bOdStrbfXn0pkd6/QyiAlg==}
 
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
@@ -1891,6 +1897,8 @@ snapshots:
   strip-bom@3.0.0: {}
 
   term-size@2.2.1: {}
+
+  three@0.185.1: {}
 
   to-regex-range@5.0.1:
     dependencies:
