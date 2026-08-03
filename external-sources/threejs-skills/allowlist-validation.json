@@ -1,0 +1,430 @@
+{
+  "source": "threejs-skills",
+  "reviewed_on": "2026-08-03",
+  "pinned_commit": "b1c623076c661fc9b03dac19292e825a5d106823",
+  "passed": true,
+  "structural_checks": [
+    {
+      "name": "registry_well_formed",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_source_ids_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_source_ids_valid",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_pins_full_sha",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_urls_normalized",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_default_branches",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_paths_safe",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_paths_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_no_wildcards",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_component_statuses_valid",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "schema_version",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "source_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "normalized_repository_url",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "default_branch",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "full_pinned_commit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration_mode",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "automatic_updates_disabled",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "manual_upstream_check_recorded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "safe_component_paths",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_paths_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlist_exact",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_statuses",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_file_counts_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_not_versioned",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "external_execution_disabled",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "nothing_approved",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "verified_hashes_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_status_known",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_unresolved_required",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "wildcard_allowlist_rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "external_cache_ignored",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "local_config_ignored",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_external_runtime_dependency",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_external_submodule",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_copied_agent_skills_root",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "checkout_checks": [
+    {
+      "name": "checkout_exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_is_git",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_pin_exact",
+      "passed": true,
+      "detail": "b1c623076c661fc9b03dac19292e825a5d106823"
+    },
+    {
+      "name": "checkout_detached",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_clean",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_origin",
+      "passed": true,
+      "detail": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    {
+      "name": "allowlisted_paths_exist",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlisted_entries_regular",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlisted_file_counts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "verified_file_hashes",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_material_present",
+      "passed": true,
+      "detail": "no license file declared (UNRESOLVED)"
+    },
+    {
+      "name": "license_text_consistent",
+      "passed": true,
+      "detail": "no license file to verify"
+    }
+  ],
+  "components": [
+    {
+      "path": "README.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-fundamentals/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-geometry/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-materials/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-lighting/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-textures/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-animation/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-loaders/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-shaders/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-postprocessing/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-interaction/SKILL.md",
+      "status": "candidate_for_audit",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    }
+  ],
+  "verified_files": [
+    {
+      "path": "README.md",
+      "expected": "e75940c238eca97c5461eb06da2a91d18bd2a1227f75effcf661813b7596ffe1",
+      "actual": "e75940c238eca97c5461eb06da2a91d18bd2a1227f75effcf661813b7596ffe1",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-fundamentals/SKILL.md",
+      "expected": "c89027e35cf56629dcf1e9e51aa16ead5107f6551efecd9bdbbf90dfb749653a",
+      "actual": "c89027e35cf56629dcf1e9e51aa16ead5107f6551efecd9bdbbf90dfb749653a",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-geometry/SKILL.md",
+      "expected": "21040e92119411a532e1df019f38c31124ec3dcc96031390a51465389fb2462b",
+      "actual": "21040e92119411a532e1df019f38c31124ec3dcc96031390a51465389fb2462b",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-materials/SKILL.md",
+      "expected": "c6dcfb1f45e08fcf1f01305516782c5c4640754c830b5b994dac4c48fa19b296",
+      "actual": "c6dcfb1f45e08fcf1f01305516782c5c4640754c830b5b994dac4c48fa19b296",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-lighting/SKILL.md",
+      "expected": "33bb2d1fa9b30450484744ab31446650180eda924fb5ba3efebf0d0b4f3c8f61",
+      "actual": "33bb2d1fa9b30450484744ab31446650180eda924fb5ba3efebf0d0b4f3c8f61",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-textures/SKILL.md",
+      "expected": "1708569adf18bb60c3366edfa70a95c14ab25fbaa5c55442e23d045c2c596b08",
+      "actual": "1708569adf18bb60c3366edfa70a95c14ab25fbaa5c55442e23d045c2c596b08",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-animation/SKILL.md",
+      "expected": "d5dbcda9d08614d6fde7cf38ab5e649feed72237f9ac3e649052e01a15a19b8c",
+      "actual": "d5dbcda9d08614d6fde7cf38ab5e649feed72237f9ac3e649052e01a15a19b8c",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-loaders/SKILL.md",
+      "expected": "deef71b4f581463ec0660b36d4db0125ee35c41d4fa1e551df65a97de2680c3f",
+      "actual": "deef71b4f581463ec0660b36d4db0125ee35c41d4fa1e551df65a97de2680c3f",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-shaders/SKILL.md",
+      "expected": "e9b1560195a856c8102cb8d51e64029f4420fabe07c1ff997542be2ff1e55a3e",
+      "actual": "e9b1560195a856c8102cb8d51e64029f4420fabe07c1ff997542be2ff1e55a3e",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-postprocessing/SKILL.md",
+      "expected": "e29494e50776ed0a9a60916daec78431320724d08c3049719daa9574ca6a48dc",
+      "actual": "e29494e50776ed0a9a60916daec78431320724d08c3049719daa9574ca6a48dc",
+      "passed": true
+    },
+    {
+      "path": "skills/threejs-interaction/SKILL.md",
+      "expected": "6a2251ce5dc088ad16febbbd31c2bcdd0f98b99ae366f556ac683f0f91741343",
+      "actual": "6a2251ce5dc088ad16febbbd31c2bcdd0f98b99ae366f556ac683f0f91741343",
+      "passed": true
+    }
+  ]
+}

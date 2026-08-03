@@ -1,0 +1,63 @@
+{
+  "source": "jungle-trail",
+  "pinned_commit": "073e6eb8efc6d6915efacc611a6e5ba91c89e34c",
+  "reviewed_on": "2026-08-03",
+  "findings": [
+    {
+      "id": "PLAYWRIGHT",
+      "severity": "info",
+      "category": "dependency",
+      "detail": "Playwright ^1.62.0 is a dev dependency only, used exclusively by tools/",
+      "status": "OBSERVED",
+      "blocks": "no"
+    },
+    {
+      "id": "THREEJS_RUNTIME",
+      "severity": "info",
+      "category": "runtime",
+      "detail": "Three.js r170 loaded from jsDelivr via importmap at runtime",
+      "status": "OBSERVED",
+      "blocks": "no"
+    },
+    {
+      "id": "RUNTIME_NETWORK",
+      "severity": "low",
+      "category": "network",
+      "detail": "Only runtime network dependency is the Three.js CDN import; src/ has no fetch/XHR/Image loaders",
+      "status": "OBSERVED",
+      "blocks": "no"
+    },
+    {
+      "id": "SOURCE_EXTERNAL_ASSETS",
+      "severity": "info",
+      "category": "assets",
+      "detail": "No external art assets observed at the pin; all textures, meshes, and audio are procedural",
+      "status": "OBSERVED",
+      "blocks": "no"
+    },
+    {
+      "id": "BUILDER_CRITIC_PATTERN",
+      "severity": "info",
+      "category": "process",
+      "detail": "Builder-to-blind-critic pattern documented in PROMPT.md with honest scores",
+      "status": "DOCUMENTED",
+      "blocks": "no"
+    },
+    {
+      "id": "DETERMINISTIC_CAPTURE",
+      "severity": "info",
+      "category": "process",
+      "detail": "Deterministic capture documented: single evaluate pause/renderOnce/read/resume; 1-px readPixels sync",
+      "status": "DOCUMENTED",
+      "blocks": "no"
+    },
+    {
+      "id": "CODE_EXECUTION",
+      "severity": "policy",
+      "category": "governance",
+      "detail": "npm run serve, npm run shoot, npm install not authorized; enforced by manifest execution_policy",
+      "status": "ENFORCED_BY_VALIDATOR",
+      "blocks": "execution"
+    }
+  ]
+}

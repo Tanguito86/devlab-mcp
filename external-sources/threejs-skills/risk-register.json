@@ -1,0 +1,55 @@
+{
+  "source": "threejs-skills",
+  "pinned_commit": "b1c623076c661fc9b03dac19292e825a5d106823",
+  "reviewed_on": "2026-08-03",
+  "findings": [
+    {
+      "id": "README_WRONG_CLONE_TARGET",
+      "severity": "medium",
+      "category": "documentation",
+      "detail": "README installation commands clone pinkforest/threejs-playground, not CloudAI-X/threejs-skills",
+      "status": "OPEN",
+      "blocks": "no"
+    },
+    {
+      "id": "README_WRONG_SKILL_PATH",
+      "severity": "medium",
+      "category": "documentation",
+      "detail": "README documents .claude/skills layout; actual tree layout is skills/<name>/SKILL.md",
+      "status": "OPEN",
+      "blocks": "no"
+    },
+    {
+      "id": "MISSING_LICENSE_FILE",
+      "severity": "high",
+      "category": "legal",
+      "detail": "MIT declared in README but no LICENSE file in pinned tree; GitHub API license: null",
+      "status": "OPEN",
+      "blocks": "reuse"
+    },
+    {
+      "id": "INVALID_API_EXAMPLE",
+      "severity": "medium",
+      "category": "content",
+      "detail": "threejs-postprocessing WebGPU example uses new THREE.PostProcessing(renderer) which does not exist in the THREE namespace",
+      "status": "OPEN",
+      "blocks": "adaptation_of_that_example"
+    },
+    {
+      "id": "VERSION_COHERENCE",
+      "severity": "low",
+      "category": "content",
+      "detail": "Mixed import styles (three/examples/jsm vs three/addons) and version annotations r150/r152 against README claim of r160+",
+      "status": "OPEN",
+      "blocks": "no"
+    },
+    {
+      "id": "DIRECT_INSTALLATION",
+      "severity": "policy",
+      "category": "governance",
+      "detail": "Direct installation (npx skills add, npm install, copying into packages) is not approved",
+      "status": "ENFORCED_BY_VALIDATOR",
+      "blocks": "execution"
+    }
+  ]
+}

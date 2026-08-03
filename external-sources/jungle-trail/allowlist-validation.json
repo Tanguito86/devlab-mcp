@@ -1,0 +1,382 @@
+{
+  "source": "jungle-trail",
+  "reviewed_on": "2026-08-03",
+  "pinned_commit": "073e6eb8efc6d6915efacc611a6e5ba91c89e34c",
+  "passed": true,
+  "structural_checks": [
+    {
+      "name": "registry_well_formed",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_source_ids_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_source_ids_valid",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_pins_full_sha",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_urls_normalized",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_default_branches",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_paths_safe",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_paths_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_no_wildcards",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_component_statuses_valid",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "schema_version",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "source_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "normalized_repository_url",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "default_branch",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "full_pinned_commit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration_mode",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "automatic_updates_disabled",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "manual_upstream_check_recorded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "safe_component_paths",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_paths_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlist_exact",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_statuses",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_file_counts_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_not_versioned",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "external_execution_disabled",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "nothing_approved",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "verified_hashes_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_status_known",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_unresolved_required",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "wildcard_allowlist_rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "external_cache_ignored",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "local_config_ignored",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_external_runtime_dependency",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_external_submodule",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_copied_agent_skills_root",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "checkout_checks": [
+    {
+      "name": "checkout_exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_is_git",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_pin_exact",
+      "passed": true,
+      "detail": "073e6eb8efc6d6915efacc611a6e5ba91c89e34c"
+    },
+    {
+      "name": "checkout_detached",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_clean",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_origin",
+      "passed": true,
+      "detail": "https://github.com/StarKnightt/jungle-trail.git"
+    },
+    {
+      "name": "allowlisted_paths_exist",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlisted_entries_regular",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlisted_file_counts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "verified_file_hashes",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_material_present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_text_consistent",
+      "passed": true,
+      "detail": "declared=MIT detected=MIT"
+    }
+  ],
+  "components": [
+    {
+      "path": "README.md",
+      "status": "reference_architecture_only",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "PROMPT.md",
+      "status": "reference_architecture_only",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "LICENSE",
+      "status": "reference_architecture_only",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "package.json",
+      "status": "reference_architecture_only",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "tools/harness.mjs",
+      "status": "reference_architecture_only",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "tools/shoot.mjs",
+      "status": "reference_architecture_only",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "tools/px.mjs",
+      "status": "reference_architecture_only",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "tools/fx.mjs",
+      "status": "reference_architecture_only",
+      "type": "file",
+      "exists": true,
+      "regular_files": 1,
+      "expected_files": 1,
+      "unsafe_entries": [],
+      "passed": true
+    }
+  ],
+  "verified_files": [
+    {
+      "path": "README.md",
+      "expected": "a1dfba6e4d0439de873a23633fa1b8f92bc95f2c0abc352c2a8f837688bdec30",
+      "actual": "a1dfba6e4d0439de873a23633fa1b8f92bc95f2c0abc352c2a8f837688bdec30",
+      "passed": true
+    },
+    {
+      "path": "PROMPT.md",
+      "expected": "96f5371c5f07280247c0e5a1d662567502d8db65eff0906c9952d51cf6ecb411",
+      "actual": "96f5371c5f07280247c0e5a1d662567502d8db65eff0906c9952d51cf6ecb411",
+      "passed": true
+    },
+    {
+      "path": "LICENSE",
+      "expected": "905d07d99f417db7582d94c0a392a7e677ec8073ad09439b7d709064a471d356",
+      "actual": "905d07d99f417db7582d94c0a392a7e677ec8073ad09439b7d709064a471d356",
+      "passed": true
+    },
+    {
+      "path": "package.json",
+      "expected": "29e68cc0d284332605a06c02461d19a90283d1c8407ad7e31e0df5cdb3e46e33",
+      "actual": "29e68cc0d284332605a06c02461d19a90283d1c8407ad7e31e0df5cdb3e46e33",
+      "passed": true
+    },
+    {
+      "path": "tools/harness.mjs",
+      "expected": "5e4fad5fb85ee77368f57f1861dd774a2f3d1c6d1e87cba160f69ebb78725e45",
+      "actual": "5e4fad5fb85ee77368f57f1861dd774a2f3d1c6d1e87cba160f69ebb78725e45",
+      "passed": true
+    },
+    {
+      "path": "tools/shoot.mjs",
+      "expected": "116ad4014a6beb2aefd6a88b1b2bfc58b9d68828a9323430e4190412619bf175",
+      "actual": "116ad4014a6beb2aefd6a88b1b2bfc58b9d68828a9323430e4190412619bf175",
+      "passed": true
+    },
+    {
+      "path": "tools/px.mjs",
+      "expected": "02a90c9c46f4771995daa1f4723714425aeaf5679026be983aea66fd1bf4780b",
+      "actual": "02a90c9c46f4771995daa1f4723714425aeaf5679026be983aea66fd1bf4780b",
+      "passed": true
+    },
+    {
+      "path": "tools/fx.mjs",
+      "expected": "77f99554e467f726eb38e7b1ab285cc7289d4565b197da46191444a9045a934a",
+      "actual": "77f99554e467f726eb38e7b1ab285cc7289d4565b197da46191444a9045a934a",
+      "passed": true
+    }
+  ]
+}
