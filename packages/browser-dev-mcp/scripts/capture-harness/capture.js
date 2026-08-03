@@ -14,6 +14,7 @@ import {
   validateContractValue,
   validateManifest,
   validateOutputTag,
+  validateRequestedViewpoints,
   validateSceneMetrics,
   ContractError,
 } from "./contract.js";
@@ -27,6 +28,65 @@ export class CaptureError extends Error {
   }
 }
 
+export function isAllowedLocalUrl(requestUrl, baseUrl) {
+  try {
+    return new URL(requestUrl).origin === new URL(baseUrl).origin;
+  } catch {
+    return false;
+  }
+}
+
+export function validatePngBuffer(buffer, expectedWidth, expectedHeight) {
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (!Buffer.isBuffer(buffer) || buffer.length < 24 || !buffer.subarray(0, 8).equals(signature)) {
+    throw new CaptureError("capture did not produce a valid PNG", "INVALID_PNG");
+  }
+  if (buffer.toString("ascii", 12, 16) !== "IHDR") {
+    throw new CaptureError("PNG has no IHDR header", "INVALID_PNG");
+  }
+  const width = buffer.readUInt32BE(16);
+  const height = buffer.readUInt32BE(20);
+  if (width !== expectedWidth || height !== expectedHeight) {
+    throw new CaptureError(
+      `PNG dimensions ${width}x${height} do not match canvas ${expectedWidth}x${expectedHeight}`,
+      "PNG_DIMENSION_MISMATCH",
+    );
+  }
+  return buffer;
+}
+
+export function validateRgbaBuffer(buffer, width, height) {
+  if (!Buffer.isBuffer(buffer) || buffer.length !== width * height * 4) {
+    throw new CaptureError("capture returned incomplete RGBA data", "RGBA_MISMATCH");
+  }
+  return buffer;
+}
+
+export async function capturePageFrame(page, timeoutMs, label) {
+  return withTimeout(
+    page.evaluate(async () => {
+      const target = window.__DEVLAB_CAPTURE__;
+      await target.renderOnce();
+      const canvas = document.querySelector("canvas");
+      if (!canvas) throw new Error("no canvas element on page");
+      const gl = canvas.getContext("webgl2") || canvas.getContext("webgl")
+        || canvas.getContext("experimental-webgl");
+      if (!gl || gl.isContextLost()) throw new Error("no usable webgl context on canvas");
+      const sync = new Uint8Array(4);
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, sync);
+      const pngDataUrl = canvas.toDataURL("image/png");
+      const w = canvas.width;
+      const h = canvas.height;
+      const full = new Uint8Array(w * h * 4);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, full);
+      if (gl.isContextLost()) throw new Error("webgl context lost during capture");
+      return { png: pngDataUrl, rgba: Array.from(full), width: w, height: h };
+    }),
+    timeoutMs,
+    `${label} timeout`,
+  );
+}
+
 /**
  * @param {object} opts
  * @param {string} opts.fixtureRoot absolute fixture directory
@@ -36,6 +96,7 @@ export class CaptureError extends Error {
  * @param {string[]} opts.viewpoints
  * @param {string} opts.tag output tag (validated)
  * @param {string} [opts.variant] fixture variant id from manifest
+ * @param {(string|null)[]} [opts.variantSequence] variants captured in one page/session
  * @param {"cpu"|"gpu"} [opts.backend]
  * @param {number} [opts.viewportWidth]
  * @param {number} [opts.viewportHeight]
@@ -52,6 +113,7 @@ export async function runCapture({
   viewpoints,
   tag,
   variant = null,
+  variantSequence = null,
   backend = "cpu",
   viewportWidth = 960,
   viewportHeight = 540,
@@ -61,6 +123,13 @@ export async function runCapture({
   onBlockedRequest = () => {},
 }) {
   validateOutputTag(tag);
+  validateRequestedViewpoints(viewpoints);
+  const variantsToCapture = variantSequence || [variant];
+  if (!Array.isArray(variantsToCapture) || variantsToCapture.length === 0
+    || new Set(variantsToCapture.map((item) => item === null ? "<default>" : item)).size
+      !== variantsToCapture.length) {
+    throw new CaptureError("variant sequence must be non-empty and unique", "BAD_VARIANT_SEQUENCE");
+  }
   const server = new CaptureServer(fixtureRoot, { vendor });
   const port = await server.start();
   const baseUrl = server.baseUrl;
@@ -83,7 +152,7 @@ export async function runCapture({
     // Abort everything that is not the local origin.
     await page.route("**/*", (route) => {
       const url = route.request().url();
-      if (url.startsWith(baseUrl)) {
+      if (isAllowedLocalUrl(url, baseUrl)) {
         route.continue();
       } else {
         blocked.push(url);
@@ -97,8 +166,7 @@ export async function runCapture({
     });
     page.on("pageerror", (err) => pageErrors.push(String(err)));
 
-    const variantParam = variant ? `?devlab-variant=${encodeURIComponent(variant)}` : "";
-    const response = await page.goto(`${baseUrl}/${variantParam}`, {
+    const response = await page.goto(`${baseUrl}/`, {
       waitUntil: "domcontentloaded",
       timeout: readyTimeoutMs,
     });
@@ -159,11 +227,32 @@ export async function runCapture({
       }
     }
 
+    for (const variantId of variantsToCapture) {
+      if (variantId !== null && !Object.hasOwn(manifest.variants, variantId)) {
+        throw new ContractError(`unknown variant: ${variantId}`, "UNKNOWN_VARIANT");
+      }
+    }
+    if (variantsToCapture.some((item) => item !== null) || variantsToCapture.length > 1) {
+      const canSetVariant = await page.evaluate(() =>
+        typeof window.__DEVLAB_CAPTURE__.setVariant === "function");
+      if (!canSetVariant) {
+        throw new ContractError("fixture does not implement setVariant()", "MISSING_VARIANT_METHOD");
+      }
+    }
+
+    if (blocked.length > 0) {
+      throw new CaptureError(`blocked external request: ${blocked[0]}`, "EXTERNAL_REQUEST_BLOCKED");
+    }
+
     await page.evaluate((s) => window.__DEVLAB_CAPTURE__.setSeed(s), seed);
     await page.evaluate((t) => window.__DEVLAB_CAPTURE__.setTime(t), timeMs);
 
     const captures = [];
-    for (const viewpoint of viewpoints) {
+    for (const variantId of variantsToCapture) {
+      if (typeof variantId === "string" || variantsToCapture.length > 1) {
+        await page.evaluate((id) => window.__DEVLAB_CAPTURE__.setVariant(id), variantId);
+      }
+      for (const viewpoint of viewpoints) {
       let viewpointError = null;
       try {
         await withTimeout(
@@ -180,31 +269,17 @@ export async function runCapture({
 
       // One logical operation: render once, sync GPU with a 1px readPixels,
       // then read PNG + full RGBA before the drawing buffer is cleared.
-      const frame = await withTimeout(
-        page.evaluate(async () => {
-          const target = window.__DEVLAB_CAPTURE__;
-          await target.renderOnce();
-          const canvas = document.querySelector("canvas");
-          if (!canvas) throw new Error("no canvas element on page");
-          const gl =
-            canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-          if (!gl) throw new Error("no webgl context on canvas");
-          // GPU sync: a 1px readPixels cannot return before the frame exists.
-          const sync = new Uint8Array(4);
-          gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, sync);
-          const pngDataUrl = canvas.toDataURL("image/png");
-          const w = canvas.width;
-          const h = canvas.height;
-          const full = new Uint8Array(w * h * 4);
-          gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, full);
-          return { png: pngDataUrl, rgba: Array.from(full), width: w, height: h };
-        }),
-        captureTimeoutMs,
-        `capture(${viewpoint}) timeout`,
-      );
+      const frame = await capturePageFrame(page, captureTimeoutMs, `capture(${viewpoint})`);
 
-      const pngBuffer = Buffer.from(frame.png.split(",")[1], "base64");
-      const rgbaBuffer = Buffer.from(frame.rgba);
+      if (typeof frame.png !== "string" || !frame.png.startsWith("data:image/png;base64,")) {
+        throw new CaptureError("capture returned no PNG data URL", "MISSING_PNG");
+      }
+      const pngBuffer = validatePngBuffer(
+        Buffer.from(frame.png.slice("data:image/png;base64,".length), "base64"),
+        frame.width,
+        frame.height,
+      );
+      const rgbaBuffer = validateRgbaBuffer(Buffer.from(frame.rgba), frame.width, frame.height);
       const metrics = validateSceneMetrics(await page.evaluate(() => window.__DEVLAB_CAPTURE__.getMetrics()));
       // The fixture must prove it applied the requested state (fail-closed).
       if (metrics.seedApplied !== seed) {
@@ -225,14 +300,25 @@ export async function runCapture({
           "VIEWPOINT_NOT_APPLIED",
         );
       }
+      if (metrics.variantApplied !== undefined && metrics.variantApplied !== variantId) {
+        throw new CaptureError(
+          `variant not applied: requested ${variantId}, fixture reports ${metrics.variantApplied}`,
+          "VARIANT_NOT_APPLIED",
+        );
+      }
+      if (blocked.length > 0) {
+        throw new CaptureError(`blocked external request: ${blocked[0]}`, "EXTERNAL_REQUEST_BLOCKED");
+      }
       captures.push({
         viewpoint,
+        variant: variantId,
         png: pngBuffer,
         rgba: rgbaBuffer,
         width: frame.width,
         height: frame.height,
         metrics,
       });
+      }
     }
 
     const environment = await collectEnvironment(page);
@@ -244,6 +330,7 @@ export async function runCapture({
       consoleErrors,
       pageErrors,
       blockedRequests: blocked,
+      manifest,
       serverPort: port,
     };
   } finally {

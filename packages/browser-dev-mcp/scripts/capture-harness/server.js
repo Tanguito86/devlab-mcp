@@ -4,8 +4,8 @@
 // no external network. Guaranteed close.
 
 import http from "node:http";
-import { lstatSync, readFileSync } from "node:fs";
-import { extname, join, resolve, sep } from "node:path";
+import { lstatSync, readFileSync, realpathSync } from "node:fs";
+import { extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 function lstatSafe(path) {
@@ -13,6 +13,30 @@ function lstatSafe(path) {
     return lstatSync(path);
   } catch {
     return null;
+  }
+}
+
+function isRegularContainedFile(root, target) {
+  const normalizedRoot = resolve(root);
+  const normalizedTarget = resolve(target);
+  if (normalizedTarget === normalizedRoot || !normalizedTarget.startsWith(normalizedRoot + sep)) {
+    return false;
+  }
+  const rel = relative(normalizedRoot, normalizedTarget);
+  let current = normalizedRoot;
+  for (const segment of rel.split(sep)) {
+    current = join(current, segment);
+    const stat = lstatSafe(current);
+    if (!stat || stat.isSymbolicLink()) return false;
+  }
+  const final = lstatSafe(normalizedTarget);
+  if (!final?.isFile()) return false;
+  try {
+    const realRoot = realpathSync(normalizedRoot);
+    const realTarget = realpathSync(normalizedTarget);
+    return realTarget.startsWith(realRoot + sep);
+  } catch {
+    return false;
   }
 }
 
@@ -62,8 +86,7 @@ export class CaptureServer {
       if (stat.isDirectory() && dirName && entry.endsWith(`${sep}${dirName}`)) {
         const target = resolve(entry, ...rest.split("/"));
         if (target !== entry && !target.startsWith(entry + sep)) return null;
-        const tstat = lstatSafe(target);
-        if (tstat && tstat.isFile()) return target;
+        if (isRegularContainedFile(entry, target)) return target;
         return null;
       }
     }
@@ -105,8 +128,16 @@ export class CaptureServer {
         res.end("not found");
         return;
       }
-      // Symlinks and anything that is not a regular file are rejected outright.
-      if (stat.isSymbolicLink() || !stat.isFile()) {
+      const fixtureFile = file.startsWith(this.root + sep);
+      const vendorDirectory = this.vendor.find((entry) => {
+        const vendorStat = lstatSafe(entry);
+        return vendorStat?.isDirectory() && file.startsWith(entry + sep);
+      });
+      // Every segment below a served directory is checked. A final-file lstat
+      // alone is insufficient because an ancestor may be a junction.
+      if (stat.isSymbolicLink() || !stat.isFile()
+        || (fixtureFile && !isRegularContainedFile(this.root, file))
+        || (vendorDirectory && !isRegularContainedFile(vendorDirectory, file))) {
         res.writeHead(404);
         res.end("not found");
         return;

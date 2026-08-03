@@ -106,6 +106,23 @@ test("symlinks are rejected even inside the fixture", async () => {
   }
 });
 
+test("symlink or junction ancestors cannot escape the fixture root", async () => {
+  const root = makeFixture({ "index.html": "x" });
+  const outside = makeFixture({ "nested/leak.txt": "leak" });
+  try {
+    symlinkSync(join(outside, "nested"), join(root, "linked"), "junction");
+  } catch {
+    return;
+  }
+  const server = new CaptureServer(root);
+  await server.start();
+  try {
+    assert.equal((await get(server, "/linked/leak.txt")).status, 404);
+  } finally {
+    await server.close();
+  }
+});
+
 test("vendor file and vendor directory mapping work", async () => {
   const root = makeFixture({ "index.html": "x" });
   const vendorFile = join(root, "..", `vendor-file-${Date.now()}.js`);

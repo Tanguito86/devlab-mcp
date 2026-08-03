@@ -2,7 +2,7 @@ GENERIC-LLM-REF-01 structural validation
 SOURCE: threejs-skills
 PIN: b1c623076c661fc9b03dac19292e825a5d106823
 MODE: OFFLINE_PLUS_EXTERNAL_CHECKOUT
-CHECKS: 48/48 PASS
+CHECKS: 51/51 PASS
 RESULT: PASS
 EXTERNAL_CODE_EXECUTED: 0
 EXTERNAL_DEPENDENCIES_INSTALLED: 0
@@ -35,6 +35,8 @@ PASS checkout_not_versioned
 PASS external_execution_disabled
 PASS nothing_approved
 PASS verified_hashes_declared
+PASS verified_file_paths_unique
+PASS file_components_fully_hashed
 PASS registry_status_known
 PASS license_unresolved_required
 PASS wildcard_allowlist_rejected
@@ -44,6 +46,7 @@ PASS no_external_runtime_dependency
 PASS no_external_submodule
 PASS no_copied_agent_skills_root
 PASS checkout_exists
+PASS checkout_manifest_paths_safe
 PASS checkout_is_git
 PASS checkout_pin_exact -- b1c623076c661fc9b03dac19292e825a5d106823
 PASS checkout_detached

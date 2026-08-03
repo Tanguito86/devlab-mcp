@@ -111,6 +111,7 @@ let seedState = 1729;
 let timeStateMs = 2500;
 let viewpointState = "overview";
 let bloomEnabled = VARIANT !== "bloom-off";
+let variantState = VARIANT || null;
 
 function regenerateLayout() {
   const rand = mulberry32(seedState);
@@ -299,6 +300,13 @@ function renderOnce() {
   composer.render();
 }
 
+function setVariant(id) {
+  if (id !== null && id !== "bloom-off") throw new Error(`unknown variant: ${id}`);
+  variantState = id;
+  bloomEnabled = id !== "bloom-off";
+  bloomPass.enabled = bloomEnabled;
+}
+
 // ---- animation loop (only used by the perf flow) ----
 let loopRunning = false;
 let loopClock = null;
@@ -340,6 +348,9 @@ const contract = {
   async setViewpoint(id) {
     applyViewpoint(id);
   },
+  async setVariant(id) {
+    setVariant(id);
+  },
   async renderOnce() {
     renderOnce();
   },
@@ -354,12 +365,24 @@ const contract = {
       seedApplied: seedState,
       timeAppliedMs: timeStateMs,
       viewpointApplied: viewpointState,
+      variantApplied: variantState,
+      resize: {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        cameraAspect: camera.aspect,
+        pixelRatio: renderer.getPixelRatio(),
+        renderTargetWidth: renderTarget.width,
+        renderTargetHeight: renderTarget.height,
+        composerWidth: composer.readBuffer.width,
+        composerHeight: composer.readBuffer.height,
+      },
     };
   },
 };
 
 window.__DEVLAB_CAPTURE__ = contract;
 window.__DEVLAB_CAPTURE_TEST__ = {
+  sessionId: crypto.randomUUID(),
   startLoop,
   stopLoop,
   loseContext() {

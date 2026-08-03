@@ -58,6 +58,15 @@ are never pulled or adopted automatically.
 - `skills/threejs-postprocessing/SKILL.md` contains a WebGPU example using
   `new THREE.PostProcessing(renderer)`, which does not exist in the THREE
   namespace; the example does not run as written.
+- `skills/threejs-lighting/SKILL.md` imports `ContactShadows` from an official
+  Three.js path where that module does not exist; the API belongs to a
+  separate ecosystem and the example is not portable as written.
+- `skills/threejs-animation/SKILL.md` labels a `StringKeyframeTrack` as a
+  morph-target example even though morph weights are numeric; the later
+  `NumberKeyframeTrack` example is the viable form.
+- The selective-bloom sample renders the normal scene directly after the
+  composer without an explicit additive combine pass, so the second render
+  can overwrite the bloom result instead of demonstrating the stated effect.
 - Mixed import styles (`three/examples/jsm` vs `three/addons`) and version
   annotations r150/r152 against a README claim of "r160+".
 - Direct installation is not approved under this sprint.

@@ -78,8 +78,8 @@ the new registry.json — the registry mirrors it, it does not modify it.
 
 ## 9. Did I touch the original worktree?
 
-**No.** All work happened in the isolated worktree
-`H:\UserData\Deposito\Documents\devlab-mcp-deepseek-threejs`. The original
+**No.** All work happened in a separate, isolated review worktree outside the
+original checkout. The original
 worktree's 154 pre-existing deletions were never staged, restored, or
 modified; staged count remains 0 and its porcelain output hash is unchanged
 from the F0 baseline (`1c1253cd...`). The reference hash

@@ -145,6 +145,16 @@
       "detail": ""
     },
     {
+      "name": "verified_file_paths_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "file_components_fully_hashed",
+      "passed": true,
+      "detail": ""
+    },
+    {
       "name": "registry_status_known",
       "passed": true,
       "detail": ""
@@ -188,6 +198,11 @@
   "checkout_checks": [
     {
       "name": "checkout_exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_manifest_paths_safe",
       "passed": true,
       "detail": ""
     },

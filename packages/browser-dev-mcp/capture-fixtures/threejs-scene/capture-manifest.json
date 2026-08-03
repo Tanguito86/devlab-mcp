@@ -3,6 +3,8 @@
   "viewpoints": ["overview", "instancing", "shader", "transparency", "postprocess"],
   "defaultSeed": 1729,
   "defaultTimeMs": 2500,
+  "seedAffectedViewpoints": ["overview", "instancing"],
+  "timeAffectedViewpoints": ["overview", "shader", "transparency", "postprocess"],
   "variants": {
     "bloom-off": {
       "bloomEnabled": false,

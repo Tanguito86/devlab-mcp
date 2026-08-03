@@ -5,6 +5,56 @@
   "passed": true,
   "structural_checks": [
     {
+      "name": "registry_well_formed",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_source_ids_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_source_ids_valid",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_pins_full_sha",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_urls_normalized",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_default_branches",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_paths_safe",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_paths_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_allowlist_no_wildcards",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_component_statuses_valid",
+      "passed": true,
+      "detail": ""
+    },
+    {
       "name": "schema_version",
       "passed": true,
       "detail": ""
@@ -95,6 +145,31 @@
       "detail": ""
     },
     {
+      "name": "verified_file_paths_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "file_components_fully_hashed",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "registry_status_known",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_unresolved_required",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "wildcard_allowlist_rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
       "name": "external_cache_ignored",
       "passed": true,
       "detail": ""
@@ -127,6 +202,11 @@
       "detail": ""
     },
     {
+      "name": "checkout_manifest_paths_safe",
+      "passed": true,
+      "detail": ""
+    },
+    {
       "name": "checkout_is_git",
       "passed": true,
       "detail": ""
@@ -135,6 +215,11 @@
       "name": "checkout_pin_exact",
       "passed": true,
       "detail": "779e9f9bcf87fa8cd95870a438b70b84e47d3173"
+    },
+    {
+      "name": "checkout_detached",
+      "passed": true,
+      "detail": ""
     },
     {
       "name": "checkout_clean",
@@ -167,15 +252,21 @@
       "detail": ""
     },
     {
-      "name": "license_matches_declaration",
+      "name": "license_material_present",
       "passed": true,
       "detail": ""
+    },
+    {
+      "name": "license_text_consistent",
+      "passed": true,
+      "detail": "declared=Apache-2.0 detected=Apache-2.0"
     }
   ],
   "components": [
     {
       "path": "agent_skills/scope-creep-detector",
       "status": "candidate_for_audit",
+      "type": "directory",
       "exists": true,
       "regular_files": 4,
       "expected_files": 4,
@@ -185,6 +276,7 @@
     {
       "path": "agent_skills/commit-archaeologist",
       "status": "candidate_for_audit",
+      "type": "directory",
       "exists": true,
       "regular_files": 4,
       "expected_files": 4,
@@ -194,6 +286,7 @@
     {
       "path": "agent_skills/dependency-doctor",
       "status": "candidate_for_audit",
+      "type": "directory",
       "exists": true,
       "regular_files": 4,
       "expected_files": 4,
@@ -203,6 +296,7 @@
     {
       "path": "agent_skills/evals",
       "status": "reference_architecture_only",
+      "type": "directory",
       "exists": true,
       "regular_files": 20,
       "expected_files": 20,

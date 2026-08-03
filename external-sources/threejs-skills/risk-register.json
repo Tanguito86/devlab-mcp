@@ -44,6 +44,30 @@
       "blocks": "no"
     },
     {
+      "id": "CONTACT_SHADOWS_NOT_OFFICIAL",
+      "severity": "medium",
+      "category": "content",
+      "detail": "threejs-lighting imports ContactShadows from three/examples/jsm/objects, but that module is not part of the pinned official Three.js package",
+      "status": "OPEN",
+      "blocks": "adaptation_of_that_example"
+    },
+    {
+      "id": "MORPH_TRACK_TYPE_MISLEADING",
+      "severity": "medium",
+      "category": "content",
+      "detail": "threejs-animation presents StringKeyframeTrack for numeric morphTargetInfluences; the viable sample later uses NumberKeyframeTrack",
+      "status": "OPEN",
+      "blocks": "adaptation_of_that_example"
+    },
+    {
+      "id": "SELECTIVE_BLOOM_COMPOSITION_INCOMPLETE",
+      "severity": "medium",
+      "category": "content",
+      "detail": "the selective-bloom sample renders the normal scene directly after composer.render without an explicit additive combine pass, so it can overwrite the bloom output",
+      "status": "OPEN",
+      "blocks": "adaptation_of_that_example"
+    },
+    {
       "id": "DIRECT_INSTALLATION",
       "severity": "policy",
       "category": "governance",

@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import {
   existsSync,
   lstatSync,
+  realpathSync,
   readFileSync,
   readdirSync,
   writeFileSync,
@@ -83,6 +84,25 @@ function isSafeRegistryPath(value) {
   // ("C:foo") and NTFS Alternate Data Streams ("file:stream") on Windows.
   return segments.every((segment) =>
     segment !== "" && segment !== "." && segment !== ".." && !segment.includes(":"));
+}
+
+function pathSegmentsAreRegular(root, registryPath, { finalType = "file" } = {}) {
+  if (!isSafeRegistryPath(registryPath)) return false;
+  let current = root;
+  const segments = registryPath.split("/");
+  for (let index = 0; index < segments.length; index += 1) {
+    current = join(current, segments[index]);
+    if (!existsSync(current)) return false;
+    const stat = lstatSync(current);
+    if (stat.isSymbolicLink()) return false;
+    const final = index === segments.length - 1;
+    if (!final && !stat.isDirectory()) return false;
+    if (final && finalType === "file" && !stat.isFile()) return false;
+    if (final && finalType === "directory" && !stat.isDirectory()) return false;
+  }
+  const realRoot = realpathSync(root);
+  const realTarget = realpathSync(current);
+  return realTarget === realRoot || realTarget.startsWith(realRoot + sep);
 }
 
 function isNormalizedGitHubUrl(value) {
@@ -166,6 +186,11 @@ export function validateManifest(manifest, sourceId = SOURCE_ID, registryEntry =
     ? (registryEntry.components || []).map((component) => component.path)
     : [...ALLOWLIST.keys()];
   const license = manifest.license || {};
+  const verifiedFiles = Array.isArray(manifest.verified_files) ? manifest.verified_files : [];
+  const verifiedPaths = verifiedFiles.map((entry) => entry?.path);
+  const fileComponentPaths = components
+    .filter((component) => component?.type === "file")
+    .map((component) => component.path);
 
   checks.push(check("schema_version", manifest.schema_version === 1));
   checks.push(check("source_id", manifest.id === sourceId));
@@ -179,7 +204,9 @@ export function validateManifest(manifest, sourceId = SOURCE_ID, registryEntry =
     typeof license.spdx === "string" && license.spdx.length > 0
     && (license.path == null
       ? license.status === "UNRESOLVED" && license.reuse_authorized === false
-      : isSafeRegistryPath(license.path) && FULL_HASH.test(license.sha256 || ""))));
+      : isSafeRegistryPath(license.path) && FULL_HASH.test(license.sha256 || "")
+        && (license.status === undefined || license.status === "VERIFIED")
+        && license.reuse_authorized !== true)));
   checks.push(check("integration_mode", VALID_INTEGRATION_MODES.has(manifest.integration_mode)));
   checks.push(check("automatic_updates_disabled", manifest.automatic_updates === false));
   checks.push(check("manual_upstream_check_recorded",
@@ -208,9 +235,13 @@ export function validateManifest(manifest, sourceId = SOURCE_ID, registryEntry =
   checks.push(check("nothing_approved", manifest.approval?.components_installed === 0
     && manifest.approval?.components_approved === 0));
   checks.push(check("verified_hashes_declared", Array.isArray(manifest.verified_files)
-    && manifest.verified_files.length >= 5
-    && manifest.verified_files.every((entry) => isSafeRegistryPath(entry.path)
+    && verifiedFiles.length >= 5
+    && verifiedFiles.every((entry) => isSafeRegistryPath(entry.path)
       && FULL_HASH.test(entry.sha256 || ""))));
+  checks.push(check("verified_file_paths_unique",
+    new Set(verifiedPaths).size === verifiedPaths.length));
+  checks.push(check("file_components_fully_hashed",
+    fileComponentPaths.every((path) => verifiedPaths.includes(path))));
   checks.push(check("registry_status_known", manifest.registry_status === undefined
     || VALID_REGISTRY_STATUSES.has(manifest.registry_status)));
   checks.push(check("license_unresolved_required", license.path != null
@@ -319,6 +350,17 @@ export function validateCheckout(checkout, manifest) {
   checks.push(check("checkout_exists", existsSync(root)));
   if (!existsSync(root)) return { checks, components: componentResults };
 
+  const components = Array.isArray(manifest?.components) ? manifest.components : [];
+  const verifiedFiles = Array.isArray(manifest?.verified_files) ? manifest.verified_files : [];
+  const manifestPaths = [
+    ...components.map((component) => component?.path),
+    ...verifiedFiles.map((entry) => entry?.path),
+    ...(manifest?.license?.path ? [manifest.license.path] : []),
+  ];
+  const manifestPathsSafe = manifestPaths.every(isSafeRegistryPath);
+  checks.push(check("checkout_manifest_paths_safe", manifestPathsSafe));
+  if (!manifestPathsSafe) return { checks, components: componentResults };
+
   let head = "";
   let status = "";
   let remote = "";
@@ -340,7 +382,7 @@ export function validateCheckout(checkout, manifest) {
   checks.push(check("checkout_origin", remote === manifest.repository
     || remote === `${manifest.repository}.git`, remote));
 
-  for (const component of manifest.components) {
+  for (const component of components) {
     const componentPath = join(root, ...component.path.split("/"));
     const isFileComponent = component.type === "file";
     const exists = existsSync(componentPath);
@@ -349,14 +391,15 @@ export function validateCheckout(checkout, manifest) {
     if (exists) {
       const stat = lstatSync(componentPath);
       if (isFileComponent) {
-        if (stat.isSymbolicLink()) {
+        if (!pathSegmentsAreRegular(root, component.path, { finalType: "file" })) {
           unsafeEntries.push(`${component.path} (symlink/junction)`);
         } else if (stat.isFile()) {
           regularFiles = 1;
         } else {
           unsafeEntries.push(`${component.path} (irregular)`);
         }
-      } else if (stat.isDirectory()) {
+      } else if (stat.isDirectory()
+        && pathSegmentsAreRegular(root, component.path, { finalType: "directory" })) {
         const inventory = inventoryRegularFiles(componentPath);
         regularFiles = inventory.files.length;
         unsafeEntries = inventory.unsafe;
@@ -383,9 +426,12 @@ export function validateCheckout(checkout, manifest) {
     entry.unsafe_entries.length === 0)));
   checks.push(check("allowlisted_file_counts", componentResults.every((entry) => entry.passed)));
 
-  const hashResults = manifest.verified_files.map((entry) => {
+  const hashResults = verifiedFiles.map((entry) => {
     const file = join(root, ...entry.path.split("/"));
-    const actual = existsSync(file) && lstatSync(file).isFile() ? sha256File(file) : null;
+    const actual = existsSync(file)
+      && pathSegmentsAreRegular(root, entry.path, { finalType: "file" })
+      ? sha256File(file)
+      : null;
     return { path: entry.path, expected: entry.sha256, actual, passed: actual === entry.sha256 };
   });
   checks.push(check("verified_file_hashes", hashResults.every((entry) => entry.passed)));
@@ -398,7 +444,7 @@ export function validateCheckout(checkout, manifest) {
   const licensePath = license.path ? join(root, ...license.path.split("/")) : null;
   const licenseMaterial = licensePath
     && existsSync(licensePath)
-    && lstatSync(licensePath).isFile();
+    && pathSegmentsAreRegular(root, license.path, { finalType: "file" });
   checks.push(check("license_material_present", licensePath ? Boolean(licenseMaterial)
     : true, licensePath ? "" : "no license file declared (UNRESOLVED)"));
   if (licenseMaterial) {
@@ -429,7 +475,9 @@ export function runValidation({ repoRoot, manifestPath, checkout = null }) {
     ...validateManifest(manifest, manifest.id, entry),
     ...validateRepositoryIsolation(repoRoot),
   ];
-  const checkoutResult = checkout ? validateCheckout(checkout, manifest) : null;
+  const checkoutResult = checkout && allPassed(structural)
+    ? validateCheckout(checkout, manifest)
+    : null;
   const passed = allPassed(structural)
     && (!checkoutResult || allPassed(checkoutResult.checks));
   return { manifest, structural, checkout: checkoutResult, passed };
@@ -493,6 +541,14 @@ function configuredCheckout(repoRoot, sourceId) {
   return join(resolve(config.cache_root), sourceId);
 }
 
+function requireRegisteredSource(registry, sourceId) {
+  if (typeof sourceId !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(sourceId)
+    || !registryEntryFor(registry, sourceId)) {
+    throw new Error(`Unknown or unsafe source id: ${JSON.stringify(sourceId)}`);
+  }
+  return sourceId;
+}
+
 function manifestPathFor(repoRoot, sourceId) {
   return join(repoRoot, "external-sources", sourceId, "external-source-manifest.json");
 }
@@ -503,7 +559,7 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
   const registry = loadRegistry(repoRoot);
   const sourceIds = options.source
-    ? [options.source]
+    ? [requireRegisteredSource(registry, options.source)]
     : (registry.sources || []).map((entry) => entry.id);
 
   let anyFailed = false;

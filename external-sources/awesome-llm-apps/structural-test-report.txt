@@ -2,11 +2,21 @@ GENERIC-LLM-REF-01 structural validation
 SOURCE: awesome-llm-apps
 PIN: 779e9f9bcf87fa8cd95870a438b70b84e47d3173
 MODE: OFFLINE_PLUS_EXTERNAL_CHECKOUT
-CHECKS: 33/33 PASS
+CHECKS: 51/51 PASS
 RESULT: PASS
 EXTERNAL_CODE_EXECUTED: 0
 EXTERNAL_DEPENDENCIES_INSTALLED: 0
 
+PASS registry_well_formed
+PASS registry_source_ids_unique
+PASS registry_source_ids_valid
+PASS registry_pins_full_sha
+PASS registry_urls_normalized
+PASS registry_default_branches
+PASS registry_allowlist_paths_safe
+PASS registry_allowlist_paths_unique
+PASS registry_allowlist_no_wildcards
+PASS registry_component_statuses_valid
 PASS schema_version
 PASS source_id
 PASS normalized_repository_url
@@ -25,18 +35,26 @@ PASS checkout_not_versioned
 PASS external_execution_disabled
 PASS nothing_approved
 PASS verified_hashes_declared
+PASS verified_file_paths_unique
+PASS file_components_fully_hashed
+PASS registry_status_known
+PASS license_unresolved_required
+PASS wildcard_allowlist_rejected
 PASS external_cache_ignored
 PASS local_config_ignored
 PASS no_external_runtime_dependency
 PASS no_external_submodule
 PASS no_copied_agent_skills_root
 PASS checkout_exists
+PASS checkout_manifest_paths_safe
 PASS checkout_is_git
 PASS checkout_pin_exact -- 779e9f9bcf87fa8cd95870a438b70b84e47d3173
+PASS checkout_detached
 PASS checkout_clean
 PASS checkout_origin -- https://github.com/Shubhamsaboo/awesome-llm-apps.git
 PASS allowlisted_paths_exist
 PASS allowlisted_entries_regular
 PASS allowlisted_file_counts
 PASS verified_file_hashes
-PASS license_matches_declaration
+PASS license_material_present
+PASS license_text_consistent -- declared=Apache-2.0 detected=Apache-2.0

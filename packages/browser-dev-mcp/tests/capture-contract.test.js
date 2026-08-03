@@ -86,6 +86,23 @@ test("manifest: empty viewpoints, bad seed, bad time fail closed", () => {
   assert.throws(() => validateManifest({ version: 1, viewpoints: ["a"], defaultSeed: 1, defaultTimeMs: Infinity }), (e) => e.code === "BAD_DEFAULT_TIME");
 });
 
+test("manifest: affected viewpoint declarations are unique subsets", () => {
+  const base = { version: 1, viewpoints: ["a", "b"], defaultSeed: 1, defaultTimeMs: 1 };
+  assert.deepEqual(
+    validateManifest({ ...base, seedAffectedViewpoints: ["a"], timeAffectedViewpoints: ["a", "b"] })
+      .seedAffectedViewpoints,
+    ["a"],
+  );
+  assert.throws(
+    () => validateManifest({ ...base, seedAffectedViewpoints: ["a", "a"] }),
+    (e) => e.code === "BAD_AFFECTED_VIEWPOINTS",
+  );
+  assert.throws(
+    () => validateManifest({ ...base, seedAffectedViewpoints: ["unknown"] }),
+    (e) => e.code === "BAD_AFFECTED_VIEWPOINTS",
+  );
+});
+
 test("output tag: traversal and absolute paths fail closed", () => {
   for (const bad of ["../escape", "a/../b", "/abs", "C:/abs", "a\\b", "", "UPPER", "a b", ".hidden"]) {
     assert.throws(() => validateOutputTag(bad), (e) => e.code === "BAD_OUTPUT_TAG", JSON.stringify(bad));

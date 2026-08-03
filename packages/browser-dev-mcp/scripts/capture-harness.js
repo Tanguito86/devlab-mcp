@@ -11,10 +11,10 @@
 // Output roots are validated; tags are validated; no arbitrary JS is ever
 // evaluated in the page.
 
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
 
 import {
   runCaptureFlow,
@@ -34,7 +34,7 @@ function fail(message) {
   process.exit(1);
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const opts = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -54,6 +54,35 @@ function parseArgs(argv) {
   return opts;
 }
 
+export function resolveCliRelativePath(packageRoot, value, label) {
+  if (typeof value !== "string" || value.length === 0 || isAbsolute(value)
+    || /^[A-Za-z]:/.test(value)) {
+    throw new Error(`${label} must be a relative path inside the package`);
+  }
+  const root = resolve(packageRoot);
+  const target = resolve(root, value);
+  const rel = relative(root, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+    throw new Error(`${label} escapes the package root`);
+  }
+  let current = root;
+  let lastExisting = root;
+  for (const segment of rel.split(sep)) {
+    current = join(current, segment);
+    if (!existsSync(current)) break;
+    if (lstatSync(current).isSymbolicLink()) {
+      throw new Error(`${label} crosses a symlink or junction`);
+    }
+    lastExisting = current;
+  }
+  const realRoot = realpathSync(root);
+  const realExisting = realpathSync(lastExisting);
+  if (realExisting !== realRoot && !realExisting.startsWith(realRoot + sep)) {
+    throw new Error(`${label} escapes the package root through an ancestor`);
+  }
+  return target;
+}
+
 function vendorPaths() {
   // three.module.js + the full addons tree, resolved from this package's
   // node_modules (pnpm workspace store). The harness itself never imports
@@ -70,19 +99,30 @@ function vendorPaths() {
   return { threeMain, addonsRoot, vendorFiles };
 }
 
-async function main() {
+export async function main() {
   const args = parseArgs(process.argv.slice(2));
   const command = args._[0];
   if (!command) fail("usage: capture-harness.js <capture|determinism|sensitivity|ab|perf|resize|context> --fixture <dir> --out <dir> ...");
 
   const fixtureArg = args.fixture;
   if (!fixtureArg) fail("--fixture <dir> required");
-  const fixtureRoot = resolve(PKG_ROOT, fixtureArg);
+  let fixtureRoot;
+  try {
+    fixtureRoot = resolveCliRelativePath(PKG_ROOT, fixtureArg, "--fixture");
+  } catch (error) {
+    fail(error.message);
+  }
   if (!existsSync(join(fixtureRoot, "index.html"))) {
     fail(`fixture root has no index.html: ${fixtureRoot}`);
   }
-  const outputRoot = args.out ? resolve(PKG_ROOT, args.out) : resolve(fixtureRoot, "capture-output");
-  if (!outputRoot || outputRoot.includes("..")) fail("invalid --out");
+  let outputRoot = resolve(fixtureRoot, "capture-output");
+  if (args.out) {
+    try {
+      outputRoot = resolveCliRelativePath(PKG_ROOT, args.out, "--out");
+    } catch (error) {
+      fail(error.message);
+    }
+  }
 
   const { threeMain, addonsRoot, vendorFiles } = vendorPaths();
   // vendor: three.module.js (+ three.core.js it imports) and the whole addons
@@ -166,4 +206,7 @@ async function main() {
   }
 }
 
-main();
+if (process.argv[1]
+  && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main();
+}

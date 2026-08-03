@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { after, test } from "node:test";
@@ -186,6 +186,24 @@ test("declared MIT without license file must be UNRESOLVED and non-reusable", ()
   manifestFails(manifest2, "license_unresolved_required");
 });
 
+test("material license cannot authorize reuse through the intake manifest", () => {
+  const manifest = cloneManifest("jungle-trail");
+  manifest.license.reuse_authorized = true;
+  const jungle = registry.sources.find((entry) => entry.id === "jungle-trail");
+  const failures = failed(validateManifest(manifest, manifest.id, jungle));
+  assert.ok(failures.includes("license_declared"), failures.join(", "));
+});
+
+test("verified files are unique and cover every allowlisted file component", () => {
+  const duplicate = cloneManifest("threejs-skills");
+  duplicate.verified_files[1] = structuredClone(duplicate.verified_files[0]);
+  manifestFails(duplicate, "verified_file_paths_unique", "file_components_fully_hashed");
+
+  const missing = cloneManifest("threejs-skills");
+  missing.verified_files.pop();
+  manifestFails(missing, "file_components_fully_hashed");
+});
+
 test("automatic updates enabled fails closed", () => {
   const manifest = cloneManifest("threejs-skills");
   manifest.automatic_updates = true;
@@ -284,6 +302,48 @@ test("junction/symlink escape inside allowlist fails closed", () => {
   const { dir } = buildFixture(manifest, { junctionReplace: "README.md" });
   const result = validateCheckout(dir, manifest);
   assert.ok(failed(result.checks).includes("allowlisted_entries_regular"));
+});
+
+test("junction/symlink in an allowlisted ancestor fails closed", () => {
+  const manifest = cloneManifest("threejs-skills");
+  const { dir } = buildFixture(manifest);
+  const outside = mkdtempSync(join(tmpdir(), "devlab-ancestor-escape-"));
+  tmpDirs.push(outside);
+  renameSync(join(dir, "skills"), join(outside, "skills"));
+  try {
+    symlinkSync(join(outside, "skills"), join(dir, "skills"), "junction");
+  } catch {
+    return;
+  }
+  const result = validateCheckout(dir, manifest);
+  assert.ok(failed(result.checks).includes("allowlisted_entries_regular"));
+});
+
+test("structurally unsafe manifest never reaches checkout reads", () => {
+  const manifest = cloneManifest("threejs-skills");
+  manifest.verified_files[0].path = "../../outside-secret";
+  const dir = mkdtempSync(join(tmpdir(), "devlab-no-checkout-read-"));
+  tmpDirs.push(dir);
+  const manifestPath = join(dir, "manifest.json");
+  writeFileSync(manifestPath, JSON.stringify(manifest));
+  const result = runValidation({ repoRoot, manifestPath, checkout: dir });
+  assert.equal(result.passed, false);
+  assert.equal(result.checkout, null, "checkout validation must not run after structural failure");
+});
+
+test("unknown and path-like source ids fail before manifest path resolution", () => {
+  const script = join(repoRoot, "scripts", "validate-external-source.mjs");
+  for (const sourceId of ["unknown-source", "../escape", "C:/escape"]) {
+    assert.throws(
+      () => execFileSync(process.execPath, [script, "--source", sourceId], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: "pipe",
+      }),
+      (error) => error.status !== 0,
+      sourceId,
+    );
+  }
 });
 
 test("stale verified hash fails closed", () => {

@@ -76,7 +76,33 @@ export function validateManifest(manifest) {
       throw new ContractError(`variant ${name} must be an object`, "BAD_VARIANT");
     }
   }
-  return { viewpoints, defaultSeed: manifest.defaultSeed, defaultTimeMs: manifest.defaultTimeMs, variants };
+  const validateAffected = (name) => {
+    const value = manifest[name] ?? [];
+    if (!Array.isArray(value)
+      || new Set(value).size !== value.length
+      || value.some((id) => !seen.has(id))) {
+      throw new ContractError(`${name} must contain unique declared viewpoints`, "BAD_AFFECTED_VIEWPOINTS");
+    }
+    return value;
+  };
+  return {
+    viewpoints,
+    defaultSeed: manifest.defaultSeed,
+    defaultTimeMs: manifest.defaultTimeMs,
+    variants,
+    seedAffectedViewpoints: validateAffected("seedAffectedViewpoints"),
+    timeAffectedViewpoints: validateAffected("timeAffectedViewpoints"),
+  };
+}
+
+export function validateRequestedViewpoints(viewpoints) {
+  if (!Array.isArray(viewpoints) || viewpoints.length === 0) {
+    throw new ContractError("at least one viewpoint is required", "NO_REQUESTED_VIEWPOINTS");
+  }
+  if (new Set(viewpoints).size !== viewpoints.length) {
+    throw new ContractError("requested viewpoints contain duplicates", "DUPLICATE_REQUESTED_VIEWPOINT");
+  }
+  return viewpoints;
 }
 
 // ---- output tag policy (fail-closed, no traversal, no absolute) ----
@@ -127,6 +153,24 @@ export function validateSceneMetrics(metrics) {
       );
     }
     out[key] = value;
+  }
+  if (metrics.variantApplied !== undefined) {
+    if (metrics.variantApplied !== null && typeof metrics.variantApplied !== "string") {
+      throw new ContractError("metrics.variantApplied must be a string or null", "MALFORMED_METRICS");
+    }
+    out.variantApplied = metrics.variantApplied;
+  }
+  if (metrics.resize !== undefined) {
+    const resize = metrics.resize;
+    const keys = [
+      "canvasWidth", "canvasHeight", "cameraAspect", "pixelRatio",
+      "renderTargetWidth", "renderTargetHeight", "composerWidth", "composerHeight",
+    ];
+    if (!resize || typeof resize !== "object"
+      || keys.some((key) => typeof resize[key] !== "number" || !Number.isFinite(resize[key]))) {
+      throw new ContractError("metrics.resize is malformed", "MALFORMED_RESIZE_METRICS");
+    }
+    out.resize = Object.fromEntries(keys.map((key) => [key, resize[key]]));
   }
   return out;
 }
