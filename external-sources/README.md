@@ -19,6 +19,7 @@ Automatic updates and execution of external code are prohibited.
 | `awesome-llm-apps` | `779e9f9bcf87fa8cd95870a438b70b84e47d3173` | external-curated-reference | REFERENCE_ONLY |
 | `threejs-skills` | `b1c623076c661fc9b03dac19292e825a5d106823` | external-curated-reference | CURATED_REFERENCE / AUDIT_PENDING |
 | `jungle-trail` | `073e6eb8efc6d6915efacc611a6e5ba91c89e34c` | reference-architecture | REFERENCE_ARCHITECTURE / EXECUTION_NOT_AUTHORIZED |
+| `threejs-game-skills` | `7221c1f4a6d2ae189a4d85d058d24f3228499d46` | reference-architecture | REFERENCE_ARCHITECTURE / EXECUTION_NOT_AUTHORIZED |
 
 Per-source records:
 

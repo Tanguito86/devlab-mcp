@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://devlab.local/schemas/threejs-game-skills-ab-result-v1.json",
+  "title": "DEVLAB-THREEJS-GAME-SKILLS-AB-04 result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "benchmark", "leg", "runId", "contractHash", "environment", "correctness", "gameplay", "visual", "performance", "process", "determinism", "security", "artifacts"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "benchmark": { "const": "DEVLAB-THREEJS-GAME-SKILLS-AB-04" },
+    "leg": { "enum": ["LEG_A", "LEG_B"] },
+    "runId": { "type": "string", "minLength": 1 },
+    "contractHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "environment": { "type": "object", "required": ["devlabCommit", "model", "effort", "browser", "adapter", "backend", "viewports"], "additionalProperties": true },
+    "correctness": { "type": "object", "required": ["build", "typecheck", "consoleErrors", "pageErrors", "networkErrors", "pause", "restart", "checkpointRestore", "victory"], "additionalProperties": true },
+    "gameplay": { "type": "object", "required": ["botCompletionRate", "softlocks", "timeToObjectiveMs", "damageEvents", "restartSuccess", "inputResponseMs", "humanScore"], "additionalProperties": true },
+    "visual": { "type": "object", "required": ["nonblankShare", "entropy", "edgeDensity", "contrast", "humanScore", "humanNotes"], "additionalProperties": true },
+    "performance": { "type": "object", "required": ["frameP95Ms", "frameP99Ms", "drawCalls", "triangles", "textures", "boundedResources", "resize", "mobileViewport"], "additionalProperties": true },
+    "process": { "type": "object", "required": ["timeToFirstPlayableMs", "totalAgentTimeMs", "reworkCycles", "filesChanged", "codeComplexity", "testCount", "unresolvedRisks"], "additionalProperties": true },
+    "determinism": { "type": "object", "required": ["frozenByteEqual", "frozenPixelEqual", "controlledChangeDetected", "liveComparisonMode", "botComparisonMode"], "additionalProperties": true },
+    "security": { "type": "object", "required": ["globalInstalls", "externalScripts", "paidApiCalls", "nonLoopbackRequests", "productChanges"], "additionalProperties": true },
+    "artifacts": { "type": "array", "items": { "type": "object", "required": ["path", "sha256"], "properties": { "path": { "type": "string" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }, "additionalProperties": false } }
+  }
+}

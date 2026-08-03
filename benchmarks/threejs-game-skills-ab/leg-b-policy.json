@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "leg": "LEG_B",
+  "treatment": "SELECTED_READ_ONLY_GUIDANCE",
+  "externalGuidanceLoaded": true,
+  "selectedGuidanceManifest": "selected-guidance-manifest.json",
+  "scaffold": "devlab-internal-threejs-game-benchmark-v1",
+  "renderer": "Three.js WebGPURenderer",
+  "backend": "native-webgpu",
+  "modelPolicy": "same-model-and-version-within-pair",
+  "effort": "high",
+  "seed": 1729,
+  "maximumAgentMinutes": 120,
+  "maximumReworkCycles": 3,
+  "network": "loopback-only",
+  "crossLegInformation": false,
+  "externalScripts": false,
+  "externalScaffold": false,
+  "globalInstall": false,
+  "paidApis": false
+}

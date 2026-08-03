@@ -217,6 +217,40 @@
           "status": "candidate_for_audit"
         }
       ]
+    },
+    {
+      "id": "threejs-game-skills",
+      "repository": "https://github.com/majidmanzarpour/threejs-game-skills",
+      "default_branch": "main",
+      "pinned_commit": "7221c1f4a6d2ae189a4d85d058d24f3228499d46",
+      "components": [
+        { "path": "LICENSE", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-game-director/SKILL.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-game-director/references/phase-playbook.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-gameplay-systems/SKILL.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-gameplay-systems/references/gameplay-workflows.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-gameplay-systems/references/game-design-level-design.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-gameplay-systems/references/game-feel.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-gameplay-systems/references/checklists/new-game-definition-of-done.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-gameplay-systems/references/checklists/game-design-level-design.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-gameplay-systems/references/checklists/game-feel.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-aaa-graphics-builder/SKILL.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-aaa-graphics-builder/references/visual-scorecard.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-aaa-graphics-builder/references/technical-art.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-aaa-graphics-builder/references/checklists/aaa-visual-scorecard.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-game-ui-designer/SKILL.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-game-ui-designer/references/ui-patterns.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-game-ui-designer/references/checklists/game-ui-quality.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-game-ui-designer/references/checklists/mobile-input.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-debug-profiler/references/checklists/performance-profile.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-qa-release/SKILL.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-qa-release/references/qa-release-checklists.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-qa-release/references/playtest-bot.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-qa-release/references/checklists/bot-playtest.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-qa-release/references/visual-test-harness.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-qa-release/references/checklists/visual-verification.md", "status": "reference_architecture_only" },
+        { "path": "skills/threejs-qa-release/references/checklists/playtest-qa.md", "status": "reference_architecture_only" }
+      ]
     }
   ]
 }

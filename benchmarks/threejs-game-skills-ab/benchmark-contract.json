@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "DEVLAB-THREEJS-GAME-SKILLS-AB-04",
+  "status": "AUTHORIZED_NOT_EXECUTED",
+  "workingTitle": "ASH RELAY",
+  "promptFile": "benchmark-prompt.md",
+  "promptSha256": "f2861e6b87137cbeb3c63f6b86261c31256b248a9faca2dc23e2b30135854425",
+  "runsPerLeg": 2,
+  "maximumAgentMinutesPerRun": 120,
+  "maximumReworkCyclesPerRun": 3,
+  "shared": {
+    "modelPolicy": "same-model-and-version-within-pair",
+    "effort": "high",
+    "seed": 1729,
+    "scaffold": "devlab-internal-threejs-game-benchmark-v1",
+    "renderer": "Three.js WebGPURenderer",
+    "backend": "native-webgpu",
+    "browser": "verified-full-chromium",
+    "adapter": "same-hardware-adapter-within-pair",
+    "viewports": ["960x540", "390x844"],
+    "network": "loopback-only",
+    "assets": "same-procedural-and-local-allowlist",
+    "evaluator": "same-blinded-human-evaluator",
+    "tests": "same-devlab-test-matrix"
+  },
+  "treatment": {
+    "legA": "no-threejs-game-skills-guidance",
+    "legB": "read-only-hashed-selected-guidance",
+    "externalScaffold": false,
+    "externalScripts": false,
+    "globalInstall": false
+  },
+  "determinism": {
+    "frozenStateA_vs_A": "byte-and-pixel-equality-required",
+    "controlledStateChange": "known-change-must-be-detected",
+    "liveRunA_vs_A": "statistical-comparison-only",
+    "botPlaytest": "progress-robustness-and-softlocks-not-identical-replay",
+    "liveReplayByteEqualityRequired": false
+  },
+  "decision": {
+    "legBMinimumPercentagePointGain": 8,
+    "inconclusiveLowerBound": -3,
+    "inconclusiveUpperBound": 8,
+    "p0OrP1RegressionAllowed": false
+  },
+  "weights": {
+    "gameplay": 30,
+    "visualQuality": 20,
+    "correctnessAndQa": 20,
+    "performance": 15,
+    "mobileAndUi": 10,
+    "processEfficiency": 5
+  }
+}
