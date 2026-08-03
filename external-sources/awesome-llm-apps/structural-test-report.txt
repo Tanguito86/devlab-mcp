@@ -1,0 +1,42 @@
+GENERIC-LLM-REF-01 structural validation
+SOURCE: awesome-llm-apps
+PIN: 779e9f9bcf87fa8cd95870a438b70b84e47d3173
+MODE: OFFLINE_PLUS_EXTERNAL_CHECKOUT
+CHECKS: 33/33 PASS
+RESULT: PASS
+EXTERNAL_CODE_EXECUTED: 0
+EXTERNAL_DEPENDENCIES_INSTALLED: 0
+
+PASS schema_version
+PASS source_id
+PASS normalized_repository_url
+PASS default_branch
+PASS full_pinned_commit
+PASS license_declared
+PASS integration_mode
+PASS automatic_updates_disabled
+PASS manual_upstream_check_recorded
+PASS safe_component_paths
+PASS component_paths_unique
+PASS allowlist_exact
+PASS component_statuses
+PASS component_file_counts_declared
+PASS checkout_not_versioned
+PASS external_execution_disabled
+PASS nothing_approved
+PASS verified_hashes_declared
+PASS external_cache_ignored
+PASS local_config_ignored
+PASS no_external_runtime_dependency
+PASS no_external_submodule
+PASS no_copied_agent_skills_root
+PASS checkout_exists
+PASS checkout_is_git
+PASS checkout_pin_exact -- 779e9f9bcf87fa8cd95870a438b70b84e47d3173
+PASS checkout_clean
+PASS checkout_origin -- https://github.com/Shubhamsaboo/awesome-llm-apps.git
+PASS allowlisted_paths_exist
+PASS allowlisted_entries_regular
+PASS allowlisted_file_counts
+PASS verified_file_hashes
+PASS license_matches_declaration

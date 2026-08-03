@@ -1,0 +1,251 @@
+{
+  "source": "awesome-llm-apps",
+  "reviewed_on": "2026-08-03",
+  "pinned_commit": "779e9f9bcf87fa8cd95870a438b70b84e47d3173",
+  "passed": true,
+  "structural_checks": [
+    {
+      "name": "schema_version",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "source_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "normalized_repository_url",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "default_branch",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "full_pinned_commit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration_mode",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "automatic_updates_disabled",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "manual_upstream_check_recorded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "safe_component_paths",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_paths_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlist_exact",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_statuses",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "component_file_counts_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_not_versioned",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "external_execution_disabled",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "nothing_approved",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "verified_hashes_declared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "external_cache_ignored",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "local_config_ignored",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_external_runtime_dependency",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_external_submodule",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_copied_agent_skills_root",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "checkout_checks": [
+    {
+      "name": "checkout_exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_is_git",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_pin_exact",
+      "passed": true,
+      "detail": "779e9f9bcf87fa8cd95870a438b70b84e47d3173"
+    },
+    {
+      "name": "checkout_clean",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "checkout_origin",
+      "passed": true,
+      "detail": "https://github.com/Shubhamsaboo/awesome-llm-apps.git"
+    },
+    {
+      "name": "allowlisted_paths_exist",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlisted_entries_regular",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "allowlisted_file_counts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "verified_file_hashes",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "license_matches_declaration",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "components": [
+    {
+      "path": "agent_skills/scope-creep-detector",
+      "status": "candidate_for_audit",
+      "exists": true,
+      "regular_files": 4,
+      "expected_files": 4,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "agent_skills/commit-archaeologist",
+      "status": "candidate_for_audit",
+      "exists": true,
+      "regular_files": 4,
+      "expected_files": 4,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "agent_skills/dependency-doctor",
+      "status": "candidate_for_audit",
+      "exists": true,
+      "regular_files": 4,
+      "expected_files": 4,
+      "unsafe_entries": [],
+      "passed": true
+    },
+    {
+      "path": "agent_skills/evals",
+      "status": "reference_architecture_only",
+      "exists": true,
+      "regular_files": 20,
+      "expected_files": 20,
+      "unsafe_entries": [],
+      "passed": true
+    }
+  ],
+  "verified_files": [
+    {
+      "path": "LICENSE",
+      "expected": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "actual": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "passed": true
+    },
+    {
+      "path": "README.md",
+      "expected": "8d6e30662bd2e3c043be4fdbcb9684a4724eec615b5a82aaef38b2b40bc56452",
+      "actual": "8d6e30662bd2e3c043be4fdbcb9684a4724eec615b5a82aaef38b2b40bc56452",
+      "passed": true
+    },
+    {
+      "path": "agent_skills/scope-creep-detector/SKILL.md",
+      "expected": "bd2b0cfcd8ed5821f3d8691f507e3aad14e0dac12324ad4569372481bf638d13",
+      "actual": "bd2b0cfcd8ed5821f3d8691f507e3aad14e0dac12324ad4569372481bf638d13",
+      "passed": true
+    },
+    {
+      "path": "agent_skills/commit-archaeologist/SKILL.md",
+      "expected": "1f441d9e96fd01db25d2358fb799b73879045006303adb7dfad1de30cb45ceee",
+      "actual": "1f441d9e96fd01db25d2358fb799b73879045006303adb7dfad1de30cb45ceee",
+      "passed": true
+    },
+    {
+      "path": "agent_skills/dependency-doctor/SKILL.md",
+      "expected": "ad8073b0d515d4d95631e54d5ccc36d8bc2333b9cb04192c872b82847b6e60b2",
+      "actual": "ad8073b0d515d4d95631e54d5ccc36d8bc2333b9cb04192c872b82847b6e60b2",
+      "passed": true
+    },
+    {
+      "path": "agent_skills/evals/README.md",
+      "expected": "3ead6d525d43688b5483c89c3e06d2158f6c45bf60f8b855c7be52a8b5b4bd56",
+      "actual": "3ead6d525d43688b5483c89c3e06d2158f6c45bf60f8b855c7be52a8b5b4bd56",
+      "passed": true
+    }
+  ]
+}

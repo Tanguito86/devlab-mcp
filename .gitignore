@@ -24,6 +24,8 @@ packages/*/ui-dumps/
 
 # Env
 .env
+/.external-cache/
+/.external-sources.local.json
 
 # Example runtime artifacts
 examples/*/evidence/
