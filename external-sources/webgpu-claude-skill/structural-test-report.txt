@@ -1,0 +1,60 @@
+GENERIC-LLM-REF-01 structural validation
+SOURCE: webgpu-claude-skill
+PIN: af2319bd01bb7cc881267a9ef42cafdaf5e9029d
+MODE: OFFLINE_PLUS_EXTERNAL_CHECKOUT
+CHECKS: 51/51 PASS
+RESULT: PASS
+EXTERNAL_CODE_EXECUTED: 0
+EXTERNAL_DEPENDENCIES_INSTALLED: 0
+
+PASS registry_well_formed
+PASS registry_source_ids_unique
+PASS registry_source_ids_valid
+PASS registry_pins_full_sha
+PASS registry_urls_normalized
+PASS registry_default_branches
+PASS registry_allowlist_paths_safe
+PASS registry_allowlist_paths_unique
+PASS registry_allowlist_no_wildcards
+PASS registry_component_statuses_valid
+PASS schema_version
+PASS source_id
+PASS normalized_repository_url
+PASS default_branch
+PASS full_pinned_commit
+PASS license_declared
+PASS integration_mode
+PASS automatic_updates_disabled
+PASS manual_upstream_check_recorded
+PASS safe_component_paths
+PASS component_paths_unique
+PASS allowlist_exact
+PASS component_statuses
+PASS component_file_counts_declared
+PASS checkout_not_versioned
+PASS external_execution_disabled
+PASS nothing_approved
+PASS verified_hashes_declared
+PASS verified_file_paths_unique
+PASS file_components_fully_hashed
+PASS registry_status_known
+PASS license_unresolved_required
+PASS wildcard_allowlist_rejected
+PASS external_cache_ignored
+PASS local_config_ignored
+PASS no_external_runtime_dependency
+PASS no_external_submodule
+PASS no_copied_agent_skills_root
+PASS checkout_exists
+PASS checkout_manifest_paths_safe
+PASS checkout_is_git
+PASS checkout_pin_exact -- af2319bd01bb7cc881267a9ef42cafdaf5e9029d
+PASS checkout_detached
+PASS checkout_clean
+PASS checkout_origin -- https://github.com/dgreenheck/webgpu-claude-skill.git
+PASS allowlisted_paths_exist
+PASS allowlisted_entries_regular
+PASS allowlisted_file_counts
+PASS verified_file_hashes
+PASS license_material_present -- no license file declared (UNRESOLVED)
+PASS license_text_consistent -- no license file to verify

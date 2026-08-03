@@ -8,10 +8,22 @@
       "default_branch": "main",
       "pinned_commit": "779e9f9bcf87fa8cd95870a438b70b84e47d3173",
       "components": [
-        { "path": "agent_skills/scope-creep-detector", "status": "candidate_for_audit" },
-        { "path": "agent_skills/commit-archaeologist", "status": "candidate_for_audit" },
-        { "path": "agent_skills/dependency-doctor", "status": "candidate_for_audit" },
-        { "path": "agent_skills/evals", "status": "reference_architecture_only" }
+        {
+          "path": "agent_skills/scope-creep-detector",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "agent_skills/commit-archaeologist",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "agent_skills/dependency-doctor",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "agent_skills/evals",
+          "status": "reference_architecture_only"
+        }
       ]
     },
     {
@@ -20,17 +32,50 @@
       "default_branch": "main",
       "pinned_commit": "b1c623076c661fc9b03dac19292e825a5d106823",
       "components": [
-        { "path": "README.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-fundamentals/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-geometry/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-materials/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-lighting/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-textures/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-animation/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-loaders/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-shaders/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-postprocessing/SKILL.md", "status": "candidate_for_audit" },
-        { "path": "skills/threejs-interaction/SKILL.md", "status": "candidate_for_audit" }
+        {
+          "path": "README.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-fundamentals/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-geometry/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-materials/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-lighting/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-textures/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-animation/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-loaders/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-shaders/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-postprocessing/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/threejs-interaction/SKILL.md",
+          "status": "candidate_for_audit"
+        }
       ]
     },
     {
@@ -39,14 +84,138 @@
       "default_branch": "main",
       "pinned_commit": "073e6eb8efc6d6915efacc611a6e5ba91c89e34c",
       "components": [
-        { "path": "README.md", "status": "reference_architecture_only" },
-        { "path": "PROMPT.md", "status": "reference_architecture_only" },
-        { "path": "LICENSE", "status": "reference_architecture_only" },
-        { "path": "package.json", "status": "reference_architecture_only" },
-        { "path": "tools/harness.mjs", "status": "reference_architecture_only" },
-        { "path": "tools/shoot.mjs", "status": "reference_architecture_only" },
-        { "path": "tools/px.mjs", "status": "reference_architecture_only" },
-        { "path": "tools/fx.mjs", "status": "reference_architecture_only" }
+        {
+          "path": "README.md",
+          "status": "reference_architecture_only"
+        },
+        {
+          "path": "PROMPT.md",
+          "status": "reference_architecture_only"
+        },
+        {
+          "path": "LICENSE",
+          "status": "reference_architecture_only"
+        },
+        {
+          "path": "package.json",
+          "status": "reference_architecture_only"
+        },
+        {
+          "path": "tools/harness.mjs",
+          "status": "reference_architecture_only"
+        },
+        {
+          "path": "tools/shoot.mjs",
+          "status": "reference_architecture_only"
+        },
+        {
+          "path": "tools/px.mjs",
+          "status": "reference_architecture_only"
+        },
+        {
+          "path": "tools/fx.mjs",
+          "status": "reference_architecture_only"
+        }
+      ]
+    },
+    {
+      "id": "webgpu-claude-skill",
+      "repository": "https://github.com/dgreenheck/webgpu-claude-skill",
+      "default_branch": "main",
+      "pinned_commit": "af2319bd01bb7cc881267a9ef42cafdaf5e9029d",
+      "components": [
+        {
+          "path": ".claude-plugin/plugin.json",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": ".cursor/rules/compute-shaders.mdc",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": ".cursor/rules/device-loss-and-limits.mdc",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": ".cursor/rules/post-processing.mdc",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": ".cursor/rules/webgpu-threejs-tsl.mdc",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": ".cursor/rules/wgsl-integration.mdc",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "README.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/REFERENCE.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/SKILL.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/docs/compute-shaders.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/docs/core-concepts.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/docs/device-loss.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/docs/limits-and-features.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/docs/materials.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/docs/post-processing.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/docs/wgsl-integration.md",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/examples/basic-setup.js",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/examples/custom-material.js",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/examples/earth-shader.js",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/examples/particle-system.js",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/examples/post-processing.js",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/templates/compute-shader.js",
+          "status": "candidate_for_audit"
+        },
+        {
+          "path": "skills/webgpu-threejs-tsl/templates/webgpu-project.js",
+          "status": "candidate_for_audit"
+        }
       ]
     }
   ]

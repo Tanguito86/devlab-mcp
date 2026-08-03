@@ -94,7 +94,14 @@ function vendorPaths() {
   const buildDir = dirname(threeCjs);
   const threeMain = join(buildDir, "three.module.js"); // ESM build, same dir
   // three.module.js imports ./three.core.js relatively; expose both files.
-  const vendorFiles = [threeMain, join(buildDir, "three.core.js")];
+  // WebGPU fixtures also need the webgpu + tsl builds and their imports.
+  const vendorFiles = [
+    threeMain,
+    join(buildDir, "three.core.js"),
+    join(buildDir, "three.webgpu.js"),
+    join(buildDir, "three.webgpu.nodes.js"),
+    join(buildDir, "three.tsl.js"),
+  ].filter((p) => existsSync(p));
   const addonsRoot = dirname(dirname(req.resolve("three/addons/postprocessing/EffectComposer.js")));
   return { threeMain, addonsRoot, vendorFiles };
 }

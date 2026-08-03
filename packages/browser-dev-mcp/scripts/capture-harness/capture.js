@@ -67,6 +67,16 @@ export async function capturePageFrame(page, timeoutMs, label) {
     page.evaluate(async () => {
       const target = window.__DEVLAB_CAPTURE__;
       await target.renderOnce();
+      // WebGPU fixtures provide their own synchronized frame reader
+      // (no readPixels/toDataURL guarantees on a webgpu canvas). The
+      // provider runs in the same evaluate, after renderOnce() awaited.
+      if (typeof window.__DEVLAB_FRAME__ === "function") {
+        const frame = await window.__DEVLAB_FRAME__();
+        if (!frame || !frame.png || !frame.rgba || !frame.width || !frame.height) {
+          throw new Error("DEVLAB_FRAME provider returned incomplete data");
+        }
+        return { png: frame.png, rgba: Array.from(frame.rgba), width: frame.width, height: frame.height };
+      }
       const canvas = document.querySelector("canvas");
       if (!canvas) throw new Error("no canvas element on page");
       const gl = canvas.getContext("webgl2") || canvas.getContext("webgl")

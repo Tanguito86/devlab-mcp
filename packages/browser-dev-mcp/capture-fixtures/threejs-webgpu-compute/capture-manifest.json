@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "viewpoints": ["overview", "closeup"],
+  "defaultSeed": 1729,
+  "defaultTimeMs": 2500,
+  "variants": {}
+}

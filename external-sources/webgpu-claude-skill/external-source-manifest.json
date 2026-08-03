@@ -1,0 +1,393 @@
+{
+  "schema_version": 1,
+  "id": "webgpu-claude-skill",
+  "repository": "https://github.com/dgreenheck/webgpu-claude-skill",
+  "default_branch": "main",
+  "license": {
+    "spdx": "MIT",
+    "path": null,
+    "sha256": null,
+    "status": "UNRESOLVED",
+    "reuse_authorized": false
+  },
+  "pinned_commit": "af2319bd01bb7cc881267a9ef42cafdaf5e9029d",
+  "reviewed_on": "2026-08-03",
+  "integration_mode": "external-curated-reference",
+  "registry_status": "CURATED_REFERENCE / AUDIT_PENDING",
+  "automatic_updates": false,
+  "manual_upstream_check": {
+    "checked_on": "2026-08-03",
+    "reference": "refs/heads/main",
+    "observed_commit": "af2319bd01bb7cc881267a9ef42cafdaf5e9029d",
+    "drift_from_pin": false
+  },
+  "local_checkout": {
+    "versioned": false,
+    "config_file": ".external-sources.local.json",
+    "environment_variable": "DEVLAB_EXTERNAL_CACHE",
+    "ignored_fallback": ".external-cache/webgpu-claude-skill"
+  },
+  "execution_policy": {
+    "installed": false,
+    "enabled": false,
+    "external_code_executed": false,
+    "external_dependencies_installed": false
+  },
+  "components": [
+    {
+      "path": ".claude-plugin/plugin.json",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": ".cursor/rules/compute-shaders.mdc",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": ".cursor/rules/device-loss-and-limits.mdc",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": ".cursor/rules/post-processing.mdc",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": ".cursor/rules/webgpu-threejs-tsl.mdc",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": ".cursor/rules/wgsl-integration.mdc",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "README.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/REFERENCE.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/SKILL.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/compute-shaders.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/core-concepts.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/device-loss.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/limits-and-features.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/materials.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/post-processing.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/wgsl-integration.md",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/basic-setup.js",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/custom-material.js",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/earth-shader.js",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/particle-system.js",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/post-processing.js",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/templates/compute-shader.js",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/templates/webgpu-project.js",
+      "type": "file",
+      "status": "candidate_for_audit",
+      "expected_file_count": 1
+    }
+  ],
+  "files": [
+    {
+      "path": ".claude-plugin/plugin.json",
+      "sha256": "55030bf3e56ef42a81c2018d6e794f878e92ff552103c0cb4d9ae706fc8abea9",
+      "size": 539
+    },
+    {
+      "path": ".cursor/rules/compute-shaders.mdc",
+      "sha256": "c0af76cf2be30dfe9348b3b1bf84696d0a3ab3cbed40273b5e8b7e60beec7a84",
+      "size": 998
+    },
+    {
+      "path": ".cursor/rules/device-loss-and-limits.mdc",
+      "sha256": "15c0f3dfdc25f468a1bce5edbfc1c46ab1a94fdbf6e761bca1156bab338b2c48",
+      "size": 992
+    },
+    {
+      "path": ".cursor/rules/post-processing.mdc",
+      "sha256": "bf1691235cb443049ff4c65085182e885ae8a8d6f2cf0f7b5a562149323aae19",
+      "size": 1148
+    },
+    {
+      "path": ".cursor/rules/webgpu-threejs-tsl.mdc",
+      "sha256": "2dd7b4e29d436dd5793abda63b9ba991c04818f8245b871b2e013ee8f6f839e7",
+      "size": 2131
+    },
+    {
+      "path": ".cursor/rules/wgsl-integration.mdc",
+      "sha256": "7bb16f744a83b328ead1d68dfe7213c2cdb7511d45966e5b8d9635945c886fac",
+      "size": 793
+    },
+    {
+      "path": "README.md",
+      "sha256": "fc9de5505538520c30ff43976cb3dc99ed734d17929e429d4c0fad83975ba10d",
+      "size": 5909
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/REFERENCE.md",
+      "sha256": "edafd601d82a6b998ac088f54e421d37e72b8f8c0fd206c9e7c15fed76e23896",
+      "size": 9424
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/SKILL.md",
+      "sha256": "b76648d2e2c699527448bc0a6cb06b7574ca2ed73dae1bf7d30b27caa7944730",
+      "size": 3295
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/compute-shaders.md",
+      "sha256": "25d57a1bb008c41bc251bd2824527758911649a911cc47132cac45fa718c9e71",
+      "size": 16218
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/core-concepts.md",
+      "sha256": "9a37d4fc2afbc10110e0b40be84567a261edd81f8ea0c081a978cef24decd323",
+      "size": 11466
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/device-loss.md",
+      "sha256": "415228967ca79d533efa413d5dcc68e3ad344ef14da0cc62ecd40bdf574ee4fd",
+      "size": 9557
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/limits-and-features.md",
+      "sha256": "45e6e25603a8bfe55f68923526d3175c4b95c6bfc8aa65fbe52df5912bf66590",
+      "size": 5150
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/materials.md",
+      "sha256": "9a1ee8ed3a238bcdc073f937fe9eac1235df2dbfee3bfcb8c1f227d76238b991",
+      "size": 9139
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/post-processing.md",
+      "sha256": "d9afabc7cf19710ed6352c1d53f5cbd90154a4ae9ee9f896618ae177b70ab279",
+      "size": 13814
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/wgsl-integration.md",
+      "sha256": "30108fff6dd8d9078682a7fb9163fa8df0ff78365fe6120cd7931c85b4ece00c",
+      "size": 6916
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/basic-setup.js",
+      "sha256": "ce138a7c0d627a6354c0657ebf9cbf01fb0afa8ef8a63cd4b7ebf909db72513f",
+      "size": 2366
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/custom-material.js",
+      "sha256": "48cce35b42eccf9c146254d8e1ee9966e1aa797bc8959b1c694a2c08ad69c919",
+      "size": 4421
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/earth-shader.js",
+      "sha256": "d452143d931f6edb12c1835469394c93fb417f8c0b3d0e9d97c9289e2b8e3a8b",
+      "size": 8860
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/particle-system.js",
+      "sha256": "0cee121c0139d5d89740a6ba726d13518208b2bd0e17e8ed4fb40964e2b4ac9f",
+      "size": 7597
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/post-processing.js",
+      "sha256": "5e48d91a4c1c5e15dd3bb62539208d0ee93d6b2e6758413f957202b5545a4140",
+      "size": 5400
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/templates/compute-shader.js",
+      "sha256": "9d375479593981b80df23fb47234777dc6552a430cae987f69d8a4410ab8ada4",
+      "size": 9816
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/templates/webgpu-project.js",
+      "sha256": "cdccec6ee26adef81e2ba84aec36374adb34231b134685ca4cefe536a39c8cd8",
+      "size": 6595
+    }
+  ],
+  "verified_files": [
+    {
+      "path": ".claude-plugin/plugin.json",
+      "sha256": "55030bf3e56ef42a81c2018d6e794f878e92ff552103c0cb4d9ae706fc8abea9"
+    },
+    {
+      "path": ".cursor/rules/compute-shaders.mdc",
+      "sha256": "c0af76cf2be30dfe9348b3b1bf84696d0a3ab3cbed40273b5e8b7e60beec7a84"
+    },
+    {
+      "path": ".cursor/rules/device-loss-and-limits.mdc",
+      "sha256": "15c0f3dfdc25f468a1bce5edbfc1c46ab1a94fdbf6e761bca1156bab338b2c48"
+    },
+    {
+      "path": ".cursor/rules/post-processing.mdc",
+      "sha256": "bf1691235cb443049ff4c65085182e885ae8a8d6f2cf0f7b5a562149323aae19"
+    },
+    {
+      "path": ".cursor/rules/webgpu-threejs-tsl.mdc",
+      "sha256": "2dd7b4e29d436dd5793abda63b9ba991c04818f8245b871b2e013ee8f6f839e7"
+    },
+    {
+      "path": ".cursor/rules/wgsl-integration.mdc",
+      "sha256": "7bb16f744a83b328ead1d68dfe7213c2cdb7511d45966e5b8d9635945c886fac"
+    },
+    {
+      "path": "README.md",
+      "sha256": "fc9de5505538520c30ff43976cb3dc99ed734d17929e429d4c0fad83975ba10d"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/REFERENCE.md",
+      "sha256": "edafd601d82a6b998ac088f54e421d37e72b8f8c0fd206c9e7c15fed76e23896"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/SKILL.md",
+      "sha256": "b76648d2e2c699527448bc0a6cb06b7574ca2ed73dae1bf7d30b27caa7944730"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/compute-shaders.md",
+      "sha256": "25d57a1bb008c41bc251bd2824527758911649a911cc47132cac45fa718c9e71"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/core-concepts.md",
+      "sha256": "9a37d4fc2afbc10110e0b40be84567a261edd81f8ea0c081a978cef24decd323"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/device-loss.md",
+      "sha256": "415228967ca79d533efa413d5dcc68e3ad344ef14da0cc62ecd40bdf574ee4fd"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/limits-and-features.md",
+      "sha256": "45e6e25603a8bfe55f68923526d3175c4b95c6bfc8aa65fbe52df5912bf66590"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/materials.md",
+      "sha256": "9a1ee8ed3a238bcdc073f937fe9eac1235df2dbfee3bfcb8c1f227d76238b991"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/post-processing.md",
+      "sha256": "d9afabc7cf19710ed6352c1d53f5cbd90154a4ae9ee9f896618ae177b70ab279"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/docs/wgsl-integration.md",
+      "sha256": "30108fff6dd8d9078682a7fb9163fa8df0ff78365fe6120cd7931c85b4ece00c"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/basic-setup.js",
+      "sha256": "ce138a7c0d627a6354c0657ebf9cbf01fb0afa8ef8a63cd4b7ebf909db72513f"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/custom-material.js",
+      "sha256": "48cce35b42eccf9c146254d8e1ee9966e1aa797bc8959b1c694a2c08ad69c919"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/earth-shader.js",
+      "sha256": "d452143d931f6edb12c1835469394c93fb417f8c0b3d0e9d97c9289e2b8e3a8b"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/particle-system.js",
+      "sha256": "0cee121c0139d5d89740a6ba726d13518208b2bd0e17e8ed4fb40964e2b4ac9f"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/examples/post-processing.js",
+      "sha256": "5e48d91a4c1c5e15dd3bb62539208d0ee93d6b2e6758413f957202b5545a4140"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/templates/compute-shader.js",
+      "sha256": "9d375479593981b80df23fb47234777dc6552a430cae987f69d8a4410ab8ada4"
+    },
+    {
+      "path": "skills/webgpu-threejs-tsl/templates/webgpu-project.js",
+      "sha256": "cdccec6ee26adef81e2ba84aec36374adb34231b134685ca4cefe536a39c8cd8"
+    }
+  ],
+  "approval": {
+    "source_registered": true,
+    "components_installed": 0,
+    "components_approved": 0,
+    "next_recommended_audit": null
+  }
+}
