@@ -3,7 +3,7 @@
 ## DevLab
 
 ```text
-REPOSITORY: H:\UserData\Deposito\Documents\devlab-mcp
+REPOSITORY: <DEVLAB_REPOSITORY>
 EXPECTED_HEAD: 38ae493dce03694a95c5a9717c451a44aff029c5
 ACTUAL_HEAD:   38ae493dce03694a95c5a9717c451a44aff029c5   -> MATCH
 BRANCH: master
@@ -15,7 +15,7 @@ HEAD commit: DEVLAB-CODEX-REVIEW-01 harden Three.js reference stack
 ## Worktree aislado
 
 ```text
-PATH: H:\UserData\Deposito\Documents\devlab-mcp-webgpu-tsl
+PATH: <WEBGPU_INTAKE_WORKTREE>
 BRANCH: ops-webgpu-tsl-intake-01
 HEAD: 38ae493
 WORKTREE: CLEAN

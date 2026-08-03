@@ -13,7 +13,7 @@ ADAPT_AFTER_FIXES / REFERENCE_ONLY / REJECT.
 | DEVICE_LOSS_GUIDANCE | 7 | Conceptos sólidos; backend.device privado; patrón de duplicación |
 | PERFORMANCE_GUIDANCE | 6 | DPR sin límite en 3 examples; 100k esferas; sin métricas honestas |
 | SECURITY | 9 | Sin red/exec; localStorage solo en ejemplo de app |
-| RUNTIME_RESULTS | 0 | NO VERIFICADO (WebGPU inaccesible vía CDP — BLOCKED) |
+| RUNTIME_RESULTS | 10 | WebGPU/TSL/compute/RenderPipeline/device-loss verificados en NVIDIA/Turing |
 | ADAPTATION_COST | 5 | Alta: reescribir examples, fix de paths, decidir política device |
 
 ## Estados por área
@@ -34,9 +34,8 @@ devlab-threejs-webgpu-tsl: DEFINED / NOT STARTED
 ```
 
 Requisitos mínimos antes de su inicio:
-1. Backend WebGPU accesible por el arnés (Firefox, build Chromium sin
-   restricción CDP, o Chrome con workaround) — gate duro.
-2. Verificación runtime de los 4 fixtures (determinismo, A/B, device-loss).
+1. Mantener el probe sobre origen loopback real y Chromium completo.
+2. Preservar la regresión que rechaza `about:blank` y adapters software.
 3. Política de device: API pública si aparece en three; si no, wrapper
    version-pinned documentado.
 4. Presupuestos: partículas ≤ 16k por defecto, DPR ≤ 2, geometrías ligeras.

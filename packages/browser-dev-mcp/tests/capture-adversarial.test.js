@@ -14,6 +14,11 @@ import { runCaptureFlow } from "../scripts/capture-harness/runner.js";
 import { CaptureServer } from "../scripts/capture-harness/server.js";
 import { ContractError } from "../scripts/capture-harness/contract.js";
 import { resolveCliRelativePath } from "../scripts/capture-harness.js";
+import {
+  BrowserRuntimeError,
+  resolveFullChromiumExecutable,
+  validateNativeWebGpuOrigin,
+} from "../scripts/capture-harness/browser-runtime.js";
 
 const tmpDirs = [];
 after(() => {
@@ -54,6 +59,44 @@ window.__DEVLAB_CAPTURE__ = {
 </script></body></html>`;
 
 const BASE = { seed: 1729, timeMs: 2500, viewpoints: ["overview"], backend: "cpu", readyTimeoutMs: 4000, captureTimeoutMs: 4000 };
+
+test("native WebGPU availability cannot be probed from about:blank or opaque data URLs", () => {
+  for (const url of ["about:blank", "data:text/html,probe"]) {
+    assert.throws(
+      () => validateNativeWebGpuOrigin(url, "http://127.0.0.1:8123/"),
+      (error) => error instanceof BrowserRuntimeError && error.code === "OPAQUE_WEBGPU_ORIGIN",
+    );
+  }
+});
+
+test("native WebGPU probe accepts only the navigated harness loopback origin", () => {
+  assert.equal(
+    validateNativeWebGpuOrigin("http://127.0.0.1:8123/fixture", "http://127.0.0.1:8123/"),
+    "http://127.0.0.1:8123",
+  );
+  assert.throws(
+    () => validateNativeWebGpuOrigin("https://example.com/", "http://127.0.0.1:8123/"),
+    (error) => error.code === "NON_LOCAL_WEBGPU_ORIGIN",
+  );
+});
+
+test("native WebGPU launcher rejects a configured headless-shell executable", () => {
+  const root = mkdtempSync(join(tmpdir(), "headless-shell-"));
+  tmpDirs.push(root);
+  const executable = join(root, process.platform === "win32" ? "headless_shell.exe" : "headless_shell");
+  writeFileSync(executable, "not executable");
+  assert.throws(
+    () => resolveFullChromiumExecutable({ DEVLAB_WEBGPU_BROWSER_PATH: executable }, process.platform),
+    (error) => error.code === "HEADLESS_SHELL_REJECTED",
+  );
+  assert.throws(
+    () => resolveFullChromiumExecutable(
+      { DEVLAB_WEBGPU_BROWSER_PATH: join(root, "missing-chrome") },
+      process.platform,
+    ),
+    (error) => error.code === "CONFIGURED_BROWSER_INVALID",
+  );
+});
 
 test("missing contract fails closed", async () => {
   const root = makeFixture({ "index.html": "<html><body>no contract</body></html>" });

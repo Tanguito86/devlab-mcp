@@ -17,9 +17,10 @@
   correcto; no documenta la espera de finalización para lecturas CPU
   (mapAsync) — ausencia, no error.
 
-### Fixture propio (threejs-webgpu-compute, NO VERIFICADO)
+### Fixture propio (threejs-webgpu-compute, VERIFICADO)
 
-- 16.384 partículas (presupuesto razonable), PointsNodeMaterial (no esferas).
+- 16.384 partículas (presupuesto razonable), `InstancedMesh` con
+  `SpriteNodeMaterial` y storage convertido mediante `toAttribute()`.
 - Estado inicial determinista por seed (mulberry32 en CPU → storage buffer),
   física por pasos fijos de 20 ms (gravedad, rebote, paredes), tiempo
   congelado → `steps = timeMs / 20`, `renderer.compute` por paso.
@@ -41,7 +42,7 @@
   OutputPass-equivalente en RenderPipeline es automático en r183+) —
   ausencia menor.
 
-### Fixture propio (threejs-webgpu-post, NO VERIFICADO)
+### Fixture propio (threejs-webgpu-post, VERIFICADO)
 
 - RenderPipeline + pass + bloom (addon) + saturation/tint + vignette (Fn).
 - Variante `bloom-off`: exactamente UN parámetro (bloomEnabled) — A/B sin
@@ -63,11 +64,12 @@
   remueve el canvas) → canvases duplicados; si el app usara setAnimationLoop,
   también loops duplicados.
 
-### Fixture propio (threejs-webgpu-device-loss, NO VERIFICADO)
+### Fixture propio (threejs-webgpu-device-loss, VERIFICADO)
 
 - PRIVATE_API_DEPENDENCY declarada (VERSION_PINNED / NOT GENERALIZED).
 - Recovery: dispose + re-init sobre el MISMO canvas (0 canvases duplicados),
   render explícito (0 loops), handler lost registrado por device (0
   listeners duplicados), contador de recovery en métricas.
 - Cobertura: INITIAL_RENDER, LOSS_OBSERVED, REINITIALIZATION,
-  CAPTURE_AFTER_RECOVERY — pendientes de ejecución runtime.
+  CAPTURE_AFTER_RECOVERY — ejecutada sobre NVIDIA/Turing; generación 1→2,
+  un canvas, cero loops duplicados.

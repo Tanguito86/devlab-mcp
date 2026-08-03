@@ -76,6 +76,12 @@ export function validateManifest(manifest) {
       throw new ContractError(`variant ${name} must be an object`, "BAD_VARIANT");
     }
   }
+  if (manifest.requiresNativeWebGPU !== undefined && manifest.requiresNativeWebGPU !== true) {
+    throw new ContractError(
+      "requiresNativeWebGPU, when present, must be true",
+      "BAD_NATIVE_WEBGPU_REQUIREMENT",
+    );
+  }
   const validateAffected = (name) => {
     const value = manifest[name] ?? [];
     if (!Array.isArray(value)
@@ -90,6 +96,7 @@ export function validateManifest(manifest) {
     defaultSeed: manifest.defaultSeed,
     defaultTimeMs: manifest.defaultTimeMs,
     variants,
+    requiresNativeWebGPU: manifest.requiresNativeWebGPU === true,
     seedAffectedViewpoints: validateAffected("seedAffectedViewpoints"),
     timeAffectedViewpoints: validateAffected("timeAffectedViewpoints"),
   };

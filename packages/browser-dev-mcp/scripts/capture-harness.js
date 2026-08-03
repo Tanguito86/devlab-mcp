@@ -24,6 +24,7 @@ import {
   runPerfFlow,
   runResizeFlow,
   runContextFlow,
+  runResourceStabilityFlow,
 } from "./capture-harness/runner.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -109,7 +110,7 @@ function vendorPaths() {
 export async function main() {
   const args = parseArgs(process.argv.slice(2));
   const command = args._[0];
-  if (!command) fail("usage: capture-harness.js <capture|determinism|sensitivity|ab|perf|resize|context> --fixture <dir> --out <dir> ...");
+  if (!command) fail("usage: capture-harness.js <capture|determinism|sensitivity|ab|perf|resize|context|stability> --fixture <dir> --out <dir> ...");
 
   const fixtureArg = args.fixture;
   if (!fixtureArg) fail("--fixture <dir> required");
@@ -152,7 +153,8 @@ export async function main() {
     seed,
     timeMs,
     viewpoints,
-    backend: args.backend || "cpu",
+    backend: manifest?.requiresNativeWebGPU === true ? "native-webgpu" : (args.backend || "cpu"),
+    requireNativeWebGPU: manifest?.requiresNativeWebGPU === true,
   };
 
   try {
@@ -203,6 +205,11 @@ export async function main() {
       case "context": {
         const out = await runContextFlow(common);
         console.log(JSON.stringify(out));
+        break;
+      }
+      case "stability": {
+        const out = await runResourceStabilityFlow(common);
+        console.log(`stability: bounded=${out.bounded} canvases=${out.duplicateCanvases} loops=${out.duplicateLoops}`);
         break;
       }
       default:

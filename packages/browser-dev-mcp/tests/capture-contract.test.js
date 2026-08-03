@@ -80,6 +80,16 @@ test("manifest: malformed viewpoint ids fail closed", () => {
   }
 });
 
+test("manifest: native WebGPU requirement is explicit and fail-closed", () => {
+  const base = { version: 1, viewpoints: ["overview"], defaultSeed: 1, defaultTimeMs: 1 };
+  assert.equal(validateManifest({ ...base, requiresNativeWebGPU: true }).requiresNativeWebGPU, true);
+  assert.equal(validateManifest(base).requiresNativeWebGPU, false);
+  assert.throws(
+    () => validateManifest({ ...base, requiresNativeWebGPU: false }),
+    (error) => error.code === "BAD_NATIVE_WEBGPU_REQUIREMENT",
+  );
+});
+
 test("manifest: empty viewpoints, bad seed, bad time fail closed", () => {
   assert.throws(() => validateManifest({ version: 1, viewpoints: [], defaultSeed: 1, defaultTimeMs: 1 }), (e) => e.code === "NO_VIEWPOINTS");
   assert.throws(() => validateManifest({ version: 1, viewpoints: ["a"], defaultSeed: NaN, defaultTimeMs: 1 }), (e) => e.code === "BAD_DEFAULT_SEED");

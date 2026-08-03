@@ -8,10 +8,12 @@ import { createHash } from "node:crypto";
 
 import {
   capturePageFrame,
+  installLocalOnlyRouting,
   isAllowedLocalUrl,
   runCapture,
   validatePngBuffer,
 } from "./capture.js";
+import { launchCaptureBrowser, probeNativeWebGpu } from "./browser-runtime.js";
 import { analyzeRgba, compareRgba, buffersEqual } from "./metrics.js";
 import { validateOutputTag } from "./contract.js";
 
@@ -280,13 +282,10 @@ export async function runPerfFlow(opts) {
       deviceScaleFactor: 1,
     });
     const blocked = [];
-    await page.route("**/*", (route) => {
-      const url = route.request().url();
-      if (isAllowedLocalUrl(url, baseUrl)) route.continue();
-      else {
-        blocked.push(url);
-        route.abort("blockedbyclient");
-      }
+    await installLocalOnlyRouting(page, {
+      baseUrl,
+      fixtureRoot: opts.fixtureRoot,
+      blocked,
     });
     await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.__DEVLAB_CAPTURE__, null, { timeout: 15000 });
@@ -402,33 +401,86 @@ export async function runResizeFlow(opts) {
 }
 
 export async function runContextFlow(opts) {
-  const { chromium } = await import("playwright");
   const { CaptureServer } = await import("./server.js");
   const server = new CaptureServer(opts.fixtureRoot, { vendor: opts.vendor || [] });
   const port = await server.start();
   const baseUrl = server.baseUrl;
   let browser = null;
   try {
-    browser = await chromium.launch({
-      headless: true,
-      args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+    const launched = await launchCaptureBrowser({
+      requireNativeWebGPU: opts.requireNativeWebGPU === true,
+      backend: opts.backend || "cpu",
     });
+    browser = launched.browser;
     const page = await browser.newPage({ viewport: { width: 960, height: 540 }, deviceScaleFactor: 1 });
     const blocked = [];
-    await page.route("**/*", (route) => {
-      const url = route.request().url();
-      if (isAllowedLocalUrl(url, baseUrl)) route.continue();
-      else {
-        blocked.push(url);
-        route.abort("blockedbyclient");
-      }
+    const consoleErrors = [];
+    const pageErrors = [];
+    await installLocalOnlyRouting(page, {
+      baseUrl,
+      fixtureRoot: opts.fixtureRoot,
+      blocked,
     });
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(String(error)));
     await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
+    const nativeWebGPU = opts.requireNativeWebGPU
+      ? await probeNativeWebGpu(page, baseUrl)
+      : null;
     await page.waitForFunction(() => window.__DEVLAB_CAPTURE__, null, { timeout: 15000 });
     if (blocked.length > 0) throw new RunnerError(`blocked external request: ${blocked[0]}`, "EXTERNAL_REQUEST_BLOCKED");
+    await page.evaluate(() => window.__DEVLAB_CAPTURE__.ready());
     await page.evaluate((s) => window.__DEVLAB_CAPTURE__.setSeed(s), opts.seed);
     await page.evaluate((t) => window.__DEVLAB_CAPTURE__.setTime(t), opts.timeMs);
     await page.evaluate((v) => window.__DEVLAB_CAPTURE__.setViewpoint(v), opts.viewpoints[0]);
+
+    if (opts.requireNativeWebGPU) {
+      const before = await page.evaluate(() => window.__DEVLAB_CAPTURE__.getMetrics());
+      const triggered = await page.evaluate(() => window.__DEVLAB_CAPTURE_TEST__?.destroyDevice?.() === true);
+      if (!triggered) {
+        throw new RunnerError("fixture cannot trigger controlled WebGPU device loss", "DEVICE_LOSS_HOOK_MISSING");
+      }
+      await page.waitForFunction(() => {
+        const test = window.__DEVLAB_CAPTURE_TEST__;
+        return test?.lostObserved?.() === true
+          && test?.recoveryCount?.() >= 1
+          && test?.recoveryInProgress?.() === false;
+      }, null, { timeout: 30000 });
+      const frame = await capturePageFrame(page, 30000, "WebGPU capture after device recovery");
+      const png = validatePngBuffer(
+        Buffer.from(frame.png.slice("data:image/png;base64,".length), "base64"),
+        frame.width,
+        frame.height,
+      );
+      const rgba = Buffer.from(frame.rgba);
+      const after = await page.evaluate(() => window.__DEVLAB_CAPTURE__.getMetrics());
+      if (blocked.length > 0 || consoleErrors.length > 0 || pageErrors.length > 0) {
+        throw new RunnerError(
+          blocked[0] || consoleErrors[0] || pageErrors[0],
+          blocked.length ? "EXTERNAL_REQUEST_BLOCKED" : "PAGE_RUNTIME_ERROR",
+        );
+      }
+      const out = {
+        deviceLossObserved: after.lostObserved === true,
+        deviceRecovered: after.recoveryCount >= 1 && after.recoveryInProgress === false,
+        captureAfterRecovery: png.length > 0 && rgba.length === frame.width * frame.height * 4,
+        samePageSession: true,
+        canvasCountBefore: before.canvasCount,
+        canvasCountAfter: after.canvasCount,
+        activeLoopCountAfter: after.activeLoopCount,
+        duplicateCanvases: Math.max(0, after.canvasCount - 1),
+        duplicateLoops: Math.max(0, after.activeLoopCount),
+        rendererGeneration: after.rendererGeneration,
+        lastLossReason: after.lastLossReason,
+        browser: launched.metadata,
+        nativeWebGPU,
+      };
+      writeFileSync(join(prepareSummaryRoot(opts.outputRoot), "context.json"), json(out));
+      return out;
+    }
+
     const sessionBefore = await page.evaluate(() => window.__DEVLAB_CAPTURE_TEST__?.sessionId || null);
     const hasExt = await page.evaluate(() => {
       const canvas = document.querySelector("canvas");
@@ -474,6 +526,86 @@ export async function runContextFlow(opts) {
       events: observed,
     };
     writeFileSync(join(prepareSummaryRoot(opts.outputRoot), "context.json"), json(out));
+    return out;
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+    await server.close();
+  }
+}
+
+export async function runResourceStabilityFlow(opts) {
+  const { CaptureServer } = await import("./server.js");
+  const server = new CaptureServer(opts.fixtureRoot, { vendor: opts.vendor || [] });
+  await server.start();
+  const baseUrl = server.baseUrl;
+  let browser = null;
+  try {
+    const launched = await launchCaptureBrowser({
+      requireNativeWebGPU: opts.requireNativeWebGPU === true,
+      backend: opts.backend || "cpu",
+    });
+    browser = launched.browser;
+    const page = await browser.newPage({
+      viewport: { width: opts.viewportWidth || 960, height: opts.viewportHeight || 540 },
+      deviceScaleFactor: 1,
+    });
+    const blocked = [];
+    const consoleErrors = [];
+    const pageErrors = [];
+    await installLocalOnlyRouting(page, {
+      baseUrl,
+      fixtureRoot: opts.fixtureRoot,
+      blocked,
+    });
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(String(error)));
+    await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
+    const nativeWebGPU = opts.requireNativeWebGPU
+      ? await probeNativeWebGpu(page, baseUrl)
+      : null;
+    await page.waitForFunction(() => window.__DEVLAB_CAPTURE__, null, { timeout: 15000 });
+    await page.evaluate(() => window.__DEVLAB_CAPTURE__.ready());
+    await page.evaluate((s) => window.__DEVLAB_CAPTURE__.setSeed(s), opts.seed);
+    await page.evaluate((t) => window.__DEVLAB_CAPTURE__.setTime(t), opts.timeMs);
+    await page.evaluate((v) => window.__DEVLAB_CAPTURE__.setViewpoint(v), opts.viewpoints[0]);
+    await page.evaluate(() => window.__DEVLAB_CAPTURE__.renderOnce());
+    const before = await page.evaluate(() => window.__DEVLAB_CAPTURE__.getMetrics());
+    const sampleFrames = 60;
+    await page.evaluate(async (count) => {
+      for (let index = 0; index < count; index++) {
+        await window.__DEVLAB_CAPTURE__.renderOnce();
+      }
+    }, sampleFrames);
+    const after = await page.evaluate(() => window.__DEVLAB_CAPTURE__.getMetrics());
+    if (blocked.length > 0 || consoleErrors.length > 0 || pageErrors.length > 0) {
+      throw new RunnerError(
+        blocked[0] || consoleErrors[0] || pageErrors[0],
+        blocked.length ? "EXTERNAL_REQUEST_BLOCKED" : "PAGE_RUNTIME_ERROR",
+      );
+    }
+    const growth = Object.fromEntries(["geometries", "textures", "programs"].map((key) => [
+      key,
+      Number(after[key] || 0) - Number(before[key] || 0),
+    ]));
+    const bounded = Object.values(growth).every((value) => value <= 0)
+      && after.canvasCount === 1 && Number(after.activeLoopCount || 0) === 0;
+    const out = {
+      sampleFrames,
+      before,
+      after,
+      growth,
+      bounded,
+      duplicateCanvases: Math.max(0, Number(after.canvasCount || 0) - 1),
+      duplicateLoops: Math.max(0, Number(after.activeLoopCount || 0)),
+      blockedRequests: blocked,
+      consoleErrors,
+      pageErrors,
+      browser: launched.metadata,
+      nativeWebGPU,
+    };
+    writeFileSync(join(prepareSummaryRoot(opts.outputRoot), "resource-stability.json"), json(out));
     return out;
   } finally {
     if (browser) await browser.close().catch(() => {});

@@ -8,8 +8,10 @@
 // Never relies on requestAnimationFrame timing, waitForTimeout, or gl.finish
 // for correctness. No eval / new Function / arbitrary JS from the CLI.
 
-import { chromium } from "playwright";
-import { CaptureServer } from "./server.js";
+import { join } from "node:path";
+
+import { CaptureServer, isRegularContainedFile } from "./server.js";
+import { launchCaptureBrowser, probeNativeWebGpu } from "./browser-runtime.js";
 import {
   validateContractValue,
   validateManifest,
@@ -112,6 +114,7 @@ export async function capturePageFrame(page, timeoutMs, label) {
  * @param {number} [opts.viewportHeight]
  * @param {number} [opts.readyTimeoutMs]
  * @param {number} [opts.captureTimeoutMs]
+ * @param {boolean} [opts.requireNativeWebGPU]
  * @param {function} [opts.onConsole] (type, text) => void
  * @param {function} [opts.onBlockedRequest] (url) => void
  */
@@ -129,6 +132,7 @@ export async function runCapture({
   viewportHeight = 540,
   readyTimeoutMs = 15000,
   captureTimeoutMs = 20000,
+  requireNativeWebGPU = false,
   onConsole = () => {},
   onBlockedRequest = () => {},
 }) {
@@ -151,24 +155,16 @@ export async function runCapture({
   let page = null;
 
   try {
-    const args =
-      backend === "gpu"
-        ? ["--use-angle=d3d11", "--enable-gpu-rasterization", "--ignore-gpu-blocklist"]
-        : ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"];
-
-    browser = await chromium.launch({ headless: true, args });
+    const launched = await launchCaptureBrowser({ requireNativeWebGPU, backend });
+    browser = launched.browser;
     page = await browser.newPage({ viewport: { width: viewportWidth, height: viewportHeight }, deviceScaleFactor: 1 });
 
     // Abort everything that is not the local origin.
-    await page.route("**/*", (route) => {
-      const url = route.request().url();
-      if (isAllowedLocalUrl(url, baseUrl)) {
-        route.continue();
-      } else {
-        blocked.push(url);
-        onBlockedRequest(url);
-        route.abort("blockedbyclient");
-      }
+    await installLocalOnlyRouting(page, {
+      baseUrl,
+      fixtureRoot,
+      blocked,
+      onBlockedRequest,
     });
     page.on("console", (msg) => {
       onConsole(msg.type(), msg.text());
@@ -183,6 +179,9 @@ export async function runCapture({
     if (!response || !response.ok()) {
       throw new CaptureError(`page failed to load: ${response ? response.status() : "no response"}`, "PAGE_LOAD_FAILED");
     }
+    const nativeWebGPU = requireNativeWebGPU
+      ? await probeNativeWebGpu(page, baseUrl)
+      : null;
 
     let contractPresent = false;
     try {
@@ -331,7 +330,14 @@ export async function runCapture({
       }
     }
 
-    const environment = await collectEnvironment(page);
+    if (consoleErrors.length > 0) {
+      throw new CaptureError(`page console error: ${consoleErrors[0]}`, "CONSOLE_ERROR");
+    }
+    if (pageErrors.length > 0) {
+      throw new CaptureError(`uncaught page error: ${pageErrors[0]}`, "PAGE_ERROR");
+    }
+
+    const environment = await collectEnvironment(page, launched.metadata, nativeWebGPU);
 
     return {
       tag,
@@ -350,8 +356,8 @@ export async function runCapture({
   }
 }
 
-async function collectEnvironment(page) {
-  return page.evaluate(() => {
+async function collectEnvironment(page, browserRuntime, nativeWebGPU) {
+  const pageEnvironment = await page.evaluate(() => {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
     const dbg = gl && gl.getExtension("WEBGL_debug_renderer_info");
@@ -364,6 +370,41 @@ async function collectEnvironment(page) {
       hardwareConcurrency: navigator.hardwareConcurrency,
       language: navigator.language,
     };
+  });
+  return { ...pageEnvironment, browser: browserRuntime, nativeWebGPU };
+}
+
+export async function installLocalOnlyRouting(page, {
+  baseUrl,
+  fixtureRoot,
+  blocked,
+  onBlockedRequest = () => {},
+}) {
+  const documentUrl = `${baseUrl}/`;
+  const documentPath = join(fixtureRoot, "index.html");
+  if (!isRegularContainedFile(fixtureRoot, documentPath)) {
+    throw new CaptureError("top-level fixture document is not a contained regular file", "UNSAFE_DOCUMENT");
+  }
+  await page.route("**/*", (route) => {
+    const request = route.request();
+    const url = request.url();
+    if (url === documentUrl && request.resourceType() === "document") {
+      route.fulfill({
+        status: 200,
+        contentType: "text/html; charset=utf-8",
+        path: documentPath,
+        headers: {
+          "cache-control": "no-store",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    } else if (isAllowedLocalUrl(url, baseUrl)) {
+      route.continue();
+    } else {
+      blocked.push(url);
+      onBlockedRequest(url);
+      route.abort("blockedbyclient");
+    }
   });
 }
 

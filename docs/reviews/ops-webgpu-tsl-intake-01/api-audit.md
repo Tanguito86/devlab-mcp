@@ -68,19 +68,18 @@ contra el árbol real de examples/jsm):
    init; `renderer.dispose()` no remueve el canvas → canvas duplicado.
    (El fixture propio device-loss evita esto reutilizando el canvas.)
 
-## Hallazgo NUEVO (runtime, F7)
+## Corrección del diagnóstico runtime
 
-**Chrome 150/Edge 151 desactivan WebGPU bajo depuración remota (CDP)** —
-la skill declara "Chrome 113+, Edge 113+" sin mencionar que la
-automatización (Playwright/CDP, el mecanismo del capture harness) no puede
-acceder a WebGPU en los navegadores actuales. 20+ combinaciones probadas
-(150, 151, bundled 148, Chrome 131 CfT; perfiles limpios y del usuario;
-swiftshader/GPU real; in-process-gpu; sin no-startup-window). WebGPU
-funciona solo sin CDP (dump-dom): `gpu: object`, adapter NVIDIA turing.
+La conclusión original sobre CDP era incorrecta. Los probes fallidos
+evaluaban `navigator.gpu` en `about:blank`, un origen opaco. Después de
+navegar a una página real en `127.0.0.1`, Playwright/CDP expone WebGPU,
+`requestAdapter()` devuelve `nvidia/turing` y `requestDevice()` funciona.
+La regresión ahora rechaza explícitamente `about:blank`, `data:` y cualquier
+origen opaco o no-local.
 
 ## Veredicto de auditoría
 
 Documentación mayormente de ALTA calidad (notas de versión precisas,
 patrones TSL correctos). Bloqueantes de adopción directa: 2 imports rotos,
-1 patrón MISLEADING, dependencia privada del device, y la restricción CDP
-que impide la verificación automatizada en navegadores actuales.
+1 patrón MISLEADING, dependencia privada del device y licencia material
+ausente. No existe un bloqueo CDP después de navegar a un origen válido.

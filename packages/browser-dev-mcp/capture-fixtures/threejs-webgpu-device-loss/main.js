@@ -9,7 +9,7 @@
 // pattern the audited skill documents. VERSION_PINNED / NOT GENERALIZED.
 
 import * as THREE from "three/webgpu";
-import { color, float, time, oscSine } from "three/tsl";
+import { color, float, uniform, oscSine } from "three/tsl";
 
 const state = {
   seed: 1729,
@@ -22,7 +22,12 @@ const state = {
   recoveryCount: 0,
   lostObserved: false,
   initialRenderDone: false,
+  recoveryInProgress: false,
+  recoveryPromise: null,
+  rendererGeneration: 0,
+  lastLossReason: null,
 };
+const timeSeconds = uniform(2.5);
 
 async function buildRenderer(canvas) {
   const renderer = new THREE.WebGPURenderer({ canvas, antialias: false });
@@ -45,7 +50,7 @@ function buildSceneContent(renderer) {
   scene.add(new THREE.AmbientLight(0x334466, 0.6));
 
   const mat = new THREE.MeshStandardNodeMaterial();
-  mat.colorNode = color(0x22aa66).mul(oscSine(time.mul(0.6)).mul(0.4).add(0.6));
+  mat.colorNode = color(0x22aa66).mul(oscSine(timeSeconds.mul(0.6)).mul(0.4).add(0.6));
   mat.metalnessNode = float(0.4);
   mat.roughnessNode = float(0.3);
   const mesh = new THREE.Mesh(new THREE.TorusKnotGeometry(0.9, 0.3, 128, 20), mat);
@@ -66,18 +71,25 @@ async function initWebGPU(canvas) {
   const renderer = await buildRenderer(canvas);
   const content = buildSceneContent(renderer);
   Object.assign(state, { renderer, ...content });
+  state.rendererGeneration++;
 
   // ---- loss detection + recovery (once per device) ----
   const device = renderer.backend.device; // PRIVATE_API_DEPENDENCY (documented)
-  device.lost.then(async (info) => {
+  device.lost.then((info) => {
     state.lostObserved = true;
-    state.recoveryCount++;
-    if (info.reason === "unknown" || info.reason === "destroyed") {
-      // dispose old renderer resources; do NOT remove the canvas
-      renderer.dispose();
-      // re-initialize on the SAME canvas (no duplicate DOM, no new loop)
-      await initWebGPU(canvas);
-    }
+    state.lastLossReason = info.reason;
+    if (state.recoveryPromise) return;
+    state.recoveryInProgress = true;
+    state.recoveryPromise = (async () => {
+      try {
+        await renderer.dispose();
+        await initWebGPU(canvas);
+        state.recoveryCount++;
+      } finally {
+        state.recoveryInProgress = false;
+        state.recoveryPromise = null;
+      }
+    })();
   });
 }
 
@@ -91,7 +103,10 @@ const target = {
   version: 1,
   async ready() { await ready(); },
   async setSeed(seed) { state.seed = seed; },
-  async setTime(ms) { state.timeMs = ms; },
+  async setTime(ms) {
+    state.timeMs = ms;
+    timeSeconds.value = ms / 1000;
+  },
   async setViewpoint(id) {
     if (id !== "overview") throw new Error(`unknown viewpoint: ${id}`);
     state.viewpoint = id;
@@ -120,6 +135,10 @@ const target = {
       lostObserved: state.lostObserved,
       initialRenderDone: state.initialRenderDone,
       canvasCount: document.querySelectorAll("canvas").length,
+      activeLoopCount: 0,
+      recoveryInProgress: state.recoveryInProgress,
+      rendererGeneration: state.rendererGeneration,
+      lastLossReason: state.lastLossReason,
     };
   },
 };
@@ -129,20 +148,30 @@ window.__DEVLAB_FRAME__ = async () => {
   const canvas = state.renderer.domElement;
   const w = canvas.width;
   const h = canvas.height;
+  const png = canvas.toDataURL("image/png");
+  const decoded = new Image();
+  decoded.src = png;
+  await decoded.decode();
+  if (decoded.naturalWidth !== w || decoded.naturalHeight !== h) {
+    throw new Error("decoded WebGPU frame dimensions do not match the canvas");
+  }
   const tmp = document.createElement("canvas");
   tmp.width = w;
   tmp.height = h;
   const ctx = tmp.getContext("2d");
-  ctx.drawImage(canvas, 0, 0);
+  ctx.drawImage(decoded, 0, 0);
   const img = ctx.getImageData(0, 0, w, h);
-  return { png: tmp.toDataURL("image/png"), rgba: img.data, width: w, height: h };
+  return { png, rgba: img.data, width: w, height: h };
 };
 window.__DEVLAB_CAPTURE_TEST__ = {
   destroyDevice() {
     if (state.renderer && state.renderer.backend.device) {
       state.renderer.backend.device.destroy();
+      return true;
     }
+    return false;
   },
   recoveryCount: () => state.recoveryCount,
   lostObserved: () => state.lostObserved,
+  recoveryInProgress: () => state.recoveryInProgress,
 };

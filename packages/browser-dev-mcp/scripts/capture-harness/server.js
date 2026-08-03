@@ -16,7 +16,7 @@ function lstatSafe(path) {
   }
 }
 
-function isRegularContainedFile(root, target) {
+export function isRegularContainedFile(root, target) {
   const normalizedRoot = resolve(root);
   const normalizedTarget = resolve(target);
   if (normalizedTarget === normalizedRoot || !normalizedTarget.startsWith(normalizedRoot + sep)) {
@@ -51,6 +51,19 @@ const MIME = {
   ".svg": "image/svg+xml",
   ".wasm": "application/wasm",
 };
+
+export const CAPTURE_CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "font-src 'self' data:",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "frame-ancestors 'none'",
+].join("; ");
 
 export class CaptureServer {
   /**
@@ -145,6 +158,8 @@ export class CaptureServer {
       res.writeHead(200, {
         "content-type": MIME[extname(file)] || "application/octet-stream",
         "cache-control": "no-store",
+        "content-security-policy": CAPTURE_CONTENT_SECURITY_POLICY,
+        "x-content-type-options": "nosniff",
         connection: "close",
       });
       res.end(readFileSync(file));

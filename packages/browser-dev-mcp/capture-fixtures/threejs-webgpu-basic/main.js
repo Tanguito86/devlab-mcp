@@ -5,7 +5,7 @@
 
 import * as THREE from "three/webgpu";
 import {
-  Fn, float, vec3, color, time, oscSine,
+  Fn, float, vec3, color, uniform, texture, oscSine,
   positionLocal, normalLocal, cameraPosition,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -37,6 +37,7 @@ function mulberry32(a) {
 }
 
 const VIEWPOINTS = ["overview", "instancing", "shader", "transparency", "postprocess"];
+const timeSeconds = uniform(2.5);
 
 // eslint-disable-next-line no-unused-vars
 let ring = null; // assigned in createScene
@@ -51,6 +52,7 @@ async function createRenderer() {
   // DPR capped at 2 (never unbounded)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(960, 540, false);
+  await renderer.init();
   return renderer;
 }
 
@@ -77,12 +79,12 @@ function createScene(seed) {
 
   // PBR hero with TSL material — displacement in LOCAL space (coherent)
   const heroMat = new THREE.MeshStandardNodeMaterial();
-  heroMat.colorNode = color(0x1188ff).mul(oscSine(time.mul(0.5)).mul(0.5).add(0.5));
+  heroMat.colorNode = color(0x1188ff).mul(oscSine(timeSeconds.mul(0.5)).mul(0.5).add(0.5));
   heroMat.metalnessNode = float(0.35);
   heroMat.roughnessNode = float(0.25);
   // vertex displacement: positionLocal + normalLocal (both model space)
   heroMat.positionNode = positionLocal.add(
-    normalLocal.mul(oscSine(time.mul(2.0).add(positionLocal.y)).mul(0.06)),
+    normalLocal.mul(oscSine(timeSeconds.mul(2.0).add(positionLocal.y)).mul(0.06)),
   );
   const hero = new THREE.Mesh(new THREE.TorusKnotGeometry(0.85, 0.28, 160, 24), heroMat);
   hero.position.set(0, 1.7, 0);
@@ -117,7 +119,8 @@ function createScene(seed) {
   const shaderMat = new THREE.MeshStandardNodeMaterial();
   shaderMat.colorNode = Fn(() => {
     const p = positionLocal;
-    const wave = p.x.mul(1.5).add(time).sin().mul(p.z.mul(1.5).add(time.mul(0.7)).cos());
+    const wave = p.x.mul(1.5).add(timeSeconds).sin()
+      .mul(p.z.mul(1.5).add(timeSeconds.mul(0.7)).cos());
     const h = wave.mul(0.18).add(0.5);
     return color(0x2266aa).mul(h).add(color(0x88ccff).mul(h.mul(0.4)));
   })();
@@ -154,7 +157,7 @@ function createScene(seed) {
   rtScene.add(new THREE.AmbientLight(0xffffff, 1.2));
   const rt = new THREE.WebGLRenderTarget(256, 256);
   const monitorMat = new THREE.MeshBasicNodeMaterial();
-  monitorMat.colorNode = THREE.texture(rt.texture);
+  monitorMat.colorNode = texture(rt.texture);
   const monitor = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.7), monitorMat);
   monitor.position.set(2.8, 2.0, -2.4);
   monitor.rotation.y = Math.PI / 2 + 0.5;
@@ -222,25 +225,18 @@ async function ready() {
   state.controls = new OrbitControls(state.camera, state.renderer.domElement);
   state.controls.enableDamping = false;
 
-  window.addEventListener("resize", () => {
+  const applyResize = () => {
     const w = window.innerWidth || 960;
     const h = window.innerHeight || 540;
     state.camera.aspect = w / h;
     state.camera.updateProjectionMatrix();
     state.renderer.setSize(w, h, false);
-    const size = Math.max(64, Math.floor(Math.min(w, h) / 3.5));
+    const size = Math.max(64, Math.floor(Math.min(w, h) / 3));
     state.rt.setSize(size, size);
-  });
+  };
+  window.addEventListener("resize", applyResize);
+  applyResize();
 
-  // context loss handling
-  const canvas = state.renderer.domElement;
-  canvas.addEventListener("webglcontextlost", (e) => {
-    e.preventDefault();
-    state.contextLost = true;
-  });
-  canvas.addEventListener("webglcontextrestored", () => {
-    state.contextLost = false;
-  });
 }
 
 const target = {
@@ -268,7 +264,10 @@ const target = {
     state.inst.instanceMatrix.needsUpdate = true;
     if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
   },
-  async setTime(ms) { state.timeMs = ms; },
+  async setTime(ms) {
+    state.timeMs = ms;
+    timeSeconds.value = ms / 1000;
+  },
   async setViewpoint(id) { applyViewpoint(id); },
   async renderOnce() {
     updateSimulation();
@@ -284,26 +283,44 @@ const target = {
       seedApplied: state.seed,
       timeAppliedMs: state.timeMs,
       viewpointApplied: state.viewpoint,
+      canvasCount: document.querySelectorAll("canvas").length,
+      activeLoopCount: state.loopRunning ? 1 : 0,
+      resize: {
+        canvasWidth: state.renderer.domElement.width,
+        canvasHeight: state.renderer.domElement.height,
+        cameraAspect: state.camera.aspect,
+        pixelRatio: state.renderer.getPixelRatio(),
+        renderTargetWidth: state.rt.width,
+        renderTargetHeight: state.rt.height,
+        composerWidth: state.renderer.domElement.width,
+        composerHeight: state.renderer.domElement.height,
+      },
     };
   },
 };
 
 window.__DEVLAB_CAPTURE__ = target;
 
-// WebGPU frame reader: no readPixels on a webgpu canvas. After renderOnce()
-// has awaited the render, copy the presented frame into a 2D canvas and read
-// PNG + raw RGBA from there, in the same task.
+// WebGPU frame reader: serialize the presented canvas first, then decode that
+// exact PNG into a separate 2D canvas for validated RGBA extraction.
 window.__DEVLAB_FRAME__ = async () => {
   const canvas = state.renderer.domElement;
   const w = canvas.width;
   const h = canvas.height;
+  const png = canvas.toDataURL("image/png");
+  const decoded = new Image();
+  decoded.src = png;
+  await decoded.decode();
+  if (decoded.naturalWidth !== w || decoded.naturalHeight !== h) {
+    throw new Error("decoded WebGPU frame dimensions do not match the canvas");
+  }
   const tmp = document.createElement("canvas");
   tmp.width = w;
   tmp.height = h;
   const ctx = tmp.getContext("2d");
-  ctx.drawImage(canvas, 0, 0);
+  ctx.drawImage(decoded, 0, 0);
   const img = ctx.getImageData(0, 0, w, h);
-  return { png: tmp.toDataURL("image/png"), rgba: img.data, width: w, height: h };
+  return { png, rgba: img.data, width: w, height: h };
 };
 window.__DEVLAB_CAPTURE_TEST__ = {
   startLoop() {
@@ -314,6 +331,7 @@ window.__DEVLAB_CAPTURE_TEST__ = {
       if (!state.loopRunning) return;
       state.rafId = requestAnimationFrame(loop);
       state.timeMs += Math.min(state.clock.getDelta(), 0.1) * 1000;
+      timeSeconds.value = state.timeMs / 1000;
       updateSimulation();
       state.renderer.render(state.scene, state.camera);
       state.frameCount++;

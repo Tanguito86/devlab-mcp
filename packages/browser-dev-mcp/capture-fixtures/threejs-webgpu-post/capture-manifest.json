@@ -1,9 +1,12 @@
 {
   "version": 1,
+  "requiresNativeWebGPU": true,
   "viewpoints": ["overview", "bloom", "grading", "vignette", "composite"],
   "defaultSeed": 1729,
   "defaultTimeMs": 2500,
   "variants": {
     "bloom-off": { "bloomEnabled": false }
-  }
+  },
+  "seedAffectedViewpoints": [],
+  "timeAffectedViewpoints": ["overview", "bloom", "grading", "vignette", "composite"]
 }

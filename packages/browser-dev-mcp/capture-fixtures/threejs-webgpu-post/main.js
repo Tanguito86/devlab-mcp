@@ -6,8 +6,8 @@
 
 import * as THREE from "three/webgpu";
 import {
-  Fn, float, vec2, color, uniform, pass, screenUV,
-  time, oscSine, saturation,
+  Fn, float, color, uniform, pass, screenUV,
+  oscSine, saturation,
 } from "three/tsl";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
 
@@ -15,7 +15,7 @@ const state = {
   seed: 1729,
   timeMs: 2500,
   viewpoint: "overview",
-  variant: "default",
+  variant: null,
   renderer: null,
   scene: null,
   camera: null,
@@ -30,52 +30,51 @@ const bloomThreshold = uniform(0.55);
 const vignetteIntensity = uniform(0.55);
 const saturationAmount = uniform(1.25);
 const colorTint = uniform(new THREE.Color(1.0, 0.94, 0.88));
+const timeSeconds = uniform(2.5);
 
 function buildScene() {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x101216);
+  scene.background = new THREE.Color(0x070b18);
 
-  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-  sun.position.set(4, 6, 3);
-  scene.add(sun);
-  scene.add(new THREE.AmbientLight(0x445566, 0.5));
-
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(16, 16),
-    new THREE.MeshStandardNodeMaterial({ colorNode: color(0x22262e), roughnessNode: float(0.9) }),
-  );
+  const floorMaterial = new THREE.MeshStandardNodeMaterial();
+  floorMaterial.colorNode = color(0x111a2c);
+  floorMaterial.roughnessNode = float(0.82);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 48), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  const sphereGeo = new THREE.SphereGeometry(0.55, 32, 32);
-  const colors = [0xff2244, 0x22ff88, 0x4488ff, 0xffaa22, 0xff44ff];
-  for (let i = 0; i < 5; i++) {
-    const mat = new THREE.MeshStandardNodeMaterial();
-    mat.colorNode = color(colors[i]).mul(0.35);
-    mat.emissiveNode = Fn(() => {
-      const pulse = oscSine(time.mul(1.0 + i * 0.2)).mul(0.5).add(0.5);
-      return color(colors[i]).mul(pulse.mul(2.2).add(0.4));
-    })();
-    mat.roughnessNode = float(0.25);
-    mat.metalnessNode = float(0.7);
-    const s = new THREE.Mesh(sphereGeo, mat);
-    const a = (i / 5) * Math.PI * 2;
-    s.position.set(Math.cos(a) * 2.6, 0.9 + Math.sin(i * 1.7) * 0.4, Math.sin(a) * 2.6);
-    scene.add(s);
+  const towerGeometry = new THREE.BoxGeometry(0.7, 1, 0.7);
+  const palette = [0x00d9ff, 0xff335f, 0x7dff4f, 0xffc247];
+  for (let index = 0; index < 12; index++) {
+    const material = new THREE.MeshStandardNodeMaterial();
+    const swatch = palette[index % palette.length];
+    const pulse = oscSine(timeSeconds.mul(0.35 + index * 0.031).add(index * 0.61))
+      .mul(0.38).add(0.62);
+    material.colorNode = color(swatch).mul(0.16);
+    material.emissiveNode = color(swatch).mul(pulse.mul(3.1));
+    material.roughnessNode = float(0.34);
+    material.metalnessNode = float(0.52);
+    const tower = new THREE.Mesh(towerGeometry, material);
+    const column = index % 4;
+    const row = Math.floor(index / 4);
+    const height = 0.8 + ((index * 7) % 5) * 0.32;
+    tower.scale.y = height;
+    tower.position.set((column - 1.5) * 1.55, height * 0.5, (row - 1) * 1.7);
+    scene.add(tower);
   }
 
-  const center = new THREE.Mesh(
-    new THREE.SphereGeometry(1.0, 64, 64),
-    (() => {
-      const m = new THREE.MeshStandardNodeMaterial();
-      m.colorNode = color(0x8899aa);
-      m.roughnessNode = float(0.12);
-      m.metalnessNode = float(1.0);
-      return m;
-    })(),
-  );
-  center.position.y = 1.0;
-  scene.add(center);
+  const coreMaterial = new THREE.MeshStandardNodeMaterial();
+  coreMaterial.colorNode = color(0x8ea7c7);
+  coreMaterial.metalnessNode = float(0.88);
+  coreMaterial.roughnessNode = float(0.16);
+  const core = new THREE.Mesh(new THREE.TorusKnotGeometry(0.72, 0.22, 96, 16), coreMaterial);
+  core.position.set(0, 2.4, 0);
+  scene.add(core);
+
+  const key = new THREE.DirectionalLight(0xc9ddff, 2.1);
+  key.position.set(-3, 7, 5);
+  scene.add(key);
+  scene.add(new THREE.HemisphereLight(0x315b88, 0x130d1e, 0.8));
 
   return scene;
 }
@@ -98,18 +97,17 @@ async function ready() {
   const sceneColor = scenePass.getTextureNode("output");
 
   let output = sceneColor;
-  if (state.bloomEnabled) {
-    const b = bloom(sceneColor);
-    b.threshold = bloomThreshold;
-    b.strength = bloomStrength;
-    b.radius = uniform(0.6);
-    output = output.add(b);
-  }
+  const b = bloom(sceneColor);
+  b.threshold = bloomThreshold;
+  b.strength = bloomStrength;
+  b.radius = uniform(0.6);
+  output = output.add(b);
   output = saturation(output, saturationAmount);
   output = output.mul(colorTint);
   const vignette = Fn(() => {
-    const dist = screenUV.sub(0.5).length();
-    return float(1.0).sub(dist.mul(vignetteIntensity).pow(2.0)).saturate();
+    const centered = screenUV.mul(2.0).sub(1.0);
+    const radialEnergy = centered.dot(centered);
+    return float(1.0).sub(radialEnergy.mul(vignetteIntensity)).saturate();
   });
   output = output.mul(vignette());
   state.pipeline.outputNode = output;
@@ -142,8 +140,17 @@ const target = {
   version: 1,
   async ready() { await ready(); },
   async setSeed(seed) { state.seed = seed; /* static scene: seed is accepted, no-op */ },
-  async setTime(ms) { state.timeMs = ms; },
+  async setTime(ms) {
+    state.timeMs = ms;
+    timeSeconds.value = ms / 1000;
+  },
   async setViewpoint(id) { applyViewpoint(id); },
+  async setVariant(id) {
+    if (id !== null && id !== "bloom-off") throw new Error(`unknown variant: ${id}`);
+    state.variant = id;
+    state.bloomEnabled = id !== "bloom-off";
+    bloomStrength.value = state.bloomEnabled ? 1.1 : 0;
+  },
   async renderOnce() {
     // frozen time drives emissive pulse; render the pipeline (async)
     await state.pipeline.render();
@@ -159,6 +166,9 @@ const target = {
       timeAppliedMs: state.timeMs,
       viewpointApplied: state.viewpoint,
       bloomEnabled: state.bloomEnabled,
+      variantApplied: state.variant,
+      canvasCount: document.querySelectorAll("canvas").length,
+      activeLoopCount: 0,
     };
   },
 };
@@ -168,18 +178,18 @@ window.__DEVLAB_FRAME__ = async () => {
   const canvas = state.renderer.domElement;
   const w = canvas.width;
   const h = canvas.height;
+  const png = canvas.toDataURL("image/png");
+  const decoded = new Image();
+  decoded.src = png;
+  await decoded.decode();
+  if (decoded.naturalWidth !== w || decoded.naturalHeight !== h) {
+    throw new Error("decoded WebGPU frame dimensions do not match the canvas");
+  }
   const tmp = document.createElement("canvas");
   tmp.width = w;
   tmp.height = h;
   const ctx = tmp.getContext("2d");
-  ctx.drawImage(canvas, 0, 0);
+  ctx.drawImage(decoded, 0, 0);
   const img = ctx.getImageData(0, 0, w, h);
-  return { png: tmp.toDataURL("image/png"), rgba: img.data, width: w, height: h };
+  return { png, rgba: img.data, width: w, height: h };
 };
-
-// variant applied at boot: read from query param (single parameter)
-const params = new URLSearchParams(window.location.search);
-if (params.get("devlab-variant") === "bloom-off") {
-  state.bloomEnabled = false;
-  state.variant = "bloom-off";
-}

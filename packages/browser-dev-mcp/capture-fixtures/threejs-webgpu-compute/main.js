@@ -6,8 +6,8 @@
 
 import * as THREE from "three/webgpu";
 import {
-  Fn, If, float, vec3, color, uniform,
-  instancedArray, instanceIndex, hash, time,
+  Fn, If, float, color, uniform,
+  instancedArray, instanceIndex,
 } from "three/tsl";
 
 const PARTICLE_COUNT = 16384;
@@ -69,8 +69,8 @@ const computeStep = Fn(() => {
 // deterministic CPU-side initial state from the seed
 function fillInitialState(seed) {
   const rand = mulberry32(seed);
-  const posArr = positions.array;
-  const velArr = velocities.array;
+  const posArr = positions.value.array;
+  const velArr = velocities.value.array;
   for (let i = 0; i < PARTICLE_COUNT; i++) {
     posArr[i * 3] = (rand() - 0.5) * 6;
     posArr[i * 3 + 1] = rand() * 4;
@@ -79,8 +79,8 @@ function fillInitialState(seed) {
     velArr[i * 3 + 1] = rand() * 1.5;
     velArr[i * 3 + 2] = (rand() - 0.5) * 1.2;
   }
-  positions.needsUpdate = true;
-  velocities.needsUpdate = true;
+  positions.value.needsUpdate = true;
+  velocities.value.needsUpdate = true;
 }
 
 async function ready() {
@@ -100,17 +100,25 @@ async function ready() {
   state.camera = new THREE.PerspectiveCamera(55, 960 / 540, 0.1, 50);
   state.camera.position.set(0, 3.4, 8.2);
 
-  const mat = new THREE.PointsNodeMaterial();
-  mat.positionNode = positions.element(instanceIndex);
+  const mat = new THREE.SpriteNodeMaterial({ transparent: false });
+  mat.positionNode = positions.toAttribute();
   mat.colorNode = Fn(() => {
-    const vel = velocities.element(instanceIndex);
+    const vel = velocities.toAttribute();
     const speed = vel.length().div(2.0).saturate();
     return color(0x1144ff).mix(color(0xffaa22), speed);
   })();
-  mat.sizeNode = float(0.09);
-  state.points = new THREE.Points(new THREE.BufferGeometry(), mat);
-  // instance count drives the draw from the storage buffer
-  state.points.geometry.setDrawRange(0, PARTICLE_COUNT);
+  mat.scaleNode = float(0.09);
+  state.points = new THREE.InstancedMesh(
+    new THREE.PlaneGeometry(1, 1),
+    mat,
+    PARTICLE_COUNT,
+  );
+  const identity = new THREE.Matrix4();
+  for (let index = 0; index < PARTICLE_COUNT; index++) {
+    state.points.setMatrixAt(index, identity);
+  }
+  state.points.instanceMatrix.needsUpdate = true;
+  state.points.frustumCulled = false;
   state.scene.add(state.points);
 
   window.addEventListener("resize", () => {
@@ -152,7 +160,6 @@ const target = {
     fillInitialState(seed);
     state.stepsRun = 0;
     state.stepsForTime = 0;
-    state.renderer.compute(computeStep); // push buffer to GPU after fill
   },
   async setTime(ms) { state.timeMs = ms; },
   async setViewpoint(id) { applyViewpoint(id); },
@@ -171,8 +178,10 @@ const target = {
       timeAppliedMs: state.timeMs,
       viewpointApplied: state.viewpoint,
       particles: PARTICLE_COUNT,
-      bufferBytes: positions.array.byteLength + velocities.array.byteLength,
+      bufferBytes: positions.value.array.byteLength + velocities.value.array.byteLength,
       stepsRun: state.stepsForTime,
+      canvasCount: document.querySelectorAll("canvas").length,
+      activeLoopCount: 0,
     };
   },
 };
@@ -182,11 +191,18 @@ window.__DEVLAB_FRAME__ = async () => {
   const canvas = state.renderer.domElement;
   const w = canvas.width;
   const h = canvas.height;
+  const png = canvas.toDataURL("image/png");
+  const decoded = new Image();
+  decoded.src = png;
+  await decoded.decode();
+  if (decoded.naturalWidth !== w || decoded.naturalHeight !== h) {
+    throw new Error("decoded WebGPU frame dimensions do not match the canvas");
+  }
   const tmp = document.createElement("canvas");
   tmp.width = w;
   tmp.height = h;
   const ctx = tmp.getContext("2d");
-  ctx.drawImage(canvas, 0, 0);
+  ctx.drawImage(decoded, 0, 0);
   const img = ctx.getImageData(0, 0, w, h);
-  return { png: tmp.toDataURL("image/png"), rgba: img.data, width: w, height: h };
+  return { png, rgba: img.data, width: w, height: h };
 };

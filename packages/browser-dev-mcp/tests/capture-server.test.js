@@ -4,7 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 
-import { CaptureServer } from "../scripts/capture-harness/server.js";
+import {
+  CaptureServer,
+  CAPTURE_CONTENT_SECURITY_POLICY,
+} from "../scripts/capture-harness/server.js";
 
 const tmpDirs = [];
 after(() => {
@@ -24,7 +27,7 @@ function makeFixture(files = {}) {
 
 async function get(server, path) {
   const res = await fetch(`${server.baseUrl}${path}`);
-  return { status: res.status, body: await res.text() };
+  return { status: res.status, body: await res.text(), headers: res.headers };
 }
 
 test("serves index.html at root with correct MIME", async () => {
@@ -33,9 +36,11 @@ test("serves index.html at root with correct MIME", async () => {
   const port = await server.start();
   try {
     assert.ok(port > 0);
-    const { status, body } = await get(server, "/");
+    const { status, body, headers } = await get(server, "/");
     assert.equal(status, 200);
     assert.equal(body, "<h1>hi</h1>");
+    assert.equal(headers.get("content-security-policy"), CAPTURE_CONTENT_SECURITY_POLICY);
+    assert.equal(headers.get("x-content-type-options"), "nosniff");
   } finally {
     await server.close();
   }
