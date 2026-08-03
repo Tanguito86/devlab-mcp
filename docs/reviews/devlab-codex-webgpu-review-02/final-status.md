@@ -1,8 +1,11 @@
 # Final review status
 
 ```text
-DEVLAB-CODEX-WEBGPU-REVIEW-02: COMPLETED / APPROVED_FOR_FF_ONLY
+DEVLAB-CODEX-WEBGPU-REVIEW-02: COMPLETED / WEBGPU_TSL_REFERENCE_VERIFIED
 F933FA2_INDEPENDENT_REVIEW: PASS_WITH_HOTFIX
+HOTFIX_COMMIT: 82c34f3c4a33296f0e93a9bb5fc234783349c187
+MASTER_INTEGRATION: FAST_FORWARD_PASS
+POST_INTEGRATION_VALIDATION: PASS
 
 WEBGPU_CLAUDE_SKILL: CURATED_REFERENCE / NOT_INSTALLED
 LICENSE: UNRESOLVED / SUBSTANTIAL_REUSE_NOT_AUTHORIZED
@@ -35,4 +38,5 @@ TAG: NO
 ```
 
 No WebGPU skill activation or playable vertical slice is authorized by this
-review. Master integration remains the final fast-forward-only control action.
+review. The runtime matrix was repeated from `master` at the integrated hotfix
+commit before this documentation-only closure update.
