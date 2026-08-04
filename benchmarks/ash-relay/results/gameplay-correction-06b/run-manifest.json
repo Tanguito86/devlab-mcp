@@ -1,0 +1,10 @@
+{
+  "schema": "devlab-ash-relay-gameplay-correction-06b-run-v1",
+  "status": "BLOCKED / P1_REMAINS",
+  "baselineHead": "3a7ab2d769bc5692d8a047d417d866b2bc75e7c3",
+  "gameWorking": "H:\\UserData\\Deposito\\Documents\\devlab-runs\\ash-relay-gameplay-correction-06b\\game",
+  "heavyEvidence": "C:\\Users\\Deposito\\AppData\\Local\\DevLab\\pilot-runs\\DEVLAB-ASH-RELAY-GAMEPLAY-CORRECTION-06B-20260804T132551",
+  "productTree": { "files": 35, "bytes": 306486, "sha256": "c63240f3e8f2d99cf3a97d365558f84eefab82884eb56a66be2239817e3e58ca" },
+  "distTree": { "files": 4, "bytes": 976542, "sha256": "9c714cdf8eaca28da77159a62b9d4eab9fcbef31778779356eb008e30fdaf57d" },
+  "canonicalEvidence": ["runtime-gauntlet-canonical", "determinism-desktop-canonical", "determinism-mobile-canonical", "device-loss-canonical-encounter-1", "device-loss-canonical-checkpoint", "device-loss-canonical-boss-1", "device-loss-canonical-boss-2"]
+}

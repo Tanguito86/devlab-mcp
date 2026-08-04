@@ -1,0 +1,12 @@
+{
+  "result": "PASS",
+  "runs": 10,
+  "passed": 10,
+  "softlocks": 0,
+  "restart": "10/10",
+  "checkpointRestore": "10/10",
+  "bossReachable": true,
+  "victoryReachable": true,
+  "durationSeconds": { "minimum": 115.5, "maximum": 115.5, "average": 115.5 },
+  "rawReportSha256": "d64436cc4143bb032698de0bb69fa39d069410603dbd0c3badb95b150dbe2ebb"
+}

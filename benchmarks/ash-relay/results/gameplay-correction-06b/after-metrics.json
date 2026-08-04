@@ -1,0 +1,8 @@
+{
+  "schema": "devlab-ash-relay-after-metrics-v1",
+  "bot": { "runs": 10, "passed": 10, "softlocks": 0, "durationSeconds": { "minimum": 115.5, "maximum": 115.5, "average": 115.5 } },
+  "representativePhaseEntrySeconds": { "encounter1": 6.033, "checkpoint": 15.167, "encounter2": 18.183, "bossPhase1": 80.517, "bossPhase2": 95.25, "victory": 115.483 },
+  "hatches": { "telegraphs": 19, "commits": 19, "queueHighWater": 5, "queueRejected": 0 },
+  "peakActiveHostiles": { "encounterOne": 2, "encounterTwo": 5, "guardianOverload": 2 },
+  "timingQualification": "perfect-information deterministic lower bound; human 3-5 minute result not asserted"
+}

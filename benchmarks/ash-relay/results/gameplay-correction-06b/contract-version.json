@@ -1,0 +1,7 @@
+{
+  "contract": "GAMEPLAY_V2",
+  "authority": "DEVLAB-ASH-RELAY-CONTRACT-RECONCILIATION-06A",
+  "preserved": { "playerSpeed": 8.5, "checkpointHealth": 100, "bossHealth": 540, "enemyPoolCapacity": 24 },
+  "obsoleteRejected": { "playerSpeed": 6, "checkpointHealth": 75, "mandatoryBossHealth": 360, "globalActiveHostileCap": 6 },
+  "consistencyTests": { "passed": 8, "total": 8 }
+}

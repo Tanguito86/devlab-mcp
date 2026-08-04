@@ -1,0 +1,11 @@
+{
+  "initialHealth": 540,
+  "stateTransitions": 22,
+  "attacks": { "directed": 2, "sweep": 1, "fan": 2 },
+  "vulnerabilityWindows": 5,
+  "damageDealtInWindows": 540,
+  "damageReceivedDuringTelegraph": 0,
+  "damageReceivedInSafeZone": 0,
+  "durationsSeconds": { "telegraph": 5.75, "committed": 13.083, "recovery": 4.2, "vulnerable": 4.65, "phaseOne": 14.733, "phaseTwo": 16.867, "perfectBotTotal": 31.6 },
+  "qualification": "perfect-information lower bound; human 70-100 second boss result delegated to reviewer"
+}

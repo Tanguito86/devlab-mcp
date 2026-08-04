@@ -1,0 +1,7 @@
+{
+  "schema": "devlab-ash-relay-before-metrics-v1",
+  "bot": { "runs": 10, "passed": 10, "softlocks": 0, "durationSeconds": { "minimum": 165.85, "maximum": 167.3, "average": 166.602 } },
+  "representativePhaseEntrySeconds": { "encounter1": 6.033, "checkpoint": 52.55, "encounter2": 55.567, "bossPhase1": 118.083, "bossPhase2": 138.083, "victory": 166.267 },
+  "observedBehavior": { "activationDecayPerSecond": 0.7, "activationFloor": false, "hatchTelegraphs": 0, "bossVulnerability": "global clock", "spawnCommit": "immediate" },
+  "rawReportSha256": "adb288dfe44475458fc7a237cc6b20f76839d2e7ce3842ec29a5162bc9a66442"
+}

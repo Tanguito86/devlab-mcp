@@ -1,0 +1,8 @@
+{
+  "status": "BLOCKED / P1_REMAINS",
+  "technicalRegressions": 0,
+  "builderGates": { "gameTests": "28/28", "contract": "8/8", "bot": "10/10", "softlocks": 0, "adversarial": "45/45", "determinism": "10/10 exact", "lifecycle": "10/10", "deviceLoss": "4/4", "webgpu": "NVIDIA/TURING/HARDWARE" },
+  "review": { "operation": "OPS-ASH-RELAY-GAMEPLAY-CRITIC-01C", "status": "COMPLETED", "reviewer": "Hermes v2026.8.3 / deepseek-v4-pro", "p0": 0, "p1": 1, "functionalGates": "8/8", "gameplayScoreV2": 89, "criticLabel": "GAMEPLAY_ACCEPTED_POLISH_PENDING", "resolvedLabel": "BLOCKED / P1_REMAINS" },
+  "blocker": "continuous human title-to-victory and boss timing is missing",
+  "integration": "BLOCKED_NOT_ATTEMPTED"
+}

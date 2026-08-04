@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "seeds": [424242, 424243, 424244],
+  "casesPerSeed": 15,
+  "executions": 45,
+  "passed": 45,
+  "failed": 0,
+  "formerFailure": { "scenario": "89 percent release", "minimumObservedProgress": 0.75, "result": "PASS" },
+  "rawReportSha256": "4bd144c11b1f15005fb97b31278c8b0efcdae59bdc90c097821d82140cec0f1f"
+}

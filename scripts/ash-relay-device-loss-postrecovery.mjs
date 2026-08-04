@@ -66,27 +66,34 @@ function sha256File(filePath) {
 }
 
 function parseArguments(argv) {
-  const allowed = new Set(["--dist", "--output", "--browser"]);
+  const allowed = new Set(["--dist", "--output", "--browser", "--state"]);
   const values = new Map();
   for (let index = 0; index < argv.length; index += 2) {
     const key = argv[index];
     const value = argv[index + 1];
     if (!allowed.has(key) || typeof value !== "string" || value.startsWith("--")) {
       throw new ValidationError(
-        "usage: ash-relay-device-loss-postrecovery.mjs --dist <absolute> --output <absolute-new-directory> --browser <absolute>",
+        "usage: ash-relay-device-loss-postrecovery.mjs --dist <absolute> --output <absolute-new-directory> --browser <absolute> [--state <viewpoint>]",
         "BAD_ARGUMENTS",
       );
     }
     if (values.has(key)) throw new ValidationError("duplicate argument: " + key, "BAD_ARGUMENTS");
     values.set(key, value);
   }
-  if (argv.length !== 6 || [...allowed].some((key) => !values.has(key))) {
+  const required = ["--dist", "--output", "--browser"];
+  if ((argv.length !== 6 && argv.length !== 8) || required.some((key) => !values.has(key))) {
     throw new ValidationError(
-      "usage: ash-relay-device-loss-postrecovery.mjs --dist <absolute> --output <absolute-new-directory> --browser <absolute>",
+      "usage: ash-relay-device-loss-postrecovery.mjs --dist <absolute> --output <absolute-new-directory> --browser <absolute> [--state <viewpoint>]",
       "BAD_ARGUMENTS",
     );
   }
-  return Object.fromEntries([...values].map(([key, value]) => [key.slice(2), value]));
+  const parsed = Object.fromEntries([...values].map(([key, value]) => [key.slice(2), value]));
+  parsed.state ??= "tutorial";
+  const allowedStates = new Set(["tutorial", "encounter-1", "checkpoint", "boss-phase-1", "boss-phase-2"]);
+  if (!allowedStates.has(parsed.state)) {
+    throw new ValidationError("--state must be tutorial, encounter-1, checkpoint, boss-phase-1, or boss-phase-2", "BAD_ARGUMENTS");
+  }
+  return parsed;
 }
 
 function assertNoLinkedAncestors(candidate, label) {
@@ -308,6 +315,15 @@ async function run(config) {
       (value) => value.snapshot.phase === "tutorial" && value.metrics.audioState === "running",
       "initial gameplay/audio start",
     );
+    await page.evaluate(async (state) => {
+      await window.__DEVLAB_CAPTURE__.setViewpoint(state);
+      await window.__DEVLAB_CAPTURE__.setFrozen(false);
+    }, config.state);
+    const requestedState = await poll(
+      () => readRuntime(page),
+      (value) => value.snapshot.phase === config.state && value.metrics.audioState === "running",
+      "requested live device-loss state",
+    );
     const beforeLossControls = await exerciseTrustedInputAndAudio(page, "before loss");
 
     await page.evaluate(() => window.__DEVLAB_CAPTURE_TEST__.stopLoop());
@@ -371,6 +387,7 @@ async function run(config) {
     const afterLive = await readRuntime(page);
 
     const gates = {
+      requestedStateReached: requestedState.snapshot.phase === config.state,
       nativeHardwareWebGPU: nativeWebGPU.ok === true
         && nativeWebGPU.adapter?.isFallbackAdapter !== true,
       lossDetected: afterLossStopped.metrics.lostObserved === true,
@@ -402,6 +419,7 @@ async function run(config) {
       schema: "devlab-ash-relay-device-loss-postrecovery-v1",
       status: allPassed ? "PASS" : "FAIL",
       sessionId: SESSION_ID,
+      requestedState: config.state,
       browser: launched.metadata,
       nativeWebGPU,
       input: {
@@ -449,6 +467,7 @@ async function main() {
     dist,
     browser,
     browserSha256: sha256File(browser),
+    state: args.state,
   };
   const report = await run(config);
   report.invocation = {
@@ -458,6 +477,7 @@ async function main() {
     browser,
     browserSha256: config.browserSha256,
     viewport: VIEWPORT,
+    state: config.state,
   };
   writeFileSync(join(outputRoot, "report.json"), json(report), { encoding: "utf8", flag: "wx" });
   process.stdout.write(json({
