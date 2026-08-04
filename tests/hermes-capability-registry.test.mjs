@@ -14,7 +14,7 @@ test("capability registry has the exact governed capability set", () => {
     assert.ok(registry.allowedStatuses.includes(capability.status));
     for (const field of ["source", "sourcePin", "license", "evidencePath", "authority", "integrationMode", "runtimeStatus", "securityStatus", "nextPermittedAction"]) assert.equal(typeof capability[field], "string");
     assert.match(capability.evidenceSha256, /^[0-9a-f]{64}$/);
-    const evidence = readFileSync(new URL("../" + capability.evidencePath, import.meta.url));
+    const evidence = readFileSync(new URL("../" + capability.evidencePath, import.meta.url), "utf8").replace(/\r\n/g, "\n");
     assert.equal(createHash("sha256").update(evidence).digest("hex"), capability.evidenceSha256);
     assert.ok(Array.isArray(capability.prohibitedActions));
   }
