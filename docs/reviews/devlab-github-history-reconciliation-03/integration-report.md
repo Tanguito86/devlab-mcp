@@ -2,4 +2,4 @@
 
 The unrelated histories are connected without rewriting either lineage. The remote snapshot is preserved as history, its one useful metadata change is ported explicitly, and the bridge retains the verified local tree byte-for-byte.
 
-Local fast-forward into `master` and post-integration gates remain pending. GitHub publication is outside this sprint.
+The dry-run confirms that the next real publication can be a normal fast-forward. Local fast-forward into `master` is authorized as the final sprint operation, followed by post-integration gates. GitHub publication remains outside this sprint.

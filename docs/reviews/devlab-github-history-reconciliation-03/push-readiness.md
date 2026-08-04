@@ -1,5 +1,13 @@
 # Push readiness
 
-Before the documentation commit, `origin/master...HEAD` was `0 30` and `origin/master` was an ancestor of HEAD.
+After the governed documentation commit, `origin/master...HEAD` was `0 31` and `origin/master` was an ancestor of HEAD.
 
-Final dry-run status is pending until this governed documentation is committed. The only permitted simulation is `git push --dry-run origin HEAD:master`; no real push, force option, tag, or other ref is authorized.
+`git push --dry-run origin HEAD:master` passed as a normal fast-forward simulation from `c458c3b` to `f9b4f02`. The remote ref remained unchanged after the simulation.
+
+```text
+DRY_RUN_PUSH: FAST_FORWARD / PASS
+FORCE: NO
+TAGS: 0
+OTHER_BRANCHES: 0
+PUSH_REAL: NO
+```
