@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "status": "USER_ACCEPTED_FORMAL_NEW_USER_SMOKE_WAIVED",
+  "noExternalCoaching": true,
+  "invalidatedAttempt": {
+    "status": "BLOCKED_INPUT_AXIS_INVERTED",
+    "severity": "P1",
+    "source": "direct human observation",
+    "reusableAsAcceptanceEvidence": false,
+    "reason": "The tester reported movement and aiming directions felt inverted; the run stopped before discoverability or timing acceptance."
+  },
+  "measurements": {
+    "identifyPlayerSeconds": null,
+    "firstMovementSeconds": null,
+    "firstShotSeconds": null,
+    "understandObjectiveSeconds": null,
+    "firstActivationSeconds": null,
+    "inputErrors": null,
+    "questionsAsked": null,
+    "externalExplanationsRequired": null
+  },
+  "gates": {
+    "identifyPlayerAtMostSeconds": 5,
+    "moveAndFireAtMostSeconds": 20,
+    "understandObjectiveAtMostSeconds": 45,
+    "node01WithoutExternalHelp": null,
+    "fireUsedAsInteraction": null
+  },
+  "waiver": {
+    "authority": "PRODUCT_OWNER",
+    "formalNewUserSmokePerformed": false,
+    "formalDiscoverabilityPassClaimed": false,
+    "decision": "ACCEPT_PRODUCT_WITHOUT_FORMAL_NEW_USER_EVIDENCE"
+  },
+  "video": null
+}

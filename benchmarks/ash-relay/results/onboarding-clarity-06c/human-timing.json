@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "status": "NOT_RECORDED_WAIVED_BY_PRODUCT_OWNER",
+  "desktop": null,
+  "mobile": null,
+  "requiredMarks": [
+    "MISSION_START",
+    "NODE_01_COMPLETE",
+    "CHECKPOINT",
+    "NODE_02_COMPLETE",
+    "BOSS_START",
+    "BOSS_PHASE_2",
+    "BOSS_DEFEATED",
+    "VICTORY"
+  ],
+  "gates": {
+    "missionSeconds": { "minimum": 180, "maximum": 300 },
+    "bossSeconds": { "minimum": 70, "maximum": 100 },
+    "continuous": true,
+    "softlocks": 0,
+    "victoryRequired": true
+  },
+  "waiver": {
+    "authority": "PRODUCT_OWNER",
+    "continuousHumanRunRecorded": false,
+    "missionTimingPassClaimed": false,
+    "bossTimingPassClaimed": false,
+    "decision": "ACCEPT_PRODUCT_WITHOUT_FORMAL_HUMAN_TIMING_EVIDENCE"
+  }
+}

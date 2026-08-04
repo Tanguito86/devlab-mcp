@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "status": "FORMAL_INPUT_LOG_WAIVED_BY_PRODUCT_OWNER",
+  "events": [
+    {
+      "sequence": 1,
+      "source": "human report",
+      "observation": "Movement and aiming directions felt inverted.",
+      "result": "SMOKE_STOPPED",
+      "classification": "P1_INPUT_AXIS_INVERTED",
+      "timingEvidenceAccepted": false
+    }
+  ],
+  "notes": "The failed attempt is retained only as defect evidence. No replacement continuous input log was recorded; the product owner explicitly waived that formal evidence for 06C closure."
+}

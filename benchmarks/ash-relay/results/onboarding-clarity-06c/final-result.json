@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "sprint": "DEVLAB-ASH-RELAY-ONBOARDING-CLARITY-06C",
+  "status": "COMPLETED_PRODUCT_OWNER_ACCEPTED_WITH_HUMAN_EVIDENCE_WAIVER",
+  "technicalGates": {
+    "gameTypecheck": true,
+    "gameBuild": true,
+    "gameTests": { "passed": 46, "total": 46 },
+    "gameplayContract": { "passed": 8, "total": 8 },
+    "bot": { "passed": 10, "total": 10, "softlocks": 0 },
+    "adversarial": { "passed": 45, "total": 45 },
+    "devlabTypecheck": true,
+    "devlabBuild": true,
+    "devlabTests": { "passed": 173, "total": 173 },
+    "runtimeGauntlet": true,
+    "inputDirection": {
+      "status": "PASS",
+      "desktop": true,
+      "touch": true,
+      "cursorRayPlane": true,
+      "projectileAlignment": true,
+      "restartAndCheckpoint": true
+    },
+    "captureMatrices": {
+      "passed": true,
+      "viewpoints": 8,
+      "viewports": 3,
+      "repetitions": 2,
+      "pngExact": true,
+      "rgbaExact": true
+    },
+    "lifecycle": { "passed": 10, "total": 10 },
+    "deviceLoss": { "passed": 9, "total": 9 },
+    "nativeWebGPU": "NVIDIA_TURING_HARDWARE"
+  },
+  "discoverability": "USER_ACCEPTED; FORMAL_NEW_USER_SMOKE_WAIVED_BY_PRODUCT_OWNER",
+  "humanTiming": "NOT_RECORDED; WAIVED_BY_PRODUCT_OWNER; NOT_FORMALLY_EVIDENCED",
+  "hermes01d": "NOT_INVOKED; WAIVED_BY_PRODUCT_OWNER_FOR_06C_CLOSURE",
+  "p0": 0,
+  "p0Basis": "OBSERVED",
+  "p1": 0,
+  "p1Basis": "ACCEPTED_BY_PRODUCT_OWNER",
+  "waivers": {
+    "formalNewUserDiscoverability": true,
+    "humanMissionTiming180To300Seconds": true,
+    "humanBossTiming70To100Seconds": true,
+    "claimsFormalHumanVerification": false
+  },
+  "integrationAuthorized": true,
+  "commitCreated": true
+}

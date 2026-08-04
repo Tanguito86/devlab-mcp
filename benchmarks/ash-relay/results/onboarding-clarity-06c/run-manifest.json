@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "sprint": "DEVLAB-ASH-RELAY-ONBOARDING-CLARITY-06C",
+  "branch": "devlab-ash-relay-onboarding-clarity-06c",
+  "baseCommit": "411c3c13405f25a20c9ec1593cace420329754db",
+  "masterBaseline": "3a7ab2d769bc5692d8a047d417d866b2bc75e7c3",
+  "gameWorking": "H:\\UserData\\Deposito\\Documents\\devlab-runs\\ash-relay-onboarding-clarity-06c\\game",
+  "heavyEvidence": "C:\\Users\\Deposito\\AppData\\Local\\DevLab\\pilot-runs\\DEVLAB-ASH-RELAY-ONBOARDING-CLARITY-06C-20260804T152010",
+  "browser": {
+    "path": "H:\\DevData\\ms-playwright\\chromium-1223\\chrome-win64\\chrome.exe",
+    "sha256": "290fa7018fda22c52ada5eddb0113baf3ebc41fd0fde6085eddb19793606c635",
+    "version": "148.0.7778.96"
+  },
+  "productTree": {
+    "files": 41,
+    "bytes": 355981,
+    "sha256": "91753c41697b89c77d08d5a08b7a4458806ad49ddbc1a141371fb80c5416b3ef"
+  },
+  "distTree": {
+    "files": 4,
+    "bytes": 997019,
+    "sha256": "0e7a533837dffc12930da3b340471a70d85d189c6762bd9a3d05452d9244344d"
+  },
+  "humanEvidenceStatus": "NOT_FORMALLY_EVIDENCED; WAIVED_BY_PRODUCT_OWNER",
+  "hermesStatus": "NOT_INVOKED; WAIVED_BY_PRODUCT_OWNER_FOR_06C_CLOSURE"
+}

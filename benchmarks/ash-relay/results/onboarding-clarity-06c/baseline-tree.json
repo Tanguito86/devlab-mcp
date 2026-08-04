@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "source": "H:\\UserData\\Deposito\\Documents\\devlab-runs\\ash-relay-gameplay-correction-06b\\game",
+  "sourceCommit": "411c3c13405f25a20c9ec1593cace420329754db",
+  "productTree": {
+    "files": 35,
+    "bytes": 306486,
+    "sha256": "c63240f3e8f2d99cf3a97d365558f84eefab82884eb56a66be2239817e3e58ca"
+  },
+  "distTree": {
+    "files": 4,
+    "bytes": 976542,
+    "sha256": "9c714cdf8eaca28da77159a62b9d4eab9fcbef31778779356eb008e30fdaf57d"
+  },
+  "initialFullCopy": {
+    "files": 4099,
+    "bytes": 252140245,
+    "sha256": "8eaa5881e791040867b543a1a61b7137b14399175d9da45f92f1894c3f6e916d",
+    "missing": 0,
+    "extra": 0,
+    "mismatch": 0
+  }
+}

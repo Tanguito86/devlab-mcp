@@ -89,9 +89,13 @@ function parseArguments(argv) {
   }
   const parsed = Object.fromEntries([...values].map(([key, value]) => [key.slice(2), value]));
   parsed.state ??= "tutorial";
-  const allowedStates = new Set(["tutorial", "encounter-1", "checkpoint", "boss-phase-1", "boss-phase-2"]);
+  const allowedStates = new Set([
+    "tutorial", "encounter-1", "checkpoint", "boss-phase-1", "boss-phase-2",
+    "tutorial-identify-player", "tutorial-move", "tutorial-fire", "tutorial-objective",
+    "tutorial-interact", "objective-combat-counter", "mobile-interact",
+  ]);
   if (!allowedStates.has(parsed.state)) {
-    throw new ValidationError("--state must be tutorial, encounter-1, checkpoint, boss-phase-1, or boss-phase-2", "BAD_ARGUMENTS");
+    throw new ValidationError("--state is not an allowed ASH RELAY recovery checkpoint", "BAD_ARGUMENTS");
   }
   return parsed;
 }
@@ -210,6 +214,27 @@ function playerDistance(before, after) {
   );
 }
 
+function landscapeScreenProjection(direction) {
+  const offsetX = 14.5;
+  const offsetZ = -14.7;
+  const length = Math.hypot(offsetX, offsetZ);
+  const forward = { x: -offsetX / length, z: -offsetZ / length };
+  const right = { x: -forward.z, z: forward.x };
+  return {
+    right: Number(direction.x) * right.x + Number(direction.z) * right.z,
+    up: Number(direction.x) * forward.x + Number(direction.z) * forward.z,
+  };
+}
+
+function projectileAlignment(projectile, facing) {
+  if (!projectile) return null;
+  const velocityLength = Math.hypot(projectile.velocity.x, projectile.velocity.z);
+  const facingLength = Math.hypot(facing.x, facing.z);
+  if (velocityLength < 0.0001 || facingLength < 0.0001) return null;
+  return (projectile.velocity.x * facing.x + projectile.velocity.z * facing.z)
+    / (velocityLength * facingLength);
+}
+
 async function exerciseTrustedInputAndAudio(page, label) {
   const before = await readRuntime(page);
   await page.keyboard.down("w");
@@ -224,10 +249,17 @@ async function exerciseTrustedInputAndAudio(page, label) {
     await page.keyboard.up("w");
   }
 
+  const movementScreen = landscapeScreenProjection({
+    x: moved.snapshot.player.position.x - before.snapshot.player.position.x,
+    z: moved.snapshot.player.position.z - before.snapshot.player.position.z,
+  });
+
   const canvas = await page.locator("#scene").boundingBox();
   if (!canvas) throw new ValidationError(label + " canvas has no layout box", "CONTROL_SURFACE_MISSING");
   await page.mouse.move(canvas.x + canvas.width * 0.76, canvas.y + canvas.height * 0.31);
-  const shotsBefore = Number(moved.diagnostics.shotsFired);
+  const beforeShot = await readRuntime(page);
+  const existingProjectileIds = new Set(beforeShot.snapshot.projectiles.map((projectile) => projectile.id));
+  const shotsBefore = Number(beforeShot.diagnostics.shotsFired);
   let fired;
   await page.mouse.down({ button: "left" });
   try {
@@ -241,9 +273,17 @@ async function exerciseTrustedInputAndAudio(page, label) {
     await page.mouse.up({ button: "left" });
   }
 
+  const firedProjectile = fired.snapshot.projectiles.find((projectile) =>
+    projectile.owner === "player" && !existingProjectileIds.has(projectile.id));
+  const aimScreen = landscapeScreenProjection(fired.snapshot.player.facing);
+  const shotAlignment = projectileAlignment(firedProjectile, fired.snapshot.player.facing);
+
   return {
     movementDistance: playerDistance(before.snapshot.player.position, moved.snapshot.player.position),
+    movementScreen,
     shotsDelta: Number(fired.diagnostics.shotsFired) - shotsBefore,
+    aimScreen,
+    shotAlignment,
     audioVoiceObserved: Number(fired.metrics.audioVoiceCount) > 0,
     audioState: fired.metrics.audioState,
     inputListenerCount: fired.metrics.inputListenerCount,
@@ -321,7 +361,8 @@ async function run(config) {
     }, config.state);
     const requestedState = await poll(
       () => readRuntime(page),
-      (value) => value.snapshot.phase === config.state && value.metrics.audioState === "running",
+      (value) => requestedCaptureStateReached(value.snapshot, config.state)
+        && value.metrics.audioState === "running",
       "requested live device-loss state",
     );
     const beforeLossControls = await exerciseTrustedInputAndAudio(page, "before loss");
@@ -387,7 +428,7 @@ async function run(config) {
     const afterLive = await readRuntime(page);
 
     const gates = {
-      requestedStateReached: requestedState.snapshot.phase === config.state,
+      requestedStateReached: requestedCaptureStateReached(requestedState.snapshot, config.state),
       nativeHardwareWebGPU: nativeWebGPU.ok === true
         && nativeWebGPU.adapter?.isFallbackAdapter !== true,
       lossDetected: afterLossStopped.metrics.lostObserved === true,
@@ -402,8 +443,18 @@ async function run(config) {
       singleLiveLoop: afterLive.metrics.activeLoopCount === 1,
       inputRestored: beforeLossControls.movementDistance > 0.15
         && beforeLossControls.shotsDelta > 0
+        && beforeLossControls.movementScreen.up > 0.12
+        && Math.abs(beforeLossControls.movementScreen.right) < beforeLossControls.movementScreen.up * 0.25
+        && beforeLossControls.aimScreen.right > 0.05
+        && beforeLossControls.aimScreen.up > 0.05
+        && beforeLossControls.shotAlignment > 0.999
         && afterLossControls.movementDistance > 0.15
         && afterLossControls.shotsDelta > 0
+        && afterLossControls.movementScreen.up > 0.12
+        && Math.abs(afterLossControls.movementScreen.right) < afterLossControls.movementScreen.up * 0.25
+        && afterLossControls.aimScreen.right > 0.05
+        && afterLossControls.aimScreen.up > 0.05
+        && afterLossControls.shotAlignment > 0.999
         && afterLossControls.inputListenerCount === beforeLossControls.inputListenerCount,
       audioRestored: beforeLossControls.audioState === "running"
         && beforeLossControls.audioVoiceObserved
@@ -454,6 +505,32 @@ async function run(config) {
     if (context) await context.close().catch(() => {});
     if (browser) await browser.close().catch(() => {});
     await server.close();
+  }
+}
+
+function requestedCaptureStateReached(snapshot, state) {
+  switch (state) {
+    case "tutorial-identify-player":
+      return snapshot.phase === "tutorial"
+        && snapshot.presentation.tutorialStep === "IDENTIFY_PLAYER";
+    case "tutorial-move":
+      return snapshot.phase === "tutorial"
+        && snapshot.presentation.tutorialStep === "LEARN_MOVE";
+    case "tutorial-fire":
+      return snapshot.phase === "tutorial"
+        && snapshot.presentation.tutorialStep === "LEARN_AIM_AND_FIRE";
+    case "tutorial-objective":
+      return snapshot.phase === "tutorial"
+        && snapshot.presentation.tutorialStep === "LOCATE_OBJECTIVE";
+    case "tutorial-interact":
+    case "mobile-interact":
+      return snapshot.phase === "encounter-1"
+        && snapshot.presentation.tutorialStep === "LEARN_INTERACT";
+    case "objective-combat-counter":
+      return snapshot.phase === "encounter-1"
+        && snapshot.objective.id === "counterattack-01";
+    default:
+      return snapshot.phase === state;
   }
 }
 

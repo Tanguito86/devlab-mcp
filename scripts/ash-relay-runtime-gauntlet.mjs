@@ -507,6 +507,34 @@ function playerDistance(before, after) {
   return Math.hypot(dx, dz);
 }
 
+function screenProjection(direction, portrait) {
+  const offsetX = portrait ? 10.5 : 14.5;
+  const offsetZ = portrait ? -18.5 : -14.7;
+  const length = Math.hypot(offsetX, offsetZ);
+  const forward = { x: -offsetX / length, z: -offsetZ / length };
+  const right = { x: -forward.z, z: forward.x };
+  return {
+    right: Number(direction.x) * right.x + Number(direction.z) * right.z,
+    up: Number(direction.x) * forward.x + Number(direction.z) * forward.z,
+  };
+}
+
+function directionBetween(before, after) {
+  return {
+    x: Number(after.x) - Number(before.x),
+    z: Number(after.z) - Number(before.z),
+  };
+}
+
+function projectileAlignment(projectile, facing) {
+  if (!projectile) return null;
+  const velocityLength = Math.hypot(projectile.velocity.x, projectile.velocity.z);
+  const facingLength = Math.hypot(facing.x, facing.z);
+  if (velocityLength < 0.0001 || facingLength < 0.0001) return null;
+  return (projectile.velocity.x * facing.x + projectile.velocity.z * facing.z)
+    / (velocityLength * facingLength);
+}
+
 async function runDesktopControls(browser, server, distRoot) {
   const opened = await openPage(browser, server, distRoot, { viewport: DESKTOP_VIEWPORT });
   const { context, page, diagnostics, ready } = opened;
@@ -534,7 +562,15 @@ async function runDesktopControls(browser, server, distRoot) {
     );
     await page.keyboard.up("w");
 
-    const shotsBefore = Number((await page.evaluate(() => window.__ASH_RELAY_TEST__.diagnostics())).shotsFired);
+    const afterMovement = await runtimeSnapshot(page);
+    const movementScreen = screenProjection(directionBetween(
+      before.snapshot.player.position,
+      afterMovement.snapshot.player.position,
+    ), false);
+
+    const beforeShot = await runtimeSnapshot(page);
+    const existingProjectileIds = new Set(beforeShot.snapshot.projectiles.map((projectile) => projectile.id));
+    const shotsBefore = Number(beforeShot.diagnostics.shotsFired);
     const attackStartedAt = performance.now();
     await page.mouse.down({ button: "left" });
     await page.waitForFunction(
@@ -544,6 +580,11 @@ async function runDesktopControls(browser, server, distRoot) {
     );
     const mouseAttackLatencyApproxMs = round(performance.now() - attackStartedAt);
     await page.mouse.up({ button: "left" });
+    const afterShot = await runtimeSnapshot(page);
+    const firedProjectile = afterShot.snapshot.projectiles.find((projectile) =>
+      projectile.owner === "player" && !existingProjectileIds.has(projectile.id));
+    const aimScreen = screenProjection(afterShot.snapshot.player.facing, false);
+    const shotAlignment = projectileAlignment(firedProjectile, afterShot.snapshot.player.facing);
 
     await page.keyboard.press("Escape");
     await waitForPausedState(page, true);
@@ -555,7 +596,12 @@ async function runDesktopControls(browser, server, distRoot) {
     const movementDistance = playerDistance(before.snapshot.player, after.snapshot.player);
     const shotsDelta = Number(after.diagnostics.shotsFired) - Number(before.diagnostics.shotsFired);
     const pass = movementDistance > 0.15
+      && movementScreen.up > 0.12
+      && Math.abs(movementScreen.right) < movementScreen.up * 0.25
       && shotsDelta > 0
+      && aimScreen.right > 0.05
+      && aimScreen.up > 0.05
+      && shotAlignment !== null && shotAlignment > 0.999
       && paused.metrics.paused === true
       && after.metrics.paused === false
       && after.metrics.canvasCount === 1
@@ -566,7 +612,10 @@ async function runDesktopControls(browser, server, distRoot) {
       viewport: DESKTOP_VIEWPORT,
       trustedInputs: ["keyboard:Enter", "keyboard:W", "mouse:pointermove", "mouse:left", "keyboard:Escape"],
       movementDistance: round(movementDistance),
+      movementScreen: { right: round(movementScreen.right), up: round(movementScreen.up) },
       shotsDelta,
+      aimScreen: { right: round(aimScreen.right), up: round(aimScreen.up) },
+      shotAlignment: round(shotAlignment),
       mouseAttackLatencyApproxMs,
       pauseObserved: paused.metrics.paused,
       resumeObserved: !after.metrics.paused,
@@ -660,13 +709,25 @@ async function runTouchControls(browser, server, distRoot) {
     }
     const touchMoveLatencyApproxMs = round(performance.now() - moveStartedAt);
 
-    const shotsBefore = Number((await page.evaluate(() => window.__ASH_RELAY_TEST__.diagnostics())).shotsFired);
+    const afterMovement = await runtimeSnapshot(page);
+    const movementScreen = screenProjection(directionBetween(
+      before.snapshot.player.position,
+      afterMovement.snapshot.player.position,
+    ), true);
+
+    const beforeShot = await runtimeSnapshot(page);
+    const existingProjectileIds = new Set(beforeShot.snapshot.projectiles.map((projectile) => projectile.id));
+    const shotsBefore = Number(beforeShot.diagnostics.shotsFired);
     const attackCenter = {
       x: attackButton.x + attackButton.width / 2,
       y: attackButton.y + attackButton.height / 2,
     };
+    const attackTarget = {
+      x: attackCenter.x + attackButton.width * 0.24,
+      y: attackCenter.y - attackButton.height * 0.24,
+    };
     const attackStartedAt = performance.now();
-    await dispatchTouch(cdp, "touchStart", [touchPoint(12, attackCenter.x, attackCenter.y)]);
+    await dispatchTouch(cdp, "touchStart", [touchPoint(12, attackTarget.x, attackTarget.y)]);
     try {
       await page.waitForFunction(
         (baseline) => Number(window.__ASH_RELAY_TEST__?.diagnostics()?.shotsFired || 0) > baseline,
@@ -677,6 +738,11 @@ async function runTouchControls(browser, server, distRoot) {
       await dispatchTouch(cdp, "touchEnd", []);
     }
     const touchAttackLatencyApproxMs = round(performance.now() - attackStartedAt);
+    const afterShot = await runtimeSnapshot(page);
+    const firedProjectile = afterShot.snapshot.projectiles.find((projectile) =>
+      projectile.owner === "player" && !existingProjectileIds.has(projectile.id));
+    const aimScreen = screenProjection(afterShot.snapshot.player.facing, true);
+    const shotAlignment = projectileAlignment(firedProjectile, afterShot.snapshot.player.facing);
 
     const pause = await page.locator("#pause-button").boundingBox();
     if (!pause) throw new GauntletError("mobile pause button has no layout box", "CONTROL_SURFACE_MISSING");
@@ -691,7 +757,12 @@ async function runTouchControls(browser, server, distRoot) {
     const shotsDelta = Number(after.diagnostics.shotsFired) - Number(before.diagnostics.shotsFired);
     const pass = visibility.controlsDisplay !== "none"
       && movementDistance > 0.15
+      && movementScreen.right > 0.08
+      && movementScreen.up > 0.08
       && shotsDelta > 0
+      && aimScreen.right > 0.05
+      && aimScreen.up > 0.05
+      && shotAlignment !== null && shotAlignment > 0.999
       && paused.metrics.paused === true
       && after.metrics.paused === false
       && after.metrics.canvasCount === 1
@@ -703,7 +774,10 @@ async function runTouchControls(browser, server, distRoot) {
       chromiumTouchEmulation: { hasTouch: true, isMobile: true, protocol: "Input.dispatchTouchEvent" },
       visibility,
       movementDistance: round(movementDistance),
+      movementScreen: { right: round(movementScreen.right), up: round(movementScreen.up) },
       shotsDelta,
+      aimScreen: { right: round(aimScreen.right), up: round(aimScreen.up) },
+      shotAlignment: round(shotAlignment),
       touchMoveLatencyApproxMs,
       touchAttackLatencyApproxMs,
       pauseObserved: paused.metrics.paused,
