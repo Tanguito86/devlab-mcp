@@ -1,0 +1,26 @@
+{
+  "name": "devlab-internal-threejs-game-benchmark-v1",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal deterministic Three.js WebGPU/TSL benchmark scaffold for DevLab.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/fixed-step.test.ts tests/random.test.ts tests/resource-owner.test.ts tests/scaffold-contract.test.ts tests/viewport.test.ts"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "dependencies": {
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.4",
+    "tsx": "4.22.3",
+    "typescript": "6.0.3",
+    "vite": "8.2.0"
+  }
+}

@@ -1,21 +1,13 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "contractVersion": "ab04-v2",
+  "contractSha256": "852676a9255dc01c32828100b8b327bab9337579a43bc4e226be9e8de3f43482",
   "leg": "LEG_B",
   "treatment": "SELECTED_READ_ONLY_GUIDANCE",
   "externalGuidanceLoaded": true,
   "selectedGuidanceManifest": "selected-guidance-manifest.json",
-  "scaffold": "devlab-internal-threejs-game-benchmark-v1",
-  "renderer": "Three.js WebGPURenderer",
-  "backend": "native-webgpu",
-  "modelPolicy": "same-model-and-version-within-pair",
-  "effort": "high",
-  "seed": 1729,
-  "maximumAgentMinutes": 120,
-  "maximumReworkCycles": 3,
-  "network": "loopback-only",
-  "crossLegInformation": false,
-  "externalScripts": false,
-  "externalScaffold": false,
-  "globalInstall": false,
-  "paidApis": false
+  "selectedGuidanceManifestSha256": "443f510cd4021cc43f0a0d0a53a6f40faad34f45767d6137c6d1ef23c93037ee",
+  "sourcePolicySha256": "500cde0e44a40d5a11f920ca08a6b1ca4b22f2e7c6479d961fc794c0540248f7",
+  "sourceHead": "7221c1f4a6d2ae189a4d85d058d24f3228499d46",
+  "guidanceAccessMode": "HASH_AT_OPEN_BROKER"
 }

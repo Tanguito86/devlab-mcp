@@ -1,24 +1,482 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://devlab.local/schemas/threejs-game-skills-ab-result-v1.json",
-  "title": "DEVLAB-THREEJS-GAME-SKILLS-AB-04 result",
+  "$id": "https://devlab.local/schemas/threejs-game-skills-ab-result-v2.json",
+  "title": "DEVLAB-THREEJS-GAME-SKILLS-AB-04 result v2",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "benchmark", "leg", "runId", "contractHash", "environment", "correctness", "gameplay", "visual", "performance", "process", "determinism", "security", "artifacts"],
+  "required": [
+    "schemaVersion", "contractVersion", "contractSha256", "benchmark", "leg",
+    "runId", "pairId", "environment", "correctness", "gameplay", "visual", "performance",
+    "process", "determinism", "security", "scoring", "sourceProvenance",
+    "artifactSummary", "artifacts"
+  ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
+    "contractVersion": { "const": "ab04-v2" },
+    "contractSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "benchmark": { "const": "DEVLAB-THREEJS-GAME-SKILLS-AB-04" },
     "leg": { "enum": ["LEG_A", "LEG_B"] },
     "runId": { "type": "string", "minLength": 1 },
-    "contractHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "environment": { "type": "object", "required": ["devlabCommit", "model", "effort", "browser", "adapter", "backend", "viewports"], "additionalProperties": true },
-    "correctness": { "type": "object", "required": ["build", "typecheck", "consoleErrors", "pageErrors", "networkErrors", "pause", "restart", "checkpointRestore", "victory"], "additionalProperties": true },
-    "gameplay": { "type": "object", "required": ["botCompletionRate", "softlocks", "timeToObjectiveMs", "damageEvents", "restartSuccess", "inputResponseMs", "humanScore"], "additionalProperties": true },
-    "visual": { "type": "object", "required": ["nonblankShare", "entropy", "edgeDensity", "contrast", "humanScore", "humanNotes"], "additionalProperties": true },
-    "performance": { "type": "object", "required": ["frameP95Ms", "frameP99Ms", "drawCalls", "triangles", "textures", "boundedResources", "resize", "mobileViewport"], "additionalProperties": true },
-    "process": { "type": "object", "required": ["timeToFirstPlayableMs", "totalAgentTimeMs", "reworkCycles", "filesChanged", "codeComplexity", "testCount", "unresolvedRisks"], "additionalProperties": true },
-    "determinism": { "type": "object", "required": ["frozenByteEqual", "frozenPixelEqual", "controlledChangeDetected", "liveComparisonMode", "botComparisonMode"], "additionalProperties": true },
-    "security": { "type": "object", "required": ["globalInstalls", "externalScripts", "paidApiCalls", "nonLoopbackRequests", "productChanges"], "additionalProperties": true },
-    "artifacts": { "type": "array", "items": { "type": "object", "required": ["path", "sha256"], "properties": { "path": { "type": "string" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }, "additionalProperties": false } }
-  }
+    "pairId": { "type": "string", "minLength": 1 },
+    "environment": {
+      "type": "object",
+      "required": [
+        "devlabCommit", "model", "modelBuild", "reasoningEffort", "browser",
+        "adapter", "backend", "viewports", "scaffoldTreeSha256", "worldSeed",
+        "fixedTimestepHz", "maximumCatchupSteps", "frozenCaptureTimeMs", "captureHarnessSha256",
+        "captureHarnessFilesSha256", "captureRuntimePackages"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "devlabCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "model": { "type": "string", "minLength": 1 },
+        "modelBuild": { "type": "string", "minLength": 1 },
+        "reasoningEffort": { "const": "ultra" },
+        "browser": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "browserType", "browserVersion", "executableSha256", "launchMode",
+            "cacheRevision", "distributionFileCount", "distributionByteLength",
+            "distributionTreeSha256"
+          ],
+          "properties": {
+            "browserType": { "const": "chromium" },
+            "browserVersion": { "const": "148.0.7778.96" },
+            "executableSha256": { "const": "290fa7018fda22c52ada5eddb0113baf3ebc41fd0fde6085eddb19793606c635" },
+            "launchMode": { "const": "full-chromium-native-webgpu" },
+            "cacheRevision": { "const": "chromium-1223" },
+            "distributionFileCount": { "const": 308 },
+            "distributionByteLength": { "const": 432272872 },
+            "distributionTreeSha256": { "const": "bfd9c556552c637ceee2cf808aa1b5984da29f874965f0fd99b42326b3110fa0" }
+          }
+        },
+        "adapter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["vendor", "architecture", "pciDeviceId", "isFallbackAdapter"],
+          "properties": {
+            "vendor": { "const": "nvidia" },
+            "architecture": { "const": "turing" },
+            "pciDeviceId": { "const": "10DE:1E89" },
+            "isFallbackAdapter": { "const": false }
+          }
+        },
+        "backend": { "const": "native-webgpu" },
+        "worldSeed": { "const": 424242 },
+        "fixedTimestepHz": { "const": 60 },
+        "maximumCatchupSteps": { "const": 8 },
+        "frozenCaptureTimeMs": { "const": 2500 },
+        "captureHarnessSha256": { "const": "e723d29feb8f7473784e7acc883c716f9396adfb362b62521f46005889087541" },
+        "captureHarnessFilesSha256": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["capture.js", "browser-runtime.js", "server.js", "contract.js"],
+          "properties": {
+            "capture.js": { "const": "e723d29feb8f7473784e7acc883c716f9396adfb362b62521f46005889087541" },
+            "browser-runtime.js": { "const": "369120710de97c8195f56b17eb24c249c564daad863b52dd5c9ae4a1c0032941" },
+            "server.js": { "const": "cf035842ef08f26f19c9487745d2d70f1fd6f3c86c19160610b2e82b8142f202" },
+            "contract.js": { "const": "59bcce177356b54883af8378fe57040585a0f640c6abdc715e4d4631c5638304" }
+          }
+        },
+        "captureRuntimePackages": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["playwright", "playwright-core"],
+          "properties": {
+            "playwright": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["version", "packageJsonSha256", "fileCount", "treeSha256"],
+              "properties": {
+                "version": { "const": "1.60.0" },
+                "packageJsonSha256": { "const": "8be9edc5642a8c761b677e7af8b9937f36c0443a91e14765877716d70034e5bf" },
+                "fileCount": { "const": 65 },
+                "treeSha256": { "const": "5c9d3beb07a087bfede0e3aaa63dcf837b4288b42bb74fe2e23b571efa0776ed" }
+              }
+            },
+            "playwright-core": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["version", "packageJsonSha256", "fileCount", "treeSha256"],
+              "properties": {
+                "version": { "const": "1.60.0" },
+                "packageJsonSha256": { "const": "6f7b58cc55449321279f11ca97d4e451c391738b77db32cdbcedf02851e3f097" },
+                "fileCount": { "const": 106 },
+                "treeSha256": { "const": "e6f3793c5970342eeb1d60188f7abb3adcd5f652a44c8ecc8a8c7297b2f99603" }
+              }
+            }
+          }
+        },
+        "viewports": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["desktop", "mobile"],
+          "properties": {
+            "desktop": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["width", "height"],
+              "properties": {
+                "width": { "const": 1280 },
+                "height": { "const": 720 }
+              }
+            },
+            "mobile": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["width", "height"],
+              "properties": {
+                "width": { "const": 390 },
+                "height": { "const": 844 }
+              }
+            }
+          }
+        },
+        "scaffoldTreeSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "correctness": {
+      "type": "object",
+      "required": [
+        "installFrozen", "lockfileDiff", "build", "typecheck", "consoleErrors",
+        "pageErrors", "networkErrors", "pause", "restart", "checkpointRestore",
+        "victory", "deviceLossRecovery", "p0OrP1Regressions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "installFrozen": { "type": "boolean" },
+        "lockfileDiff": { "type": "integer", "minimum": 0 },
+        "build": { "type": "boolean" },
+        "typecheck": { "type": "boolean" },
+        "consoleErrors": { "type": "integer", "minimum": 0 },
+        "pageErrors": { "type": "integer", "minimum": 0 },
+        "networkErrors": { "type": "integer", "minimum": 0 },
+        "pause": { "type": "boolean" },
+        "restart": { "type": "boolean" },
+        "checkpointRestore": { "type": "boolean" },
+        "victory": { "type": "boolean" },
+        "deviceLossRecovery": { "type": "boolean" },
+        "p0OrP1Regressions": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "gameplay": {
+      "type": "object",
+      "required": [
+        "botRuns", "botCompletionRate", "softlocks", "timeToObjectiveMs",
+        "damageEvents", "restartSuccess", "inputResponseMs", "humanScore"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "botRuns": { "const": 10 },
+        "botCompletionRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "softlocks": { "type": "integer", "minimum": 0 },
+        "timeToObjectiveMs": {
+          "type": "array", "minItems": 1,
+          "items": { "type": "number", "minimum": 0 }
+        },
+        "damageEvents": { "type": "integer", "minimum": 0 },
+        "restartSuccess": { "type": "boolean" },
+        "inputResponseMs": { "type": "number", "minimum": 0 },
+        "humanScore": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "visual": {
+      "type": "object",
+      "required": [
+        "nonblankShare", "entropy", "edgeDensity", "contrast", "tslVisible",
+        "humanScore", "humanNotes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "nonblankShare": { "type": "number", "minimum": 0, "maximum": 1 },
+        "entropy": { "type": "number", "minimum": 0 },
+        "edgeDensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "contrast": { "type": "number", "minimum": 0 },
+        "tslVisible": { "type": "boolean" },
+        "humanScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "humanNotes": { "type": "string" }
+      }
+    },
+    "performance": {
+      "type": "object",
+      "required": [
+        "repetitionsPerScenario", "scenarios", "frameP50Ms", "frameP95Ms", "frameP99Ms",
+        "drawCalls", "triangles", "textures", "heapBytes", "boundedResources",
+        "resize", "mobileViewport"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "repetitionsPerScenario": { "const": 3 },
+        "scenarios": {
+          "type": "array", "minItems": 5, "maxItems": 5,
+          "items": { "enum": ["idle", "encounter-normal", "stress", "boss", "mobile"] }
+        },
+        "frameP50Ms": { "type": "number", "minimum": 0 },
+        "frameP95Ms": { "type": "number", "minimum": 0 },
+        "frameP99Ms": { "type": "number", "minimum": 0 },
+        "drawCalls": { "type": "integer", "minimum": 0 },
+        "triangles": { "type": "integer", "minimum": 0 },
+        "textures": { "type": "integer", "minimum": 0 },
+        "heapBytes": { "type": "integer", "minimum": 0 },
+        "boundedResources": { "type": "boolean" },
+        "resize": { "type": "boolean" },
+        "mobileViewport": { "type": "boolean" }
+      }
+    },
+    "process": {
+      "type": "object",
+      "required": [
+        "timeToFirstPlayableMs", "totalActiveAgentTimeMs", "builderRuns",
+        "implementationCycles", "correctionCycles", "totalAgentPasses",
+        "filesChanged", "codeComplexity", "testCount", "unresolvedRisks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "timeToFirstPlayableMs": { "type": "integer", "minimum": 0 },
+        "totalActiveAgentTimeMs": { "type": "integer", "minimum": 0, "maximum": 14400000 },
+        "builderRuns": { "const": 1 },
+        "implementationCycles": { "const": 1 },
+        "correctionCycles": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "totalAgentPasses": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "filesChanged": { "type": "integer", "minimum": 0 },
+        "codeComplexity": { "type": "number", "minimum": 0 },
+        "testCount": { "type": "integer", "minimum": 0 },
+        "unresolvedRisks": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "determinism": {
+      "type": "object",
+      "required": [
+        "capturesPerState", "frozenByteEqual", "frozenPixelEqual",
+        "controlledChangeDetected", "restoreHashMatch", "liveComparisonMode",
+        "botComparisonMode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "capturesPerState": { "const": 2 },
+        "frozenByteEqual": { "type": "boolean" },
+        "frozenPixelEqual": { "type": "boolean" },
+        "controlledChangeDetected": { "type": "boolean" },
+        "restoreHashMatch": { "type": "boolean" },
+        "liveComparisonMode": { "type": "string", "minLength": 1 },
+        "botComparisonMode": { "type": "string", "minLength": 1 }
+      }
+    },
+    "security": {
+      "type": "object",
+      "required": [
+        "passed", "globalInstalls", "externalScripts", "externalScaffold", "paidApiCalls",
+        "nonLoopbackRequests", "productChanges", "legAExternalCheckoutAccess",
+        "legBAllowlistViolations", "filesystemContainment"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "passed": { "type": "boolean" },
+        "globalInstalls": { "type": "boolean" },
+        "externalScripts": { "type": "boolean" },
+        "externalScaffold": { "type": "boolean" },
+        "paidApiCalls": { "type": "boolean" },
+        "nonLoopbackRequests": { "type": "integer", "minimum": 0 },
+        "productChanges": { "type": "integer", "minimum": 0 },
+        "legAExternalCheckoutAccess": { "type": "boolean" },
+        "legBAllowlistViolations": { "type": "integer", "minimum": 0 },
+        "filesystemContainment": {
+          "type": "object",
+          "required": ["enforced", "mechanism", "crossLegReads", "evidenceArtifact"],
+          "additionalProperties": false,
+          "properties": {
+            "enforced": { "type": "boolean" },
+            "mechanism": { "type": "string", "minLength": 1 },
+            "crossLegReads": { "type": "integer", "const": 0 },
+            "evidenceArtifact": { "type": "string", "minLength": 1 }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "passed": { "const": true } }, "required": ["passed"] },
+          "then": {
+            "properties": {
+              "globalInstalls": { "const": false },
+              "externalScripts": { "const": false },
+              "externalScaffold": { "const": false },
+              "paidApiCalls": { "const": false },
+              "nonLoopbackRequests": { "const": 0 },
+              "productChanges": { "const": 0 },
+              "legAExternalCheckoutAccess": { "const": false },
+              "legBAllowlistViolations": { "const": 0 },
+              "filesystemContainment": {
+                "properties": {
+                  "enforced": { "const": true },
+                  "crossLegReads": { "const": 0 }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gameplay", "visualQuality", "correctnessAndQa", "performance",
+        "mobileAndUi", "processEfficiency", "weightedTotal"
+      ],
+      "properties": {
+        "gameplay": { "type": "number", "minimum": 0, "maximum": 100 },
+        "visualQuality": { "type": "number", "minimum": 0, "maximum": 100 },
+        "correctnessAndQa": { "type": "number", "minimum": 0, "maximum": 100 },
+        "performance": { "type": "number", "minimum": 0, "maximum": 100 },
+        "mobileAndUi": { "type": "number", "minimum": 0, "maximum": 100 },
+        "processEfficiency": { "type": "number", "minimum": 0, "maximum": 100 },
+        "weightedTotal": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "sourceProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guidanceLoaded", "guidanceAccessMode", "sourceHead",
+        "sourcePolicySha256", "selectedGuidanceManifestSha256", "guidanceBrokerLogSha256",
+        "guidanceReadReceipts"
+      ],
+      "properties": {
+        "guidanceLoaded": { "type": "boolean" },
+        "guidanceAccessMode": { "enum": ["FORBIDDEN", "HASH_AT_OPEN_BROKER"] },
+        "sourceHead": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "sourcePolicySha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "selectedGuidanceManifestSha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "guidanceBrokerLogSha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "guidanceReadReceipts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sequence", "path", "sha256", "brokerReceiptHmacSha256"],
+            "properties": {
+              "sequence": { "type": "integer", "minimum": 1 },
+              "path": { "type": "string", "minLength": 1 },
+              "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "brokerReceiptHmacSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          }
+        }
+      }
+    },
+    "artifactSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozenStateCount", "capturesPerState", "frozenPngArtifacts",
+        "frozenRgbaArtifacts", "botRunArtifacts",
+        "performanceRepetitionsPerScenario", "performanceScenarioCount",
+        "allArtifactHashesVerified"
+      ],
+      "properties": {
+        "frozenStateCount": { "const": 9 },
+        "capturesPerState": { "const": 2 },
+        "frozenPngArtifacts": { "const": 18 },
+        "frozenRgbaArtifacts": { "const": 18 },
+        "botRunArtifacts": { "const": 10 },
+        "performanceRepetitionsPerScenario": { "const": 3 },
+        "performanceScenarioCount": { "const": 5 },
+        "allArtifactHashesVerified": { "type": "boolean" }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256", "role", "mediaType"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "role": {
+            "enum": [
+              "contract", "prompt", "scoring-rubric", "acceptance-gates", "leg-policy",
+              "source-policy", "selected-guidance-manifest",
+              "scaffold-manifest", "build-log", "typecheck-log", "test-log",
+              "frozen-capture-png", "frozen-capture-rgba", "bot-run",
+              "performance-run", "guidance-broker-log", "final-report"
+            ]
+          },
+          "mediaType": { "type": "string", "minLength": 1 },
+          "state": { "type": "string", "minLength": 1 },
+          "scenario": { "type": "string", "minLength": 1 },
+          "repetition": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "leg": { "const": "LEG_A" } }, "required": ["leg"] },
+      "then": {
+        "properties": {
+          "sourceProvenance": {
+            "properties": {
+              "guidanceLoaded": { "const": false },
+              "guidanceAccessMode": { "const": "FORBIDDEN" },
+              "sourceHead": { "const": null },
+              "sourcePolicySha256": { "const": null },
+              "selectedGuidanceManifestSha256": { "const": null },
+              "guidanceBrokerLogSha256": { "const": null },
+              "guidanceReadReceipts": { "maxItems": 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "leg": { "const": "LEG_B" } }, "required": ["leg"] },
+      "then": {
+        "properties": {
+          "sourceProvenance": {
+            "properties": {
+              "guidanceLoaded": { "const": true },
+              "guidanceAccessMode": { "const": "HASH_AT_OPEN_BROKER" },
+              "sourceHead": { "const": "7221c1f4a6d2ae189a4d85d058d24f3228499d46" },
+              "sourcePolicySha256": { "const": "500cde0e44a40d5a11f920ca08a6b1ca4b22f2e7c6479d961fc794c0540248f7" },
+              "selectedGuidanceManifestSha256": { "const": "443f510cd4021cc43f0a0d0a53a6f40faad34f45767d6137c6d1ef23c93037ee" },
+              "guidanceBrokerLogSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "guidanceReadReceipts": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "security": { "properties": { "passed": { "const": true } } }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactSummary": {
+            "properties": { "allArtifactHashesVerified": { "const": true } }
+          }
+        }
+      }
+    }
+  ]
 }

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "requiresNativeWebGPU": true,
+  "viewpoints": ["title"],
+  "defaultSeed": 0,
+  "defaultTimeMs": 0,
+  "variants": {},
+  "seedAffectedViewpoints": ["title"],
+  "timeAffectedViewpoints": ["title"]
+}

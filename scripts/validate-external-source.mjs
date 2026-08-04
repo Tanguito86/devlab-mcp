@@ -269,20 +269,84 @@ function collectForbiddenTokens(repoRoot) {
   return [...tokens].filter(Boolean);
 }
 
+const DEPENDENCY_FIELDS = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies",
+  "bundledDependencies",
+  "bundleDependencies",
+  "overrides",
+  "resolutions",
+  "workspaces",
+  "imports",
+];
+
+const PNPM_DEPENDENCY_FIELDS = [
+  "overrides",
+  "packageExtensions",
+  "patchedDependencies",
+];
+
+function valueContainsForbiddenToken(value, forbidden) {
+  const text = JSON.stringify(value).toLowerCase();
+  return forbidden.some((token) => text.includes(token));
+}
+
+function isContainedLocalNodeScript(manifestPath, command) {
+  if (typeof command !== "string") return false;
+  const match = /^node\s+(scripts\/[A-Za-z0-9][A-Za-z0-9._/-]*\.mjs)(?:\s+[A-Za-z0-9][A-Za-z0-9:_-]*)?$/.exec(command);
+  return Boolean(match)
+    && pathSegmentsAreRegular(dirname(manifestPath), match[1], { finalType: "file" });
+}
+
+function packageManifestHasExternalRuntimeCoupling(path, forbidden) {
+  try {
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    const dependencyValues = DEPENDENCY_FIELDS
+      .filter((field) => Object.hasOwn(manifest, field))
+      .map((field) => manifest[field]);
+    if (manifest.pnpm && typeof manifest.pnpm === "object") {
+      for (const field of PNPM_DEPENDENCY_FIELDS) {
+        if (Object.hasOwn(manifest.pnpm, field)) dependencyValues.push(manifest.pnpm[field]);
+      }
+    }
+    if (dependencyValues.some((value) => valueContainsForbiddenToken(value, forbidden))) {
+      return true;
+    }
+    const scripts = manifest.scripts && typeof manifest.scripts === "object"
+      ? Object.values(manifest.scripts)
+      : [];
+    return scripts.some((command) => valueContainsForbiddenToken(command, forbidden)
+      && !isContainedLocalNodeScript(path, command));
+  } catch {
+    // A malformed runtime manifest cannot prove isolation.
+    return true;
+  }
+}
+
 export function validateRepositoryIsolation(repoRoot) {
   const checks = [];
   const ignore = readFileSync(join(repoRoot, ".gitignore"), "utf8");
-  const runtimeFiles = ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"];
+  const packageManifests = [join(repoRoot, "package.json")];
+  const runtimeMetadata = [
+    join(repoRoot, "pnpm-lock.yaml"),
+    join(repoRoot, "pnpm-workspace.yaml"),
+  ];
   const packageFiles = readdirSync(join(repoRoot, "packages"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => join(repoRoot, "packages", entry.name, "package.json"));
   const forbidden = collectForbiddenTokens(repoRoot);
 
-  const runtimeClean = [...runtimeFiles, ...packageFiles].every((path) => {
+  packageManifests.push(...packageFiles);
+  const manifestsClean = packageManifests.every((path) => !existsSync(path)
+    || !packageManifestHasExternalRuntimeCoupling(path, forbidden));
+  const metadataClean = runtimeMetadata.every((path) => {
     if (!existsSync(path)) return true;
     const text = readFileSync(path, "utf8").toLowerCase();
     return forbidden.every((token) => !text.includes(token));
   });
+  const runtimeClean = manifestsClean && metadataClean;
   const modulesPath = join(repoRoot, ".gitmodules");
   const noSubmodule = !existsSync(modulesPath)
     || forbidden.every((token) => !readFileSync(modulesPath, "utf8").toLowerCase().includes(token));

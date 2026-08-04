@@ -1,23 +1,49 @@
-# Runbook — not authorized for execution in this sprint
+# DEVLAB-THREEJS-GAME-SKILLS-AB-04 runbook
 
-1. Create independent LEG_A and LEG_B workdirs from the same frozen DevLab
-   commit. Record clean status and environment identity.
-2. Resolve and verify the external checkout without fetching: exact detached
-   pin, clean status, regular files, exact hashes. Do this only for LEG_B.
-3. Verify equality of the two run manifests. Reject any difference outside the
-   treatment fields.
-4. Give each leg the frozen prompt in a fresh context. LEG_A receives no
-   external guidance. LEG_B may read only the selected manifest paths after
-   hash verification; benchmark restrictions override upstream instructions.
-5. Deny non-loopback network. Never run upstream scripts or use its scaffold.
-6. Record agent timing, first playable, rework cycles and every command.
-7. Run the same DevLab build, capture, bot, runtime, mobile and resource gates.
-8. Repeat frozen captures for byte/pixel equality. Repeat live runs for
-   statistical distributions, not identical replay.
-9. Blind and randomize evidence for the human evaluator. Reveal leg identities
-   only after scores are frozen.
-10. Validate each result against `result-schema.json`, compare the pair and
-    apply the decision rule in `scoring-rubric.md`.
+```text
+EXECUTION_AUTHORIZED: YES
+CONTRACT_VERSION: ab04-v2
+FILESYSTEM_CONTAINMENT_REQUIRED: YES
+SIBLING_DIRECTORIES_ARE_NOT_A_SANDBOX: YES
+```
 
-Do not alternate A-B-A-B within one shared context. Counterbalancing is across
-fresh independent pairs so LEG_B cannot inherit LEG_A results.
+1. Check out the authorized DevLab commit on a clean worktree. Do not infer or
+   duplicate shared values from a conversation; read `benchmark-contract.json`.
+2. Run `corepack pnpm run benchmark:ab04:verify`. Stop without correction if
+   contract, derived files, scaffold, source allowlist or hashes fail.
+3. Create the benchmark evidence root and freeze the verified contract, prompt,
+   rubric, gates and leg policies with canonical hashes.
+4. Materialize each baseline with `benchmark:ab04:materialize`, passing the
+   authorized run root and exactly one leg identifier. Never use an upstream
+   scaffold, installer, script, generator or copied game.
+5. Run `benchmark:ab04:compare-baselines`; both complete trees, including
+   generated baseline metadata, must be byte-identical before builders start.
+6. Give each leg the generated prompt and its minimal policy in a fresh isolated
+   context. The sibling baseline directories are not an ACL or sandbox boundary:
+   the executor must enforce leg-only filesystem access before starting either
+   builder. LEG_A must never access the external checkout. LEG_B may consume an
+   allowlisted file only through
+   `corepack pnpm run benchmark:ab04:read-guidance -- --path <manifest-path> --pair-id <pair-id> --run-id <run-id>`.
+   The coordinator must provide an executor-only 32-byte hexadecimal
+   `DEVLAB_AB04_BROKER_HMAC_KEY`, keep it outside both builder contexts, and
+   protect `coordinator/guidance-broker/<pairId>/<runId>.jsonl` with OS ACLs.
+   Stop on any broker, checkout, pin, cleanliness, path, HMAC or hash failure.
+7. Deny non-loopback network at the OS/process boundary, including package
+   lifecycle subprocesses. Browser routing and offline package-manager flags
+   are required evidence but do not replace this executor control. Record
+   model/build identity, active time,
+   passes, commands, changed files, first playable, failures and corrections.
+8. Execute the static, native WebGPU, capture, bot, performance, mobile,
+   lifecycle and device-loss gates using the repetitions in the contract.
+9. Anonymize complete evidence, evaluate in a fresh blind context, then reveal
+   the private mapping and apply the contract decision rule.
+10. From the trusted coordinator context, validate each result with
+    `benchmark:ab04:verify-result` while the same executor-only HMAC key is
+    available. LEG_B evidence must contain an exact copy of the trusted ledger;
+    the verifier authenticates every ordered receipt. Compare the eligible pair
+    with `benchmark:ab04:compare-results`; it recomputes scoring and applies the
+    decision rule in `scoring-rubric.md`. Run the complete DevLab suite and
+    integrate only by the separately authorized fast-forward procedure.
+
+Any contract drift, unequal baseline, model/build mismatch, source hash failure,
+cross-leg contamination or incomplete evidence invalidates the benchmark.

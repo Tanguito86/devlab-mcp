@@ -382,13 +382,55 @@ test("clean detached aligned fixture passes all checkout checks (control)", () =
 // Product coupling adversarial cases
 // ---------------------------------------------------------------------------
 
-function fakeRepoRoot({ dependencyInPackage }) {
+function fakeRepoRoot({
+  dependencyInPackage = false,
+  dependencyInOverride = false,
+  dependencyInPackageExtension = false,
+  aliasedDependency = false,
+  sourceNamedScript = false,
+  externalSourceScript = false,
+  npxExternalSource = false,
+  lockfileDependency = false,
+  malformedRootManifest = false,
+} = {}) {
   const root = mkdtempSync(join(tmpdir(), "devlab-isolation-"));
   tmpDirs.push(root);
   writeFileSync(join(root, ".gitignore"), "/.external-cache/\n/.external-sources.local.json\n");
   mkdirSync(join(root, "external-sources"), { recursive: true });
   writeFileSync(join(root, "external-sources", "registry.json"),
     JSON.stringify(registry, null, 2));
+  if (sourceNamedScript) {
+    mkdirSync(join(root, "scripts"), { recursive: true });
+    writeFileSync(join(root, "scripts", "threejs-game-skills-ab04.mjs"), "// internal fixture\n");
+  }
+  if (externalSourceScript) {
+    mkdirSync(join(root, "external-sources", "threejs-game-skills"), { recursive: true });
+    writeFileSync(join(root, "external-sources", "threejs-game-skills", "install.mjs"),
+      "// external fixture\n");
+  }
+  writeFileSync(join(root, "package.json"), malformedRootManifest
+    ? "{ malformed"
+    : JSON.stringify({
+      name: "fixture-root",
+      scripts: sourceNamedScript
+        ? { benchmark: "node scripts/threejs-game-skills-ab04.mjs" }
+        : externalSourceScript
+          ? { installExternal: "node external-sources/threejs-game-skills/install.mjs" }
+          : npxExternalSource
+            ? { installExternal: "npx threejs-game-skills" }
+          : {},
+      dependencies: aliasedDependency
+        ? { benignName: "github:majidmanzarpour/threejs-game-skills" }
+        : {},
+      pnpm: dependencyInOverride
+        ? { overrides: { "threejs-game-skills": "1.0.0" } }
+        : dependencyInPackageExtension
+          ? { packageExtensions: { "threejs-game-skills@*": { dependencies: { x: "1.0.0" } } } }
+          : {},
+    }));
+  if (lockfileDependency) {
+    writeFileSync(join(root, "pnpm-lock.yaml"), "threejs-game-skills: 1.0.0\n");
+  }
   mkdirSync(join(root, "packages", "pkg"), { recursive: true });
   writeFileSync(join(root, "packages", "pkg", "package.json"), JSON.stringify({
     name: "pkg",
@@ -406,4 +448,51 @@ test("product runtime dependency on an external source fails closed", () => {
 test("clean product tree passes isolation (control)", () => {
   const root = fakeRepoRoot({ dependencyInPackage: false });
   assert.deepEqual(failed(validateRepositoryIsolation(root)), []);
+});
+
+test("source-named benchmark script is not a runtime dependency", () => {
+  const root = fakeRepoRoot({ sourceNamedScript: true });
+  assert.deepEqual(failed(validateRepositoryIsolation(root)), []);
+});
+
+test("package-manager override on an external source fails closed", () => {
+  const root = fakeRepoRoot({ dependencyInOverride: true });
+  const failures = failed(validateRepositoryIsolation(root));
+  assert.ok(failures.includes("no_external_runtime_dependency"), failures.join(", "));
+});
+
+test("script that executes an external-source path fails closed", () => {
+  const root = fakeRepoRoot({ externalSourceScript: true });
+  const failures = failed(validateRepositoryIsolation(root));
+  assert.ok(failures.includes("no_external_runtime_dependency"), failures.join(", "));
+});
+
+test("npx invocation of an external source fails closed", () => {
+  const root = fakeRepoRoot({ npxExternalSource: true });
+  const failures = failed(validateRepositoryIsolation(root));
+  assert.ok(failures.includes("no_external_runtime_dependency"), failures.join(", "));
+});
+
+test("aliased GitHub dependency on an external source fails closed", () => {
+  const root = fakeRepoRoot({ aliasedDependency: true });
+  const failures = failed(validateRepositoryIsolation(root));
+  assert.ok(failures.includes("no_external_runtime_dependency"), failures.join(", "));
+});
+
+test("package extension for an external source fails closed", () => {
+  const root = fakeRepoRoot({ dependencyInPackageExtension: true });
+  const failures = failed(validateRepositoryIsolation(root));
+  assert.ok(failures.includes("no_external_runtime_dependency"), failures.join(", "));
+});
+
+test("external source in the target repository lockfile fails closed", () => {
+  const root = fakeRepoRoot({ lockfileDependency: true });
+  const failures = failed(validateRepositoryIsolation(root));
+  assert.ok(failures.includes("no_external_runtime_dependency"), failures.join(", "));
+});
+
+test("malformed package manifest cannot prove runtime isolation", () => {
+  const root = fakeRepoRoot({ malformedRootManifest: true });
+  const failures = failed(validateRepositoryIsolation(root));
+  assert.ok(failures.includes("no_external_runtime_dependency"), failures.join(", "));
 });

@@ -1,0 +1,18 @@
+benchmarks/threejs-game-skills-ab/** text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.css text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.html text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.js text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.json text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.md text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.mjs text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.ts text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.txt text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.yaml text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.yml text eol=lf
+benchmarks/threejs-game-skills-ab/**/*.gif binary
+benchmarks/threejs-game-skills-ab/**/*.ico binary
+benchmarks/threejs-game-skills-ab/**/*.jpg binary
+benchmarks/threejs-game-skills-ab/**/*.jpeg binary
+benchmarks/threejs-game-skills-ab/**/*.png binary
+benchmarks/threejs-game-skills-ab/**/*.wasm binary
+benchmarks/threejs-game-skills-ab/**/*.webp binary
