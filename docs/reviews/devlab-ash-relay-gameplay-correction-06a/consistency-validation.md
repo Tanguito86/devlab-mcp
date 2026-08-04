@@ -29,7 +29,7 @@ The suite proves:
 5. the boss FSM, sweep, fan gaps, and attack-linked vulnerability agree;
 6. stale values are isolated in a non-normative invalidation section;
 7. the historical-score boundary is explicit; and
-8. external critic rubric and brief are byte-identical to their versioned
+8. external critic rubric and brief are content-identical to their versioned
    sources after line-ending normalization.
 
 `package.json` parses and `git diff --check` passes.
@@ -40,12 +40,16 @@ because a fresh-worktree install stopped at the repository's existing
 no policy was changed. The test has no package dependencies and passed directly
 with Node as recorded above.
 
-## SHA-256
+## LF-normalized SHA-256
+
+These hashes normalize CRLF to LF before hashing. This makes the Git working
+tree and external critic copies comparable without bypassing the repository's
+line-ending policy.
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `core-loop-contract.md` v2 | `C33091A5C8D9F27BDE347C2B5E1315AFDC56025F9359AFDB08AAC3469DEA4403` |
-| `encounter-plan.md` v2 | `A5B784C5573F453ABAAC1609D929677E65FF0B9B6937404F3EF9C6EE68D59BBC` |
+| `core-loop-contract.md` v2 | `7F7A843C1443ECF9908E49905D3ECABB867269A10E599B4D80D13A9AFC91CFC8` |
+| `encounter-plan.md` v2 | `523FC1AB826032DCDB20BA91FC086AD0CF5F580B652A3BCF4B8BECE23C9B30CA` |
 | versioned `gameplay-rubric-v2.md` | `7C71B665244F1E9D9974A0A7D2AA8D10C7E11815CCEF814B89F4B04D288BE28B` |
 | external `gameplay-rubric.md` | `7C71B665244F1E9D9974A0A7D2AA8D10C7E11815CCEF814B89F4B04D288BE28B` |
 | versioned `codex-correction-brief-v2.md` | `FECE2BF026636E260109B6B64CFBD80E64BE25F6DAB90096B4248F2A77DA08AF` |
