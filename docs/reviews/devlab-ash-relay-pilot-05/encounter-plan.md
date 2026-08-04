@@ -1,4 +1,9 @@
-# ASH RELAY encounter plan
+# ASH RELAY encounter plan v2
+
+This version reconciles the live gameplay findings with the validated pilot
+values. It is normative for `DEVLAB-ASH-RELAY-GAMEPLAY-CORRECTION-06B` and
+supersedes the earlier ordering, timed Guardian shutters, invisible fixed-point
+spawns, and any claimed global six-hostile limit.
 
 ## Route
 
@@ -13,7 +18,7 @@ there is no branch, key hunt, or unskippable cinematic.
 
 ## Implemented enemy vocabulary
 
-### Harrier - close pursuit
+### Cinder Scrapper (implemented as Harrier) - close pursuit
 
 The Harrier is a small three-pronged maintenance chassis that continuously
 pursues with a seeded lateral weave.
@@ -27,7 +32,7 @@ pursues with a seeded lateral weave.
 Its small silhouette, close pressure, orange jaws, and rapid path distinguish
 it from the Ward.
 
-### Ward - ranged moving lane pressure
+### Arc Sentry (implemented as Ward) - ranged moving lane pressure
 
 The Ward is a heavy aperture unit that tries to hold a five-to-eight-unit
 standoff while orbiting at 2.4 world units/second.
@@ -42,9 +47,36 @@ standoff while orbiting at 2.4 world units/second.
 The implementation does not claim solid-geometry projectile occlusion. The
 Ward instead creates readable moving lanes in the open arena.
 
-All standard enemies use the preallocated 24-slot enemy pool. The deterministic
-wave schedule and pool diagnostics, rather than a fictional six-enemy rule,
-bound the encounter.
+All standard enemies use the preallocated 24-slot enemy pool. Pool capacity is
+independent from simultaneous encounter pressure. Every request first enters a
+bounded encounter-owned queue, then a visible hatch telegraph, and only then
+commits an enemy while that encounter has active budget available.
+
+| Context | Standard-enemy active budget | Pending queue capacity | Bounded schedule |
+| --- | ---: | ---: | --- |
+| Relay A onboarding | 2 | 2 | exactly two Cinder Scrappers |
+| Relay A post-activation response | 2 | 2 | one Scrapper and one Arc Sentry; no reinforcements |
+| Relay B mixed encounter | 5 | 5 | deterministic authored waves; at most five queued requests |
+| Guardian phase 1 | 0 | 0 | no standard-enemy reinforcement |
+| Guardian phase 2 | 2 | 3 | at most three reinforcement requests in the entire phase |
+
+These are local pressure budgets, not a global active-hostile cap. The Guardian
+and projectiles do not consume standard-enemy slots. A queue at capacity must
+defer or reject an additional request deterministically; it must never grow
+without bound.
+
+Every standard-enemy spawn uses this lifecycle:
+
+```text
+HATCH_IDLE -> HATCH_TELEGRAPH -> SPAWN_COMMIT -> ENEMY_ACTIVE
+```
+
+`HATCH_TELEGRAPH` lasts at least 0.65 seconds and uses both animated shape and
+high-contrast color. At commit time the enemy may not overlap the player or the
+player collision radius. An invalid hatch remains queued and is retried at a
+valid authored hatch; it may not silently spawn at a raw coordinate. Telegraphs
+must remain visible against the dark floor and in the contractual portrait
+composition.
 
 ## Measured beat plan
 
@@ -53,27 +85,34 @@ The final ten-run bot observed these approximate transitions:
 | Elapsed | Beat |
 | ---: | --- |
 | 0:00 | title/start and integrated movement/fire tutorial |
-| 0:06 | Node 01 activation, then first Harrier/Ward encounter |
+| 0:06 | historical build: Node 01 activation, then first Harrier/Ward encounter |
 | 0:52.55 | encounter clear and checkpoint commit |
 | 0:55.57 | Node 02 activation, then mixed encounter |
 | 1:58.08-1:58.23 | Relay Guardian phase 1 |
 | 2:18.08-2:18.23 | Relay Guardian phase 2 |
 | 2:45.85-2:47.30 | evacuation completes and victory |
 
-The bot has perfect information. Human reading, exploration, and feel remain
-separate from this automated lower bound.
+These measurements describe the original build and are retained as historical
+evidence only. The bot has perfect information. Human reading, exploration,
+and feel remain separate from this automated lower bound. Version 2 must be
+remeasured after implementation; it targets the 3-5 minute mission contract.
 
 ## Relay encounters
 
-Node 01 must be activated for 1.25 seconds before its ambush spawns. The first
-spawn is two normal Harriers and one normal Ward; deterministic reinforcements
-introduce elite variants and new angles. Clearing all scheduled enemies
-restores health, removes hostile projectiles, and commits the checkpoint.
+Node 01 begins disabled. Two normal Cinder Scrappers emerge through opposite
+telegraphed hatches and teach movement, attack, and kiting. Defeating both
+enables the activation ring. Activation then follows the 75% floor contract in
+`core-loop-contract.md`. Completion triggers a bounded response of exactly one
+normal Cinder Scrapper and one normal Arc Sentry, with no reinforcement wave.
+Clearing both restores health, removes hostile projectiles, and commits the
+checkpoint. Relay A must remain measurably less demanding than Relay B: it has
+fewer active hostiles, fewer total hostiles, and no elite variant.
 
 Node 02 repeats the activation verb before combat. Its opening group is three
-Harriers plus two Wards, including elite variants. Later deterministic waves
-increase simultaneous angle pressure. Clearing the schedule opens the Guardian
-with both conduits active.
+Cinder Scrappers plus two Arc Sentries, including elite variants. Later
+deterministic authored waves may increase angle pressure but must respect its
+five-active budget and five-request pending queue. Clearing the finite schedule
+opens the Guardian with both conduits active.
 
 The `stress` performance recipe advances the boss-phase-2 composition by 180
 fixed ticks. The `mobile-active` recipe uses the mixed arena at 390x844 with
@@ -81,29 +120,47 @@ touch movement and FIRE surfaces visible.
 
 ## Relay Guardian
 
-The Guardian has 540 health and alternates aimed bolts with radial salvos.
-Vulnerability shutters use a 4.8-second cycle with a 3.1-second opening in
-phase 1 and a 4.1-second cycle with a 2.85-second opening in phase 2.
+The Relay Custodian starts with 540 health. This value remains provisional only
+against measured duration: it may change after 06B solely when repeatable
+metrics place the mission outside 3-5 minutes or the boss outside its 70-100
+second budget. HP may not be changed merely to imitate the obsolete 360 value.
+
+Each phase runs the explicit attack FSM below:
+
+```text
+TELEGRAPH -> COMMITTED_ATTACK -> RECOVERY -> VULNERABLE -> TELEGRAPH
+```
+
+Phase transition is an explicit event between completed FSM states. Telegraphs
+must precede damage and identify a reachable safe response. `RECOVERY` begins
+only after the committed pattern has finished producing damage. `VULNERABLE`
+opens the weak point as a consequence of that completed attack and cannot be
+opened by an unrelated global clock. Every transition, committed attack, and
+vulnerability window is recorded by boss metrics.
 
 ### Phase 1
 
-- aimed bolt cadence: 0.92 seconds, damage 4;
-- radial cadence: 3.65 seconds, nine projectiles, damage 3;
+- readable directed attack with a distinct warning;
+- a legible sweep with advance warning and a reachable safe zone;
+- clear recovery followed by an attack-linked vulnerability window;
 - no standard-enemy reinforcement;
-- at 270 health, armor becomes explicitly sealed until 20 phase seconds have
-  elapsed; the HUD reports `ARMOR SEALED — SURVIVE Ns`.
+- no timed armor lock and no global shutter cycle.
 
 ### Phase 2
 
 - visually distinct orange overburn shell/HUD state;
-- aimed bolt cadence: 0.68 seconds, damage 5;
-- radial cadence: 2.55 seconds, twelve projectiles, damage 4;
-- one elite Harrier every 4.6 seconds;
-- at 54 health, armor remains sealed until 25 phase seconds have elapsed, with
-  the same explicit countdown.
+- a projectile fan with stable, recognizable gaps that are reachable from the
+  telegraphed player position;
+- a committed phase-2 pattern, clear recovery, then an attack-linked
+  vulnerability window;
+- at most two simultaneous secondary standard enemies and three total
+  reinforcement requests in the phase, all using telegraphed hatches;
+- no infinite reinforcement timer, timed armor lock, or global shutter cycle.
 
-The two timed armor locks ensure the attack vocabulary is experienced without
-adding health alone or silently discarding player hits.
+The attack vocabulary, rather than passive waits or invulnerability timers,
+owns the fight's rhythm. Validation records phase time, attacks executed,
+windows opened, damage received during telegraphs, damage received while in a
+signaled safe zone, total boss time, and total mission time.
 
 ## Defeat, evacuation, and feedback
 

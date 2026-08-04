@@ -1,0 +1,52 @@
+# Contract v2 consistency validation
+
+## Baseline and scope
+
+- DevLab base: `9ef8b08bd8a643fc74776a5ce56814d47c4efe9d`.
+- Isolated branch: `devlab-ash-relay-contract-reconciliation-06a`.
+- Game repository initialized: no.
+- Game source or runtime files modified: no.
+- External critic reports other than the rubric and correction brief modified:
+  no. They remain historical 01B evidence.
+
+## Automated checks
+
+Command:
+
+```powershell
+$env:ASH_RELAY_CRITIC_ROOT = 'H:\UserData\Deposito\Documents\ash-relay-critic'
+node --test tests\ash-relay-contract-v2.test.mjs
+```
+
+Result: `8/8 PASS`, `0 FAIL`, `0 SKIP`.
+
+The suite proves:
+
+1. canonical `8.5 / 100 / 540 / 24` values are retained;
+2. the 75% activation floor and legitimate reset are defined;
+3. Relay A ordering and lower difficulty are explicit;
+4. encounter-local budgets and bounded queues replace the stale global cap;
+5. the boss FSM, sweep, fan gaps, and attack-linked vulnerability agree;
+6. stale values are isolated in a non-normative invalidation section;
+7. the historical-score boundary is explicit; and
+8. external critic rubric and brief are byte-identical to their versioned
+   sources after line-ending normalization.
+
+`package.json` parses and `git diff --check` passes.
+
+The convenience `pnpm run contract:ash-relay:v2:verify` did not reach the test
+because a fresh-worktree install stopped at the repository's existing
+`ERR_PNPM_IGNORED_BUILDS` policy for `esbuild@0.28.0`. No build was approved and
+no policy was changed. The test has no package dependencies and passed directly
+with Node as recorded above.
+
+## SHA-256
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `core-loop-contract.md` v2 | `C33091A5C8D9F27BDE347C2B5E1315AFDC56025F9359AFDB08AAC3469DEA4403` |
+| `encounter-plan.md` v2 | `A5B784C5573F453ABAAC1609D929677E65FF0B9B6937404F3EF9C6EE68D59BBC` |
+| versioned `gameplay-rubric-v2.md` | `7C71B665244F1E9D9974A0A7D2AA8D10C7E11815CCEF814B89F4B04D288BE28B` |
+| external `gameplay-rubric.md` | `7C71B665244F1E9D9974A0A7D2AA8D10C7E11815CCEF814B89F4B04D288BE28B` |
+| versioned `codex-correction-brief-v2.md` | `FECE2BF026636E260109B6B64CFBD80E64BE25F6DAB90096B4248F2A77DA08AF` |
+| external `codex-correction-brief.md` | `FECE2BF026636E260109B6B64CFBD80E64BE25F6DAB90096B4248F2A77DA08AF` |

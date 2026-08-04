@@ -1,9 +1,14 @@
-# ASH RELAY core-loop contract
+# ASH RELAY core-loop contract v2
 
 ## Contract boundary
 
-This document records the measurable player-visible contract implemented by
-the pilot. Acceptance is established only by the dedicated validation records.
+This document records the reconciled measurable player-visible contract for
+the correction build. Version 2 preserves validated tuning where the live
+critique found no contrary evidence and adopts the demonstrated gameplay
+problems recorded by `DEVLAB-ASH-RELAY-CONTRACT-RECONCILIATION-06A`.
+Acceptance is established only by the dedicated validation records. The
+original 70/100 critique remains historical evidence and is not directly
+comparable with a future score produced from the v2 rubric.
 
 ## Mission state model
 
@@ -11,7 +16,7 @@ the pilot. Acceptance is established only by the dedicated validation records.
 | --- | --- | --- | --- |
 | `TITLE` | clean boot or return from result | start mission | world is rebuilt from seed `424242`; enter `TUTORIAL` |
 | `TUTORIAL` | start dock is ready | move and fire the transported core | route to Relay A opens |
-| `RELAY_A` | player enters first yard | hold the activation zone, then defeat the initial threat | Relay A is active and its deterministic waves are cleared |
+| `RELAY_A` | player enters first yard | defeat two Cinder Scrappers, then hold the enabled activation zone and clear its bounded response | Relay A is active and its deterministic response is cleared |
 | `CHECKPOINT` | Relay A encounter is cleared | no extra action; a three-second checkpoint banner confirms the save | enter `RELAY_B` |
 | `RELAY_B` | player enters second yard | hold the activation zone, then survive the mixed waves | Relay B is active and its deterministic waves are cleared |
 | `GUARDIAN` | both nodes are active | read both Relay Guardian phases and damage its exposed weak point | guardian health reaches zero; evacuation lift powers up |
@@ -32,8 +37,14 @@ state without an extra fixed step.
 2. The core stays visibly tethered to the unit. It cannot be dropped, lost
    behind geometry, or transferred to an inventory screen.
 3. A relay activation requires the player inside the marked ring and
-   `ACTIVATE` held for 1.25 continuous seconds. Releasing activation or leaving
-   the ring drains progress at 0.7 units/second; it cannot complete offscreen.
+   `ACTIVATE` held for 1.25 accumulated seconds. Before progress first reaches
+   75%, releasing activation or leaving the ring drains it at 0.7 units/second
+   down to zero. Reaching 75% arms an irreversible floor for that pending
+   activation: subsequent interruption may drain progress to 75%, never below
+   it. The floor does not auto-complete the relay and cannot advance offscreen.
+   A legitimate full mission restart clears progress and the armed floor. A
+   checkpoint restore recreates only the relay state specified by the recovery
+   contract below, without leaking a pending activation from the failed state.
 4. An activated relay is permanent for the current run, changes from orange to
    cyan, illuminates its outgoing conduit and increments the HUD from `0/2` to
    `1/2` or `2/2`.
@@ -55,6 +66,10 @@ These are the final implemented combat values for the validated build.
 | Relay activation hold | 1.25 seconds |
 | Extraction hold | 1.50 seconds |
 | Enemy pool capacity | 24 |
+
+The 24-slot enemy pool is storage capacity, not a global active-hostile cap.
+Each encounter owns its smaller active budget and bounded pending queue as
+defined in `encounter-plan.md`.
 
 Projectiles, hit sparks, ash puffs and telegraph rings come from bounded pools.
 Pool exhaustion must skip a cosmetic effect or recycle a safely inactive item;
@@ -83,10 +98,11 @@ cleared, when the state transitions to `CHECKPOINT`. A checkpoint retry restores
 - the player at the checkpoint marker facing the bridge.
 
 `Restart mission` is distinct. It resets the authoritative CPU world and every
-pool, restores seed `424242` and 100 health, turns both relays off, and returns
-to the tutorial start without rebinding input, audio, animation-frame, or
-resize handlers. Full page shutdown and device-loss rebuild own the separate
-GPU create/dispose paths.
+pool, restores seed `424242` and 100 health, turns both relays off, clears both
+activation values and their armed-floor flags, and returns to the tutorial
+start without rebinding input, audio, animation-frame, or resize handlers.
+Full page shutdown and device-loss rebuild own the separate GPU create/dispose
+paths.
 
 Defeat freezes combat after the final impact presentation, then opens a UI that
 cannot also fire the pulse underneath it. Victory similarly stops combat and

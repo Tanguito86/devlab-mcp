@@ -16,6 +16,7 @@
     "benchmark:ab04:verify-result": "node scripts/threejs-game-skills-ab04.mjs verify-result",
     "benchmark:ab04:compare-results": "node scripts/threejs-game-skills-ab04.mjs compare-results",
     "benchmark:ab04:smoke-scaffold": "node scripts/threejs-game-skills-ab04-smoke.mjs",
+    "contract:ash-relay:v2:verify": "node --test tests/ash-relay-contract-v2.test.mjs",
     "clean": "pnpm -r clean",
     "doctor": "pnpm -r doctor",
     "pack:dry-run": "pnpm -r pack:dry-run",
