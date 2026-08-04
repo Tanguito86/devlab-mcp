@@ -1,0 +1,109 @@
+{
+ "sprint": "OPS-IMG2THREEJS-INTAKE-01",
+ "pin": "b604139f51d6831780240e8cf1d8b21a42401d0a",
+ "method": "ast parse est\u00e1tico; detalle fino verificado por lectura",
+ "network": {
+  "forge/stage1_intake/fetch_cs2_metadata.py": {
+   "calls": [
+    "urllib.request.urlopen(index_url, timeout=30)",
+    "urllib.request.urlretrieve(metadata['imageUrl'], target)"
+   ],
+   "endpoints": "\u00edndice de metadata CS2 (URL user-supplied, trusted seg\u00fan noqa S310) + descarga de im\u00e1genes por imageUrl",
+   "auth": "ninguna visible",
+   "risk": "MEDIO \u2014 descarga desde URL provista por el usuario/agente; timeout 30s; solo en path CS2"
+  },
+  "scripts/issue_triage.py": {
+   "calls": [
+    "urllib.request.Request + urlopen(request, timeout=30)"
+   ],
+   "endpoints": "GitHub API (issue labeling automation del repo)",
+   "auth": "token v\u00eda env var (verificar nombre exacto en el script)",
+   "risk": "BAJO para el pipeline de assets \u2014 es tooling de mantenimiento del repo, no parte de forge/ de producci\u00f3n"
+  },
+  "forge/tests/test_issue_triage.py": {
+   "calls": [
+    "urlopen (mockeado en test)"
+   ],
+   "risk": "n/a \u2014 test"
+  },
+  "note": "El detector ast inicial sobre-report\u00f3 network (46 scripts) por capturar m\u00e9todos .get/.post/etc. de dicts; la verificaci\u00f3n con grep fino reduce la red real a 2 scripts + 1 test. Los \u00fanicos hits de urllib/http/socket REALES est\u00e1n listados arriba."
+ },
+ "subprocess": {
+  "forge/stage1_intake/build_detail_inventory.py": {
+   "calls": [
+    "subprocess.run([sips, -s, format, png, path, --out, converted])"
+   ],
+   "shell": false,
+   "binary": "sips (macOS)",
+   "risk": "BAJO (args fijos, capture_output); NO disponible en Windows"
+  },
+  "forge/stage1_intake/extract_landmarks.py": {
+   "calls": [
+    "subprocess.run([sips, -s, format, png, path, --out, converted])"
+   ],
+   "shell": false,
+   "binary": "sips (macOS)",
+   "risk": "BAJO; NO disponible en Windows"
+  },
+  "forge/stage1_intake/delight_albedo.py": {
+   "calls": [
+    "subprocess.run(command, capture_output=True, check=False)"
+   ],
+   "shell": false,
+   "binary": "sips (macOS, command construido con sips)",
+   "risk": "BAJO; NO disponible en Windows"
+  },
+  "forge/stage1_intake/extract_pbr_evidence.py": {
+   "calls": [
+    "subprocess.run(command, capture_output=True, text=True, check=False)"
+   ],
+   "shell": false,
+   "binary": "sips (macOS)",
+   "risk": "BAJO; NO disponible en Windows"
+  },
+  "forge/stage1_intake/extract_cs2_textures.py": {
+   "calls": [
+    "subprocess.run(cmd, capture_output=True, text=True)"
+   ],
+   "shell": false,
+   "binary": "SOURCE2VIEWER_BINARY = Source2Viewer-CLI (externo, path CS2)",
+   "risk": "MEDIO \u2014 ejecuta binario externo de Source2Viewer (solo path CS2)"
+  },
+  "forge/stage4_review/make_comparison_sheet.py": {
+   "calls": [
+    "subprocess.run([sips, -s, format, png, path, --out, converted])"
+   ],
+   "shell": false,
+   "binary": "sips (macOS)",
+   "risk": "BAJO; NO disponible en Windows"
+  },
+  "forge/tests/test_pipeline.py": {
+   "calls": [
+    "subprocess (tests)"
+   ],
+   "shell": false,
+   "risk": "n/a \u2014 test"
+  },
+  "forge/tests/test_search_specs.py": {
+   "calls": [
+    "subprocess (tests)"
+   ],
+   "shell": false,
+   "risk": "n/a \u2014 test"
+  },
+  "forge/tests/test_workflow_state.py": {
+   "calls": [
+    "subprocess (tests)"
+   ],
+   "shell": false,
+   "risk": "n/a \u2014 test"
+  },
+  "note": "shell=True en CERO scripts. Todos con capture_output. El uso de sips (binario de macOS) es la dependencia externa de runtime real del pipeline \u2014 contradice parcialmente el claim 'Pure Python stdlib, no pip installs' en hosts Windows/Linux (fallback a conversi\u00f3n propia cuando sips no existe: verificar en delight_albedo.py:172 y extract_pbr_evidence.py:202 si hay fallback)."
+ },
+ "risk_classification": {
+  "LOW": "scripts sin red ni subprocess (mayor\u00eda del pipeline)",
+  "MEDIUM": "fetch_cs2_metadata.py (URL user-supplied), extract_cs2_textures.py (binario externo Source2Viewer)",
+  "LOW_TOOLING": "scripts/issue_triage.py (GitHub API, dev tooling)",
+  "WINDOWS_GAP": "6 scripts usan sips (macOS-only) \u2014 requieren adaptador en Windows (ver 16 y 21)"
+ }
+}

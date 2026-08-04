@@ -1,0 +1,66 @@
+{
+  "sprint": "OPS-ASH-RELAY-GAMEPLAY-CRITIC-01C",
+  "schema": "evidence-schema-v2",
+  "schemaVersion": 2,
+  "status": "PREPARED",
+  "contract_ref": "contratos v2 (core-loop-contract, encounter-plan, gameplay-rubric-v2, codex-correction-brief-v2)",
+  "stale_values": ["player speed 6.0", "checkpoint health 75", "mandatory boss health 360", "global active-hostile cap 6", "exact checkpoint RNG rewind"],
+  "stale_rule": "los valores obsoletos solo existen en la sección histórica del paquete v2 y en el paquete v1 (ash-relay-critic/), que queda marcado como histórico. Ningún probe/gate/score v2 los usa.",
+  "execution_trigger": {
+    "signal": "CORRECTION_BUILD_READY_FOR_REVIEW (declarado por Codex)",
+    "preconditions": [
+      "GAME_WORKING path válido",
+      "tree o commit hash verificado contra el declarado",
+      "typecheck + tests verdes del build corregido",
+      "entregables de Codex completos (abajo)"
+    ],
+    "hash_verification": "calcular hash del tree/build recibido y comparar con el declarado por Codex ANTES de abrir el browser"
+  },
+  "codex_deliverables": [
+    { "id": "game_working", "type": "path", "description": "ruta del build corregido (GAME_WORKING)", "required": true },
+    { "id": "tree_hash", "type": "hash", "description": "tree o commit hash de la build", "required": true },
+    { "id": "build_checks", "type": "report", "description": "build + typecheck + tests verdes", "required": true },
+    { "id": "captures", "type": "capturas", "description": "10 estados frozen del contrato v2 (title, tutorial, encounter-1, checkpoint, encounter-2, boss-phase-1, boss-phase-2, defeat, victory, mobile-active 390x844)", "required": true },
+    { "id": "video", "type": "video", "description": "recorrido completo + derrota + checkpoint retry + recorrido del boss", "required": true },
+    { "id": "bot_results", "type": "report", "description": "bot runs v2 (10 seeds, seed 424242; rango esperado 165.850-167.300s como límite inferior informativo)", "required": true },
+    { "id": "adversarial_results", "type": "report", "description": "resultados adversariales v2 (los 15 casos del plan v2, 3 corridas)", "required": true },
+    { "id": "timing_report", "type": "report", "description": "timing por segmento (timing-contract-v2.json)", "required": true },
+    { "id": "boss_metrics", "type": "report", "description": "boss: tiempo por fase, ataques ejecutados, ventanas abiertas, daño durante telegraph, daño en zona segura, duración total", "required": true },
+    { "id": "determinism_report", "type": "report", "description": "2 capturas por estado idénticas + hash determinista", "required": true },
+    { "id": "lifecycle_report", "type": "report", "description": "restart/checkpoint lifecycle + floors + colas", "required": true },
+    { "id": "device_loss_report", "type": "report", "description": "device loss por fase (incluye Overload)", "required": true }
+  ],
+  "review_constraints": {
+    "read_only": true,
+    "input_layer": "capa pública de input (keyboard/touch reales); autopilot solo como herramienta del harness del builder, nunca para sustituir recorrido humano",
+    "forbidden": ["modificar código", "pedir cambios de alcance", "crear enemigos nuevos", "reemplazar el diseño", "seleccionar capturas favorables", "usar valores stale v1"],
+    "output": "hallazgos P0-P3 + gates v2 + score v2 + veredicto v2"
+  },
+  "finding_severity": {
+    "P0": "bloquea el juego (softlock, gate funcional FAIL, crash, estado corrupto)",
+    "P1": "daña claramente gameplay o móvil (floor roto, hatch ausente, FSM del boss roto, control fusionado ambiguo, checkpoint/restart roto, touch roto)",
+    "P2": "reduce claridad, ritmo o feedback (timing fuera de ventana, contraste, feedback de 1 canal)",
+    "P3": "pulido (cosmético, audio fino, micro-ajustes)"
+  },
+  "per_finding_schema": {
+    "id": "AR2-XX",
+    "severity": "P0|P1|P2|P3",
+    "title": "string",
+    "state": "estado del juego donde ocurre",
+    "repro": "secuencia mínima de inputs + evidencia",
+    "contract_ref": "cita del contrato v2 que se viola",
+    "probe_ref": "probe del paquete v2 que lo detecta",
+    "impact": "qué daña",
+    "suggestion": "dirección de fix (sin tocar código)"
+  },
+  "final_status_schema": {
+    "gates": "PASS/FAIL por gate (8 gates v2)",
+    "score": "0-100 con desglose por categoría (rubric v2)",
+    "veredicto": "PASS | GAMEPLAY_ACCEPTED_POLISH_PENDING | FAIL",
+    "findings": ["P0", "P1", "P2", "P3"],
+    "timing": { "BOT_TIME": "s", "HUMAN_DESKTOP_TIME": "s", "HUMAN_MOBILE_TIME": "s" },
+    "report_date": "ISO",
+    "build_hash": "hash verificado de la build evaluada"
+  },
+  "output_files": "H:\\UserData\\Deposito\\Documents\\ash-relay-critic-v2\\ (paquete v2 completo; los 12 archivos de preparación + los resultados de ejecución que se generen)"
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "authoring": "Hermes + DeepSeek",
+  "source": "OPS-ASH-RELAY-GAMEPLAY-CRITIC-01C preparation bundle",
+  "sourcePin": "contract-v2-synced",
+  "license": "INTERNAL_EVIDENCE",
+  "sourceDeliverables": 12,
+  "copiedDeliverables": 12,
+  "staleValuesOperative": 0,
+  "upstreamCodeCopied": false
+}

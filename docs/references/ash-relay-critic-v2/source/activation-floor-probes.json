@@ -1,0 +1,90 @@
+{
+  "sprint": "OPS-ASH-RELAY-GAMEPLAY-CRITIC-01C",
+  "schema": "activation-floor-probes-v2",
+  "status": "PREPARED",
+  "contract_ref": "core-loop-contract.md v2 regla 3 (75% irreversible floor, drain 0.7 u/s, sin auto-complete) + codex-correction-brief-v2 #1",
+  "execution": "correr SOLO tras CORRECTION_BUILD_READY_FOR_REVIEW; input por capa pública; 3 corridas por caso",
+  "constants": {
+    "HOLD_SECONDS": 1.25,
+    "DRAIN_RATE": 0.7,
+    "FLOOR": 0.75,
+    "SAMPLE_INTERVAL_MS": 220
+  },
+  "cases": [
+    {
+      "id": "AF-01",
+      "name": "74-pct-released-decays",
+      "objective": "antes del floor el progreso puede decaer hasta 0",
+      "procedure": "llegar a relay A; hold E hasta activation ~0.74 (timing: 0.74*1.25s); soltar; muestrear 6 intervalos de 220ms",
+      "metrics": ["activation_ramp", "activation_decay"],
+      "pass": "decay monótono hasta <= 0.74 y en 5 intervalos llega a ~0 (0.74 - 0.7*1.1s ≈ 0)",
+      "fail_severity": "P1 (viola drain pre-floor)",
+      "notes": "si la build deshabilita la activación hasta matar los 2 Scrappers (onboarding v2), este caso corre DESPUÉS del onboarding"
+    },
+    {
+      "id": "AF-02",
+      "name": "75-pct-arms-floor",
+      "objective": "alcanzar 75% arma el floor",
+      "procedure": "hold E hasta activation >= 0.75 (0.75*1.25 = 0.9375s); soltar; muestrear 8 intervalos",
+      "metrics": ["activation_peak", "activation_min_after_release", "floor_armed_signal"],
+      "pass": "activation nunca < 0.75 tras el armado (min >= 0.75)",
+      "fail_severity": "P1 (gate SOFTLOCKS; brief v2 #1)",
+      "observable_signal": "activation estable en 0.75; estado 'floor armed' distinguible (feedback 2+ canales, ledger B2/H1)"
+    },
+    {
+      "id": "AF-03",
+      "name": "89-pct-released-never-below-75",
+      "objective": "interrupción al 89% drena solo hasta 75%",
+      "procedure": "hold hasta activation ~0.89 (1.1125s); soltar; muestrear 10 intervalos de 220ms",
+      "metrics": ["activation_peak", "activation_min", "activation_series"],
+      "pass": "min(series) >= 0.75 durante toda la ventana de 2.2s",
+      "fail_severity": "P1 (gate SOFTLOCKS; reproducción del hallazgo AR-01 de 01B)",
+      "regression_ref": "01B: 0.893 -> 0.742 -> 0.59 -> 0.427 -> 0.275 -> 0.123 (sin floor) — esta build DEBE mostrar 0.893 -> 0.75 -> 0.75 -> ..."
+    },
+    {
+      "id": "AF-04",
+      "name": "pause-during-activation-no-extra-progress",
+      "objective": "pausa durante la activación no avanza ni drena",
+      "procedure": "hold E hasta ~0.6; pausar (P); esperar 1s; leer activation; resume; esperar 1s; leer",
+      "metrics": ["activation_paused", "activation_resumed", "tick_paused", "tick_resumed"],
+      "pass": "activation idéntica durante pause (sin progreso ni decay); resume continua desde el mismo valor",
+      "fail_severity": "P1 (gate PAUSE_RESUME)",
+      "observable_signal": "tick congelado durante pause"
+    },
+    {
+      "id": "AF-05",
+      "name": "restart-clears-floor",
+      "objective": "restart completo limpia progreso y floor flag",
+      "procedure": "armar floor (0.89); restart (R); leer activation y estado floor; re-hold y verificar que arranca de 0",
+      "metrics": ["activation_after_restart", "floor_flag_after_restart", "ramp_after_restart"],
+      "pass": "activation 0, sin floor flag; ramp recomienza en 0",
+      "fail_severity": "P1 (gate RESTART_SUCCESS; brief v2 #1)",
+      "observable_signal": "snapshot nodes[].activation === 0 y sin señal de floor"
+    },
+    {
+      "id": "AF-06",
+      "name": "checkpoint-restore-exact-state",
+      "objective": "checkpoint restore recrea solo el estado contractual, sin floor armado filtrado",
+      "procedure": "activar relay A; en relay B armar floor al 89%; morir deliberadamente; retry checkpoint; leer activation de B y floor flag",
+      "metrics": ["nodeA_active", "nodeB_activation", "floor_flag_B", "health", "rng_stream_position", "residuals"],
+      "pass": "nodeA activo, nodeB activation 0 SIN floor flag, HP 100, stream RNG en posición actual (no rewind), 0 residuos",
+      "fail_severity": "P1 (gate CHECKPOINT_RESTORE)",
+      "observable_signal": "ledger B5"
+    },
+    {
+      "id": "AF-07",
+      "name": "complete-single-event",
+      "objective": "completar la activación produce UN solo evento de commit",
+      "procedure": "hold hasta activation 1.0; esperar 2s; contar commits/checkpointSaves y eventos de relay",
+      "metrics": ["activation_final", "duplicate_complete_events", "checkpoint_saves_delta"],
+      "pass": "DUPLICATE_COMPLETE_EVENTS = 0; sin re-activación ni doble commit",
+      "fail_severity": "P1",
+      "gate": "DUPLICATE_COMPLETE_EVENTS: 0"
+    }
+  ],
+  "gates": {
+    "LAST_QUARTER_FLOOR": "PASS (AF-02 y AF-03 3/3)",
+    "DUPLICATE_COMPLETE_EVENTS": 0
+  },
+  "evidence": "por caso: serie de activation + snapshot + captura si aplica; guardar en evidence-v2/frames/"
+}

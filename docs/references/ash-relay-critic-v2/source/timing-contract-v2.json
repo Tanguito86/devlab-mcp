@@ -1,0 +1,42 @@
+{
+  "sprint": "OPS-ASH-RELAY-GAMEPLAY-CRITIC-01C",
+  "schema": "timing-contract-v2",
+  "status": "PREPARED",
+  "contract_ref": "core-loop-contract.md v2 (Timing contract) + encounter-plan.md v2 (Measured beat plan) + gameplay-rubric-v2.md (PACING)",
+  "segments": [
+    { "id": "T1", "name": "title_to_first_input", "target": "0:00-0:08", "note": "arranque responsivo; sin input duplicado" },
+    { "id": "T2", "name": "first_input_to_node01", "target": "0:00-0:20", "note": "tutorial: move + fire; onboarding 2 Scrappers incluido en T3" },
+    { "id": "T3", "name": "node01_to_checkpoint", "target": "0:20-1:15", "note": "onboarding + activación + response acotada; sin refuerzos" },
+    { "id": "T4", "name": "checkpoint_to_node02", "target": "1:15-1:25", "note": "banner 3s; cruce del puente" },
+    { "id": "T5", "name": "node02_to_boss", "target": "1:25-2:35", "note": "encounter B 5/5 con elites; waves deterministas" },
+    { "id": "T6", "name": "boss_calibration", "target": "2:35-3:05", "note": "fase 1: sweep + directed; sin refuerzos; ~30s" },
+    { "id": "T7", "name": "boss_overload", "target": "3:05-3:40", "note": "fase 2: fan con gaps + refuerzos <= 2/3; ~35s" },
+    { "id": "T8", "name": "boss_defeat_to_victory", "target": "3:40-4:10", "note": "evacuación 1.5s + presentación" },
+    { "id": "T9", "name": "total", "target": "3:00-5:00", "note": "first-input-to-victory; bot 165.85-167.30s = límite inferior automático, NO humano" }
+  ],
+  "boss_budget": {
+    "total": "70-100s",
+    "max_phase_without_pattern_change": 55,
+    "note": "540 HP se mantiene salvo métricas repetibles fuera de presupuesto (brief v2 #3)"
+  },
+  "measurement": {
+    "BOT_TIME": "del harness del builder (10 runs, seed 424242): primer step a victory. NO se usa como evidencia humana.",
+    "HUMAN_DESKTOP_TIME": "recorrido humano desktop hasta victory (input público, sin autopilot): first-input-to-victory + tiempos por segmento.",
+    "HUMAN_MOBILE_TIME": "recorrido humano móvil (touch real) hasta victory: first-input-to-victory + tiempos por segmento.",
+    "rule": "el tiempo del bot NUNCA sustituye al humano: BOT_TIME es cota inferior informativa; los gates de timing se evalúan con HUMAN_*_TIME."
+  },
+  "recording": {
+    "per_run": ["segment_id", "elapsed_start", "elapsed_end", "duration", "phase", "notes"],
+    "output": "timing-results-v2.json (BOT_TIME, HUMAN_DESKTOP_TIME, HUMAN_MOBILE_TIME separados)"
+  },
+  "pass_conditions": {
+    "T9_total": "HUMAN_DESKTOP_TIME y HUMAN_MOBILE_TIME en [180, 300]s",
+    "boss_total": "70 <= boss_total <= 100s",
+    "phases": "ninguna fase del boss > 55s sin cambio de patrón o estado",
+    "pacing_levers": "speed 8.5 constante; sin waits pasivas; sin refuerzos infinitos; HP 540 justificado por métricas"
+  },
+  "fail_severity": {
+    "T9_fail": "P2 (PACING) — no invalida gates funcionales salvo que el total salga del rango por diseño roto",
+    "boss_budget_fail": "P2 — revisar HP solo con métricas repetibles (brief v2 #3)"
+  }
+}

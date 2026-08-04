@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "authoring": "Hermes + DeepSeek",
+  "upstreamRepository": "https://github.com/img2threejs/img2threejs",
+  "sourcePin": "b604139f51d6831780240e8cf1d8b21a42401d0a",
+  "license": "Apache-2.0",
+  "fullEvidenceDeliverables": 30,
+  "selectedDocumentsCopied": 12,
+  "selectionMode": "decision-security-and-pilot-documents-only",
+  "upstreamCodeCopied": false,
+  "installed": false
+}

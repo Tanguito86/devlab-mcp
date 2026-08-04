@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "authoring": "Hermes + DeepSeek",
+  "upstreamRepository": "https://github.com/pmndrs/react-three-fiber",
+  "sourcePin": "0a107412ac64667b1908422e859447952f57feef",
+  "license": "MIT",
+  "fullEvidenceDeliverables": 27,
+  "selectedDocumentsCopied": 16,
+  "selectionMode": "decision-and-contract-documents-only",
+  "upstreamCodeCopied": false,
+  "installed": false
+}

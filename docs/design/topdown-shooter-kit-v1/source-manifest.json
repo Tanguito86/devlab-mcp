@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "authoring": "Hermes + DeepSeek",
+  "source": "OPS-DEVLAB-TOPDOWN-SHOOTER-KIT-DESIGN-01",
+  "sourcePin": "internal-design-18-of-18",
+  "license": "INTERNAL_MIT",
+  "sourceDeliverables": 18,
+  "copiedDeliverables": 18,
+  "upstreamCodeCopied": false,
+  "pathPolicy": "repository-relative-or-sanitized-evidence-reference"
+}

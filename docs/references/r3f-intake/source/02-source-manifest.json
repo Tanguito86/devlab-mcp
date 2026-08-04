@@ -1,0 +1,773 @@
+{
+ "sprint": "OPS-R3F-INTAKE-01",
+ "repository": "https://github.com/pmndrs/react-three-fiber",
+ "pin": "0a107412ac64667b1908422e859447952f57feef",
+ "pin_short": "0a107412",
+ "cloned_at": "2026-08-03T19:29:18",
+ "head_commit": "0a107412ac64667b1908422e859447952f57feef",
+ "head_subject": "RELEASING: Releasing 2 package(s)",
+ "detached": true,
+ "worktree_clean": true,
+ "tracked_count": 187,
+ "total_size_bytes": 3016546,
+ "files": [
+  {
+   "path": ".changeset/README.md",
+   "size": 518
+  },
+  {
+   "path": ".changeset/config.json",
+   "size": 383
+  },
+  {
+   "path": ".eslintignore",
+   "size": 28
+  },
+  {
+   "path": ".eslintrc.json",
+   "size": 2096
+  },
+  {
+   "path": ".github/FUNDING.yml",
+   "size": 101
+  },
+  {
+   "path": ".github/ISSUE_TEMPLATE/bug_report.md",
+   "size": 298
+  },
+  {
+   "path": ".github/ISSUE_TEMPLATE/feature_request.md",
+   "size": 112
+  },
+  {
+   "path": ".github/issue_template.md",
+   "size": 457
+  },
+  {
+   "path": ".github/workflows/canary.yml",
+   "size": 1568
+  },
+  {
+   "path": ".github/workflows/docs.yml",
+   "size": 1263
+  },
+  {
+   "path": ".github/workflows/test.yml",
+   "size": 1906
+  },
+  {
+   "path": ".gitignore",
+   "size": 331
+  },
+  {
+   "path": ".husky/.gitignore",
+   "size": 3
+  },
+  {
+   "path": ".husky/pre-commit",
+   "size": 72
+  },
+  {
+   "path": ".prettierignore",
+   "size": 88
+  },
+  {
+   "path": ".prettierrc",
+   "size": 166
+  },
+  {
+   "path": "CONTRIBUTING.md",
+   "size": 2742
+  },
+  {
+   "path": "LICENSE",
+   "size": 1093
+  },
+  {
+   "path": "babel.config.js",
+   "size": 673
+  },
+  {
+   "path": "docs/API/additional-exports.mdx",
+   "size": 1685
+  },
+  {
+   "path": "docs/API/canvas.mdx",
+   "size": 10813
+  },
+  {
+   "path": "docs/API/events.mdx",
+   "size": 8514
+  },
+  {
+   "path": "docs/API/hooks.mdx",
+   "size": 16513
+  },
+  {
+   "path": "docs/API/objects.mdx",
+   "size": 9341
+  },
+  {
+   "path": "docs/API/testing.mdx",
+   "size": 4156
+  },
+  {
+   "path": "docs/API/typescript.mdx",
+   "size": 4783
+  },
+  {
+   "path": "docs/advanced/pitfalls.mdx",
+   "size": 7816
+  },
+  {
+   "path": "docs/advanced/scaling-performance.mdx",
+   "size": 15828
+  },
+  {
+   "path": "docs/banner-journey.jpg",
+   "size": 45096
+  },
+  {
+   "path": "docs/banner-r3f.jpg",
+   "size": 68550
+  },
+  {
+   "path": "docs/basic-app.gif",
+   "size": 319676
+  },
+  {
+   "path": "docs/getting-started/basic-example-sandpack/index.jsx",
+   "size": 1404
+  },
+  {
+   "path": "docs/getting-started/basic-example-sandpack/styles.css",
+   "size": 61
+  },
+  {
+   "path": "docs/getting-started/basic-example.gif",
+   "size": 81129
+  },
+  {
+   "path": "docs/getting-started/community-r3f-components.mdx",
+   "size": 6228
+  },
+  {
+   "path": "docs/getting-started/examples.mdx",
+   "size": 31652
+  },
+  {
+   "path": "docs/getting-started/installation.mdx",
+   "size": 5695
+  },
+  {
+   "path": "docs/getting-started/introduction.mdx",
+   "size": 9598
+  },
+  {
+   "path": "docs/getting-started/your-first-scene.mdx",
+   "size": 5775
+  },
+  {
+   "path": "docs/logo.jpg",
+   "size": 121194
+  },
+  {
+   "path": "docs/preview.jpg",
+   "size": 84333
+  },
+  {
+   "path": "docs/tutorials/basic-animations.mdx",
+   "size": 3483
+  },
+  {
+   "path": "docs/tutorials/events-and-interaction.mdx",
+   "size": 2835
+  },
+  {
+   "path": "docs/tutorials/gltfjsx.png",
+   "size": 124610
+  },
+  {
+   "path": "docs/tutorials/how-it-works.mdx",
+   "size": 6083
+  },
+  {
+   "path": "docs/tutorials/loading-models.mdx",
+   "size": 5871
+  },
+  {
+   "path": "docs/tutorials/loading-textures.mdx",
+   "size": 4454
+  },
+  {
+   "path": "docs/tutorials/v9-migration-guide.mdx",
+   "size": 9082
+  },
+  {
+   "path": "example/.gitignore",
+   "size": 50
+  },
+  {
+   "path": "example/CHANGELOG.md",
+   "size": 302
+  },
+  {
+   "path": "example/favicon.svg",
+   "size": 409
+  },
+  {
+   "path": "example/index.html",
+   "size": 390
+  },
+  {
+   "path": "example/package.json",
+   "size": 773
+  },
+  {
+   "path": "example/public/Parrot.glb",
+   "size": 333280
+  },
+  {
+   "path": "example/public/Stork.glb",
+   "size": 309520
+  },
+  {
+   "path": "example/public/apple.gltf",
+   "size": 10664
+  },
+  {
+   "path": "example/public/bottle.gltf",
+   "size": 5194
+  },
+  {
+   "path": "example/public/farm.gltf",
+   "size": 155686
+  },
+  {
+   "path": "example/public/lightning.gltf",
+   "size": 12660
+  },
+  {
+   "path": "example/public/pmndrs.png",
+   "size": 10032
+  },
+  {
+   "path": "example/public/ramen.gltf",
+   "size": 15120
+  },
+  {
+   "path": "example/public/react.png",
+   "size": 25183
+  },
+  {
+   "path": "example/public/three.png",
+   "size": 11999
+  },
+  {
+   "path": "example/src/App.tsx",
+   "size": 1892
+  },
+  {
+   "path": "example/src/components.tsx",
+   "size": 687
+  },
+  {
+   "path": "example/src/demos/Activity.tsx",
+   "size": 2652
+  },
+  {
+   "path": "example/src/demos/AutoDispose.tsx",
+   "size": 1854
+  },
+  {
+   "path": "example/src/demos/ChangeTexture.tsx",
+   "size": 780
+  },
+  {
+   "path": "example/src/demos/ClickAndHover.tsx",
+   "size": 1290
+  },
+  {
+   "path": "example/src/demos/ContextMenuOverride.tsx",
+   "size": 836
+  },
+  {
+   "path": "example/src/demos/FlushSync.tsx",
+   "size": 1392
+  },
+  {
+   "path": "example/src/demos/Gestures.tsx",
+   "size": 1657
+  },
+  {
+   "path": "example/src/demos/Gltf.tsx",
+   "size": 713
+  },
+  {
+   "path": "example/src/demos/Inject.tsx",
+   "size": 1617
+  },
+  {
+   "path": "example/src/demos/Layers.tsx",
+   "size": 1210
+  },
+  {
+   "path": "example/src/demos/Lines.tsx",
+   "size": 2024
+  },
+  {
+   "path": "example/src/demos/MultiMaterial.tsx",
+   "size": 3883
+  },
+  {
+   "path": "example/src/demos/MultiRender.tsx",
+   "size": 1164
+  },
+  {
+   "path": "example/src/demos/MultiView.tsx",
+   "size": 5898
+  },
+  {
+   "path": "example/src/demos/Pointcloud.tsx",
+   "size": 2226
+  },
+  {
+   "path": "example/src/demos/Portals.tsx",
+   "size": 5345
+  },
+  {
+   "path": "example/src/demos/Reparenting.tsx",
+   "size": 1437
+  },
+  {
+   "path": "example/src/demos/ResetProps.tsx",
+   "size": 3124
+  },
+  {
+   "path": "example/src/demos/SVGRenderer.tsx",
+   "size": 1206
+  },
+  {
+   "path": "example/src/demos/Selection.tsx",
+   "size": 2112
+  },
+  {
+   "path": "example/src/demos/ShaderMaterial.tsx",
+   "size": 1688
+  },
+  {
+   "path": "example/src/demos/StopPropagation.tsx",
+   "size": 3141
+  },
+  {
+   "path": "example/src/demos/SuspenseAndErrors.tsx",
+   "size": 1216
+  },
+  {
+   "path": "example/src/demos/SuspenseMaterial.tsx",
+   "size": 833
+  },
+  {
+   "path": "example/src/demos/Test.tsx",
+   "size": 1708
+  },
+  {
+   "path": "example/src/demos/ViewTracking.tsx",
+   "size": 8820
+  },
+  {
+   "path": "example/src/demos/Viewcube.tsx",
+   "size": 2297
+  },
+  {
+   "path": "example/src/demos/WebGPU.tsx",
+   "size": 1840
+  },
+  {
+   "path": "example/src/demos/index.tsx",
+   "size": 2442
+  },
+  {
+   "path": "example/src/index.tsx",
+   "size": 144
+  },
+  {
+   "path": "example/src/styles.css",
+   "size": 3084
+  },
+  {
+   "path": "example/tsconfig.json",
+   "size": 530
+  },
+  {
+   "path": "example/vite.config.ts",
+   "size": 202
+  },
+  {
+   "path": "example/yarn.lock",
+   "size": 58210
+  },
+  {
+   "path": "jest.config.js",
+   "size": 842
+  },
+  {
+   "path": "package.json",
+   "size": 3025
+  },
+  {
+   "path": "packages/eslint-plugin/.npmignore",
+   "size": 26
+  },
+  {
+   "path": "packages/eslint-plugin/CHANGELOG.md",
+   "size": 273
+  },
+  {
+   "path": "packages/eslint-plugin/README.md",
+   "size": 3302
+  },
+  {
+   "path": "packages/eslint-plugin/docs/rules/no-clone-in-loop.md",
+   "size": 1316
+  },
+  {
+   "path": "packages/eslint-plugin/docs/rules/no-new-in-loop.md",
+   "size": 1297
+  },
+  {
+   "path": "packages/eslint-plugin/package.json",
+   "size": 1378
+  },
+  {
+   "path": "packages/eslint-plugin/scripts/codegen.ts",
+   "size": 4660
+  },
+  {
+   "path": "packages/eslint-plugin/src/configs/all.ts",
+   "size": 246
+  },
+  {
+   "path": "packages/eslint-plugin/src/configs/recommended.ts",
+   "size": 246
+  },
+  {
+   "path": "packages/eslint-plugin/src/index.ts",
+   "size": 274
+  },
+  {
+   "path": "packages/eslint-plugin/src/lib/url.ts",
+   "size": 159
+  },
+  {
+   "path": "packages/eslint-plugin/src/rules/index.ts",
+   "size": 272
+  },
+  {
+   "path": "packages/eslint-plugin/src/rules/no-clone-in-loop.ts",
+   "size": 887
+  },
+  {
+   "path": "packages/eslint-plugin/src/rules/no-new-in-loop.ts",
+   "size": 841
+  },
+  {
+   "path": "packages/eslint-plugin/tests/rules/no-clone-in-loop.test.ts",
+   "size": 667
+  },
+  {
+   "path": "packages/eslint-plugin/tests/rules/no-new-in-loop.test.ts",
+   "size": 1126
+  },
+  {
+   "path": "packages/fiber/.npmignore",
+   "size": 90
+  },
+  {
+   "path": "packages/fiber/CHANGELOG.md",
+   "size": 19831
+  },
+  {
+   "path": "packages/fiber/__mocks__/expo-asset.ts",
+   "size": 522
+  },
+  {
+   "path": "packages/fiber/__mocks__/expo-file-system.ts",
+   "size": 251
+  },
+  {
+   "path": "packages/fiber/__mocks__/expo-gl.ts",
+   "size": 522
+  },
+  {
+   "path": "packages/fiber/__mocks__/react-native.ts",
+   "size": 1026
+  },
+  {
+   "path": "packages/fiber/__mocks__/react-use-measure.ts",
+   "size": 449
+  },
+  {
+   "path": "packages/fiber/native/package.json",
+   "size": 163
+  },
+  {
+   "path": "packages/fiber/package.json",
+   "size": 2296
+  },
+  {
+   "path": "packages/fiber/readme.md",
+   "size": 10361
+  },
+  {
+   "path": "packages/fiber/src/core/events.ts",
+   "size": 23422
+  },
+  {
+   "path": "packages/fiber/src/core/hooks.tsx",
+   "size": 6362
+  },
+  {
+   "path": "packages/fiber/src/core/index.tsx",
+   "size": 1167
+  },
+  {
+   "path": "packages/fiber/src/core/loop.ts",
+   "size": 5663
+  },
+  {
+   "path": "packages/fiber/src/core/reconciler.tsx",
+   "size": 26750
+  },
+  {
+   "path": "packages/fiber/src/core/renderer.tsx",
+   "size": 21078
+  },
+  {
+   "path": "packages/fiber/src/core/store.ts",
+   "size": 12407
+  },
+  {
+   "path": "packages/fiber/src/core/utils.tsx",
+   "size": 20309
+  },
+  {
+   "path": "packages/fiber/src/index.tsx",
+   "size": 225
+  },
+  {
+   "path": "packages/fiber/src/native.tsx",
+   "size": 362
+  },
+  {
+   "path": "packages/fiber/src/native/Canvas.tsx",
+   "size": 8192
+  },
+  {
+   "path": "packages/fiber/src/native/events.ts",
+   "size": 2759
+  },
+  {
+   "path": "packages/fiber/src/native/polyfills.ts",
+   "size": 6207
+  },
+  {
+   "path": "packages/fiber/src/three-types.ts",
+   "size": 3238
+  },
+  {
+   "path": "packages/fiber/src/web/Canvas.tsx",
+   "size": 5630
+  },
+  {
+   "path": "packages/fiber/src/web/events.ts",
+   "size": 2670
+  },
+  {
+   "path": "packages/fiber/tests/__snapshots__/canvas.native.test.tsx.snap",
+   "size": 516
+  },
+  {
+   "path": "packages/fiber/tests/__snapshots__/canvas.test.tsx.snap",
+   "size": 480
+  },
+  {
+   "path": "packages/fiber/tests/__snapshots__/index.test.tsx.snap",
+   "size": 1666
+  },
+  {
+   "path": "packages/fiber/tests/__snapshots__/utils.test.ts.snap",
+   "size": 488
+  },
+  {
+   "path": "packages/fiber/tests/canvas.native.test.tsx",
+   "size": 1543
+  },
+  {
+   "path": "packages/fiber/tests/canvas.test.tsx",
+   "size": 1737
+  },
+  {
+   "path": "packages/fiber/tests/events.test.tsx",
+   "size": 21086
+  },
+  {
+   "path": "packages/fiber/tests/hooks.test.tsx",
+   "size": 7675
+  },
+  {
+   "path": "packages/fiber/tests/index.test.tsx",
+   "size": 9564
+  },
+  {
+   "path": "packages/fiber/tests/polyfills.test.ts",
+   "size": 1456
+  },
+  {
+   "path": "packages/fiber/tests/reconciler.test.ts",
+   "size": 2355
+  },
+  {
+   "path": "packages/fiber/tests/renderer.test.tsx",
+   "size": 33670
+  },
+  {
+   "path": "packages/fiber/tests/utils.test.ts",
+   "size": 20837
+  },
+  {
+   "path": "packages/shared/setupTests.ts",
+   "size": 1641
+  },
+  {
+   "path": "packages/test-renderer/.npmignore",
+   "size": 16
+  },
+  {
+   "path": "packages/test-renderer/CHANGELOG.md",
+   "size": 8727
+  },
+  {
+   "path": "packages/test-renderer/README.md",
+   "size": 2849
+  },
+  {
+   "path": "packages/test-renderer/markdown/rttr-instance.md",
+   "size": 4082
+  },
+  {
+   "path": "packages/test-renderer/markdown/rttr.md",
+   "size": 4799
+  },
+  {
+   "path": "packages/test-renderer/package.json",
+   "size": 841
+  },
+  {
+   "path": "packages/test-renderer/src/WebGL2RenderingContext.ts",
+   "size": 19576
+  },
+  {
+   "path": "packages/test-renderer/src/__tests__/RTTR.core.test.tsx",
+   "size": 13291
+  },
+  {
+   "path": "packages/test-renderer/src/__tests__/RTTR.events.test.tsx",
+   "size": 2077
+  },
+  {
+   "path": "packages/test-renderer/src/__tests__/RTTR.hooks.test.tsx",
+   "size": 2390
+  },
+  {
+   "path": "packages/test-renderer/src/__tests__/RTTR.methods.test.tsx",
+   "size": 3647
+  },
+  {
+   "path": "packages/test-renderer/src/__tests__/__snapshots__/RTTR.core.test.tsx.snap",
+   "size": 10264
+  },
+  {
+   "path": "packages/test-renderer/src/createTestCanvas.ts",
+   "size": 1373
+  },
+  {
+   "path": "packages/test-renderer/src/createTestInstance.ts",
+   "size": 4303
+  },
+  {
+   "path": "packages/test-renderer/src/fireEvent.ts",
+   "size": 2035
+  },
+  {
+   "path": "packages/test-renderer/src/helpers/events.ts",
+   "size": 388
+  },
+  {
+   "path": "packages/test-renderer/src/helpers/graph.ts",
+   "size": 1243
+  },
+  {
+   "path": "packages/test-renderer/src/helpers/strings.ts",
+   "size": 224
+  },
+  {
+   "path": "packages/test-renderer/src/helpers/testInstance.ts",
+   "size": 1719
+  },
+  {
+   "path": "packages/test-renderer/src/helpers/tree.ts",
+   "size": 731
+  },
+  {
+   "path": "packages/test-renderer/src/helpers/waitFor.ts",
+   "size": 622
+  },
+  {
+   "path": "packages/test-renderer/src/index.tsx",
+   "size": 3066
+  },
+  {
+   "path": "packages/test-renderer/src/types/index.ts",
+   "size": 26
+  },
+  {
+   "path": "packages/test-renderer/src/types/internal.ts",
+   "size": 465
+  },
+  {
+   "path": "packages/test-renderer/src/types/public.ts",
+   "size": 1335
+  },
+  {
+   "path": "packages/test-renderer/yarn.lock",
+   "size": 347
+  },
+  {
+   "path": "readme.md",
+   "size": 14740
+  },
+  {
+   "path": "tsconfig.json",
+   "size": 569
+  },
+  {
+   "path": "vite.config.ts",
+   "size": 2014
+  },
+  {
+   "path": "yarn.lock",
+   "size": 548712
+  }
+ ],
+ "security": {
+  "symlinks_index": [],
+  "gitmodules": false,
+  "hooks_non_sample": [],
+  "credential_files": [],
+  "executables_index": [
+   ".husky/pre-commit",
+   "example/src/index.tsx"
+  ]
+ }
+}

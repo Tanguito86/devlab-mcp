@@ -1,0 +1,59 @@
+{
+  "benchmark_id": "DEVLAB-R3F-ARCHITECTURE-AB-05",
+  "status": "DESIGNED / NOT_EXECUTED",
+  "sprint_source": "OPS-R3F-INTAKE-01",
+  "hypothesis": "R3F mejora la estructura, mantenibilidad y velocidad de producción de una vertical slice sin degradar gameplay, rendimiento, determinismo, WebGPU, mobile o lifecycle frente a Three.js directo.",
+  "legs": {
+    "LEG_A": {
+      "name": "Vanilla Three.js",
+      "stack": ["three (WebGPURenderer)", "TSL", "DevLab harness"],
+      "react": false
+    },
+    "LEG_B": {
+      "name": "React Three Fiber",
+      "stack": ["react 19.2.0", "@react-three/fiber 9.7.0", "three (WebGPURenderer)", "TSL", "DevLab harness"],
+      "react": true
+    }
+  },
+  "mandatory_equality": [
+    "mismo gameplay contract",
+    "mismo arte",
+    "mismos shaders",
+    "mismo audio",
+    "mismo seed",
+    "mismo navegador",
+    "misma GPU (RTX 2060)",
+    "mismo backend",
+    "mismos viewports",
+    "mismo modelo (LLM y config)",
+    "mismo esfuerzo",
+    "mismo tiempo",
+    "mismos ciclos",
+    "mismo evaluador"
+  ],
+  "code_sharing_rule": "NO se permite reutilización de código entre piernas después del inicio del benchmark",
+  "slice": {
+    "working_title": "EMBER CIRCUIT",
+    "duration_minutes": "2-3",
+    "genre": "3D arcade arena",
+    "requirements": [
+      "player", "movement", "aim/action", "two enemy types", "projectile pool",
+      "checkpoint", "pause", "defeat", "restart", "mini boss", "victory",
+      "desktop", "touch controls", "HUD", "frozen capture states"
+    ],
+    "excluded": "ASH RELAY (mantener independientes los benchmarks)"
+  },
+  "metrics": {
+    "production": ["time_to_first_playable", "total_implementation_time", "files_changed", "lines_of_code", "component_count"],
+    "architecture": ["scene_graph_complexity", "react_commits", "human_maintainability_score"],
+    "runtime": ["cpu_frame_time", "gpu_frame_time", "p95_p99", "draw_calls", "triangles", "textures", "input_latency"],
+    "memory": ["heap_growth", "restart_growth"],
+    "robustness": ["device_loss_recovery", "softlocks", "bot_completion", "mobile_correctness", "frozen_determinism"],
+    "human": ["human_gameplay_score"]
+  },
+  "acceptance_rule": "R3F debe mejorar arquitectura/proceso al menos 10% sin regresión P0/P1 en gameplay, frame pacing, memoria, input, WebGPU, device loss, mobile o determinismo congelado.",
+  "device": "RTX 2060 + navegador fijo (mismo para ambas piernas)",
+  "not_to_claim": ["R3F_WEBGPU_RUNTIME_VERIFIED"],
+  "allowed_claim": "STATICALLY_SUPPORTED / DEVLAB_RUNTIME_BENCHMARK_PENDING",
+  "execution_reserved_for": "Codex (Hermes no ejecuta: prohibido browser/GPU en OPS-R3F-INTAKE-01)"
+}

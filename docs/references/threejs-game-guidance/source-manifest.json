@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "authoring": "DevLab selective integration based on Codex review",
+  "upstreamRepository": "https://github.com/majidmanzarpour/threejs-game-skills",
+  "sourcePin": "7221c1f4a6d2ae189a4d85d058d24f3228499d46",
+  "license": "MIT",
+  "existingAuthority": ["docs/reviews/devlab-codex-game-skills-review-03", "benchmarks/threejs-game-skills-ab"],
+  "upstreamCodeCopied": false,
+  "installed": false
+}

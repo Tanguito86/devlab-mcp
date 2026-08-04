@@ -1,0 +1,79 @@
+{
+  "pilot_id": "DEVLAB-IMG2THREEJS-ASSET-PILOT-01",
+  "status": "DESIGNED / NOT_EXECUTED",
+  "sprint_source": "OPS-IMG2THREEJS-INTAKE-01",
+  "working_asset": "CINDER RELAY DRONE",
+  "reference": {
+    "type": "concepto original",
+    "requirements": [
+      "sin marcas",
+      "sin propiedad intelectual externa",
+      "hard-surface",
+      "vista 3/4 clara",
+      "segunda vista opcional",
+      "fondo simple"
+    ],
+    "generation": "Kimi o image_gen, FUERA de este sprint (autorizado posteriormente)"
+  },
+  "asset_requirements": [
+    "drone industrial compacto",
+    "núcleo luminoso",
+    "dos propulsores laterales",
+    "arma o herramienta inferior",
+    "pivotes laterales",
+    "muzzle/tool socket",
+    "engine sockets",
+    "collider proxy",
+    "damage groups",
+    "idle animation hook"
+  ],
+  "outputs": {
+    "A": "runtime Three.js/WebGPU (modelo procedural + adaptador DEVLAB_IMG2THREEJS_ADAPTER)",
+    "B": "render multivista → frames → atlas → sprite (vía GVF, cuando exista el puente)"
+  },
+  "stack": {
+    "pipeline": "img2threejs pin b604139 (paquete del checkout, NO instalación global)",
+    "runtime": "Three.js (namespace classic para el modelo; WebGPURenderer para presentación)",
+    "harness": "DevLab capture-harness (frozen simulation, setViewpoint, captura byte-idéntica)",
+    "adaptador": "DEVLAB_IMG2THREEJS_ADAPTER (evidencia 16 §3): renderer WebGPU + init async, sin composer clásico, dispose contract, DevLabCaptureTarget"
+  },
+  "mandatory_fixes_before_pilot": [
+    "FIX-1 (bloqueante): cerrar inyección por comentarios R1-R3 (generate_threejs_factory.py:1020, :1021, :1169) — escapar newline/U+2028/U+2029 o eliminar los comentarios",
+    "FIX-2 (bloqueante): gate de admisión de imágenes con límites de evidencia 09 §7 (MAX_FILE_SIZE 50MB, MAX_WIDTH/HEIGHT 16384, MAX_PIXELS 16-20MP, MAX_DECOMPRESSED 160MB, MAX_CHUNK_COUNT 10000, TIMEOUT 30s)",
+    "FIX-3 (recomendado): finitud en vector()/scale_vector y clamp de count/segments del generador (12 R4-R6)",
+    "FIX-4 (recomendado): validador strict con positividad/finitud de dimensions, chequeo de ciclos, cruce de componentRefs (11 §5)"
+  ],
+  "gates": [
+    "silhouette agreement",
+    "component coverage",
+    "multi-angle coherence",
+    "attachment correctness",
+    "socket correctness",
+    "no floating parts",
+    "triangle budget",
+    "draw-call budget",
+    "texture budget",
+    "WebGPU runtime",
+    "device-loss recovery",
+    "resource disposal",
+    "deterministic captures",
+    "canonical atlas generation"
+  ],
+  "budget_profile": "DESKTOP_PROP (evidencia 18): 100k tris, 48 draw calls, 8 materiales, 40 texturas, 1024px, 1000 instancias — salvo salida B que usa SPRITE_RENDER_SOURCE (500k tris de bake, determinismo obligatorio, sin referencePbr externo)",
+  "gauntlet_roles": {
+    "BUILDER": "genera spec y modelo (img2threejs stage2+3)",
+    "CRITIC_VISUAL": "revisa comparison sheet completa + multiángulo (rol SEPARADO del builder — evidencia 15 §6.2)",
+    "CRITIC_TECNICO": "revisa geometría, recursos y rendimiento (métricas reales post-build — evidencia 18 §6)",
+    "DEVLAB": "captura y métricas (frozen simulation, viewpoints, hashes)",
+    "INTEGRATOR": "aplica correcciones acotadas (3 por pass, 6 total — bounded correction ADOPT)"
+  },
+  "not_allowed": [
+    "caminos CS2 (marcas Valve)",
+    "armas comerciales",
+    "imágenes personales o comerciales de referencia",
+    "ground-blade (winding sospechoso, evidencia 13 §1.11 — verificar antes en un fixture aparte)",
+    "referencePbr con URLs externas (rompe determinismo de atlas)",
+    "composer clásico en el path WebGPU (UNSUPPORTED — evidencia 16)"
+  ],
+  "execution_reserved_for": "sprint posterior revisado por Codex (la generación visual, ejecución WebGPU e integración NO se ejecutan en este intake)"
+}

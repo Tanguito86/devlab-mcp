@@ -1,0 +1,128 @@
+{
+  "sprint": "OPS-ASH-RELAY-GAMEPLAY-CRITIC-01C",
+  "schema": "boss-fsm-probes-v2",
+  "status": "PREPARED",
+  "contract_ref": "encounter-plan.md v2 (Relay Guardian FSM: TELEGRAPH -> COMMITTED_ATTACK -> RECOVERY -> VULNERABLE) + rubric v2 BOSS",
+  "execution": "correr SOLO tras CORRECTION_BUILD_READY_FOR_REVIEW; 3 corridas; instrumentación: snapshots por tick en fase boss (lectura) + video",
+  "fsm_states": ["INTRO", "TELEGRAPH", "COMMITTED_ATTACK", "RECOVERY", "VULNERABLE", "TRANSITION", "DEFEATED"],
+  "observable_signals": {
+    "INTRO": "guardian spawnea con 540 HP, fase 1, sin ataque activo",
+    "TELEGRAPH": "señal de ataque entrante (visual + duración >= 0.65s para spawns; aviso propio del patrón)",
+    "COMMITTED_ATTACK": "el patrón produce daño/proyectiles",
+    "RECOVERY": "fin del patrón; sin daño activo",
+    "VULNERABLE": "weak point abierto POR el ataque completado (vulnerable === true tras recovery)",
+    "TRANSITION": "evento explícito entre FSM completadas (fase 1 -> fase 2)",
+    "DEFEATED": "HP 0; ataques cancelados; evac unlock"
+  },
+  "cases": [
+    {
+      "id": "BF-01",
+      "name": "intro-540hp",
+      "objective": "el Custodian spawnea con 540 HP en el estado correcto",
+      "procedure": "activar ambos relays; entrar a GUARDIAN; leer guardian snapshot al primer tick",
+      "metrics": ["spawn_health", "spawn_phase", "spawn_state"],
+      "pass": "health === 540; phase 1; estado INTRO sin ataque",
+      "fail_severity": "P1 (ledger E6)",
+      "gate_ref": "BOSS_HP: 540"
+    },
+    {
+      "id": "BF-02",
+      "name": "phase1-sweep-safe-zone",
+      "objective": "fase 1: sweep legible con aviso previo y zona segura alcanzable",
+      "procedure": "registrar la secuencia TELEGRAPH -> sweep; pararse en la zona segura señalada durante el sweep y medir daño; pararse fuera y medir daño",
+      "metrics": ["sweep_telegraph_duration", "damage_in_safe_zone", "damage_outside_safe_zone", "sweep_angle", "safe_zone_reachable"],
+      "pass": "telegraph precede al daño; daño en zona segura = 0; daño fuera > 0; la zona se alcanza con speed 8.5",
+      "fail_severity": "P1 (brief v2 #3; ledger E2)",
+      "regression_ref": "01B: sweep ausente (solo bolt dirigido + anillo radial)"
+    },
+    {
+      "id": "BF-03",
+      "name": "phase1-no-reinforcements",
+      "objective": "fase 1 sin enemigos estándar",
+      "procedure": "muestrear enemies durante toda la fase 1",
+      "metrics": ["max_standard_enemies_p1", "reinforcement_requests_p1"],
+      "pass": "0 enemigos estándar en fase 1",
+      "fail_severity": "P1 (ledger E5; budget P1 0/0)"
+    },
+    {
+      "id": "BF-04",
+      "name": "phase2-fan-gaps",
+      "objective": "fase 2: fan con huecos estables, reconocibles y alcanzables",
+      "procedure": "registrar los ángulos de los proyectiles del fan; medir el hueco máximo y mínimo; pararse en un hueco señalado y verificar 0 daño",
+      "metrics": ["fan_bolt_count", "fan_gap_angles", "min_gap_angle", "damage_in_gap", "gap_reachable_from_telegraph"],
+      "pass": "gaps estables entre corridas (mismo seed); gap alcanzable; daño en gap = 0",
+      "fail_severity": "P1 (brief v2 #3; ledger E3)",
+      "gate_ref": "CLOSED_RADIAL_RING_WITHOUT_GAPS: 0",
+      "regression_ref": "01B: anillo radial de 9-12 bolts sin gaps"
+    },
+    {
+      "id": "BF-05",
+      "name": "vulnerability-caused-by-attack",
+      "objective": "la vulnerabilidad abre POR el ataque completado, nunca por reloj global",
+      "procedure": "correlacionar vulnerable===true con la finalización del COMMITTED_ATTACK (post RECOVERY); verificar que NO se abre en ausencia de ataque",
+      "metrics": ["vulnerable_timeline", "attack_end_timeline", "vulnerable_without_attack_events"],
+      "pass": "toda apertura de vulnerabilidad sigue a un ataque completado; 0 aperturas sin ataque",
+      "fail_severity": "P1 (brief v2 #3; ledger E4)",
+      "gate_ref": "VULNERABILITY_CAUSED_BY_ATTACK: PASS",
+      "regression_ref": "01B: ciclo temporal 3.1/4.8s y 2.85/4.1s no ligado a ataques"
+    },
+    {
+      "id": "BF-06",
+      "name": "phase2-bounded-reinforcements",
+      "objective": "fase 2: <= 2 secundarios simultáneos y <= 3 requests totales, por hatches telegrafiados",
+      "procedure": "contar refuerzos de fase 2 durante toda la fase (requests y commits) y los hatches usados",
+      "metrics": ["max_simultaneous_secondary", "total_reinforcement_requests", "reinforcement_hatches", "reinforcement_telegraphs"],
+      "pass": "max <= 2; total requests <= 3; todos con hatch telegraph",
+      "fail_severity": "P1 (ledger E5; brief v2 #5)",
+      "regression_ref": "01B: harrier elite cada 4.6s indefinido"
+    },
+    {
+      "id": "BF-07",
+      "name": "phase-transition-explicit",
+      "objective": "la transición 1->2 es un evento explícito entre FSM completadas; sin doble transición",
+      "procedure": "registrar el tick de transición y el estado del FSM; verificar 1 solo evento",
+      "metrics": ["transition_tick", "phase_before", "phase_after", "double_transition_events", "fsm_state_at_transition"],
+      "pass": "transición ocurre tras VULNERABLE completado (o entre patrones completos); DOUBLE_PHASE_TRANSITION = 0",
+      "fail_severity": "P1",
+      "gate_ref": "DOUBLE_PHASE_TRANSITION: 0"
+    },
+    {
+      "id": "BF-08",
+      "name": "no-permanent-states",
+      "objective": "ningún estado de vulnerabilidad o invulnerabilidad persiste para siempre",
+      "procedure": "muestrear vulnerable/armor durante 90s de pelea (o hasta DEFEAT)",
+      "metrics": ["max_vulnerable_continuous", "max_invulnerable_continuous", "permanent_state_events"],
+      "pass": "PermanentInvulnerability = 0; toda ventana de vulnerabilidad cierra y reabre",
+      "fail_severity": "P1 (ledger E8)",
+      "gate_ref": "PERMANENT_INVULNERABILITY: 0"
+    },
+    {
+      "id": "BF-09",
+      "name": "duration-budget",
+      "objective": "boss 70-100s; ninguna fase > 55s sin cambio de patrón",
+      "procedure": "medir duración fase 1, fase 2 y total (boss spawn -> DEFEATED)",
+      "metrics": ["phase1_duration", "phase2_duration", "boss_total_duration", "mission_total"],
+      "pass": "70 <= boss_total <= 100; cada fase <= 55s",
+      "fail_severity": "P2 (ledger E7)",
+      "hp_note": "540 HP se mantiene salvo que métricas repetibles fallen el presupuesto (brief v2 #3)"
+    },
+    {
+      "id": "BF-10",
+      "name": "defeated-cleanup",
+      "objective": "a 0 HP: ataques cancelados, proyectiles resueltos, evac se desbloquea, control del jugador preservado",
+      "procedure": "llevar el boss a 0; muestrear proyectiles/ataques/evacuation.unlocked y control del jugador",
+      "metrics": ["projectiles_after_defeat", "attacks_after_defeat", "evacuation_unlocked", "player_control_after_defeat"],
+      "pass": "sin ataques/proyectiles activos del boss; evacuation.unlocked true; jugador controla",
+      "fail_severity": "P1 (ledger A4, F6)"
+    }
+  ],
+  "per_phase_records": ["phase_time", "attacks_executed", "windows_opened", "damage_during_telegraph", "damage_in_safe_zone", "boss_duration", "mission_duration"],
+  "gates": {
+    "BOSS_HP": 540,
+    "VULNERABILITY_CAUSED_BY_ATTACK": "PASS",
+    "CLOSED_RADIAL_RING_WITHOUT_GAPS": 0,
+    "PERMANENT_INVULNERABILITY": 0,
+    "DOUBLE_PHASE_TRANSITION": 0
+  },
+  "evidence": "video del recorrido del boss + capturas por estado FSM + boss-metrics-v2.json al ejecutar"
+}

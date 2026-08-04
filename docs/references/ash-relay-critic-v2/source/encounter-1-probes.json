@@ -1,0 +1,86 @@
+{
+  "sprint": "OPS-ASH-RELAY-GAMEPLAY-CRITIC-01C",
+  "schema": "encounter-1-probes-v2",
+  "status": "PREPARED",
+  "contract_ref": "encounter-plan.md v2 (Relay encounters) + rubric v2 PACING",
+  "execution": "correr SOLO tras CORRECTION_BUILD_READY_FOR_REVIEW; input por capa pública; 3 corridas por caso",
+  "cases": [
+    {
+      "id": "E1-01",
+      "name": "onboarding-two-scrappers-before-node",
+      "objective": "dos Cinder Scrappers normales aparecen por hatches opuestos ANTES de que Node 01 se habilite",
+      "procedure": "entrar al primer yard; muestrear enemies y nodes[0].unlocked cada 250ms; registrar orden de spawns (tipo, hatch, timestamp)",
+      "metrics": ["spawn_order", "spawn_kinds", "spawn_hatches", "node0_unlocked_timing", "node0_unlocked_condition"],
+      "pass": "los 2 primeros spawns son harrier normales (no elite) desde hatches opuestos; nodes[0].unlocked pasa a true SOLO tras derrotarlos (2 kills)",
+      "fail_severity": "P1 (gate SOFTLOCKS / PACING; brief v2 #2)",
+      "regression_ref": "01B: activación sin combate previo y 3+3+2 enemigos después — esta build DEBE invertir el orden"
+    },
+    {
+      "id": "E1-02",
+      "name": "node-blocked-until-onboarding",
+      "objective": "Node 01 no acepta activación antes de resolver el onboarding",
+      "procedure": "pararse en el ring con node bloqueado; hold E 3s; leer activation",
+      "metrics": ["activation_with_node_locked"],
+      "pass": "activation permanece 0 con node bloqueado",
+      "fail_severity": "P1 (gate SOFTLOCKS; ledger C2)"
+    },
+    {
+      "id": "E1-03",
+      "name": "bounded-response",
+      "objective": "tras activar: exactamente 1 Scrapper + 1 Sentry, sin refuerzos",
+      "procedure": "activar Node 01; muestrear enemies cada 500ms durante 30s (o hasta que el encuentro se limpie)",
+      "metrics": ["response_spawn_order", "response_total_hostiles", "response_peak_active", "reinforcements_after_response", "response_kinds"],
+      "pass": "peak activos <= 2; totales de respuesta = 2 (1 harrier + 1 ward); sin spawns posteriores a la respuesta",
+      "fail_severity": "P1 (brief v2 #2; ledger C3)"
+    },
+    {
+      "id": "E1-04",
+      "name": "relay-a-less-demanding-than-b",
+      "objective": "Relay A mediblemente menos exigente que Relay B",
+      "procedure": "registrar para A: peak activos, totales, elites, composición; repetir para B (encounter-2)",
+      "metrics": ["A_peak_active", "A_total_hostiles", "A_elites", "A_composition", "B_peak_active", "B_total_hostiles", "B_elites", "B_composition"],
+      "pass": "A_peak < B_peak; A_total < B_total; A sin elites; composición A (2 melee) más simple que B (3 melee + 2 ranged)",
+      "fail_severity": "P2 (rubric PACING; ledger C4)",
+      "compare_ref": "encounter-plan v2: A 2/2+2/2 sin elites; B 5/5 con elites"
+    },
+    {
+      "id": "E1-05",
+      "name": "no-spawn-on-player",
+      "objective": "ningún commit dentro del radio del jugador",
+      "procedure": "durante todos los spawns del encuentro, registrar distancia commit-jugador",
+      "metrics": ["min_commit_distance", "overlap_events"],
+      "pass": "min distancia > (PLAYER_RADIUS 0.55 + enemy radius); overlap_events = 0",
+      "fail_severity": "P1 (brief v2 #4; ledger D7)"
+    },
+    {
+      "id": "E1-06",
+      "name": "edge-kite-no-softlock",
+      "objective": "kite de un Scrapper hasta el borde del arena no produce softlock ni enemigo perdido",
+      "procedure": "kite al borde; el enemigo debe recuperarse o quedar atrapado de forma jugable; el encuentro sigue siendo completable",
+      "metrics": ["enemy_at_edge", "softlock", "encounter_completable"],
+      "pass": "sin softlock; el encuentro se completa; sin enemigo disparando desde fuera del arena",
+      "fail_severity": "P1 (brief v2 #2; ledger C5)"
+    },
+    {
+      "id": "E1-07",
+      "name": "onboarding-damage-profile",
+      "objective": "registrar perfil de daño del onboarding para comparar contra Encounter 2",
+      "procedure": "recorrido competente (bot o humano): registrar daño recibido en A y en B, muertes, duración",
+      "metrics": ["damage_received_A", "damage_received_B", "deaths_A", "deaths_B", "duration_A", "duration_B"],
+      "pass": "A menos demandante que B también en daño/duración (registro, sin umbral duro)",
+      "fail_severity": "P2 (registro para PACING)"
+    }
+  ],
+  "per_run_schema": {
+    "spawn_order": "lista [tick, kind, elite, hatch_id]",
+    "active_hostile_peak": "máximo de enemigos activos simultáneos",
+    "damage": "total recibido",
+    "deaths": "conteo DEFEAT",
+    "duration": "segundos de la fase",
+    "node01_enabled": "bool + condición",
+    "hatches_used": "ids de hatches",
+    "softlock": "bool + descripción"
+  },
+  "expected_result": "3/3 corridas PASS por caso; registrar todo en bot-results-v2.json / encounter-1-results.json al ejecutar",
+  "evidence": "captura encounter-1 (onboarding con 2 hatches + response) en evidence-v2/frames/"
+}

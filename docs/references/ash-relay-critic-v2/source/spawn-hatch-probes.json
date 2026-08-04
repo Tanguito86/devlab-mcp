@@ -1,0 +1,92 @@
+{
+  "sprint": "OPS-ASH-RELAY-GAMEPLAY-CRITIC-01C",
+  "schema": "spawn-hatch-probes-v2",
+  "status": "PREPARED",
+  "contract_ref": "encounter-plan.md v2 (lifecycle HATCH_IDLE -> HATCH_TELEGRAPH -> SPAWN_COMMIT -> ENEMY_ACTIVE; budgets locales; telegraph >= 0.65s con forma+color) + core-loop v2 (pool 24 = storage)",
+  "execution": "correr SOLO tras CORRECTION_BUILD_READY_FOR_REVIEW; 3 corridas por caso",
+  "distinctions": {
+    "POOL_CAPACITY": "24 slots de almacenamiento (preallocated pool). NO es presión simultánea. NO se falla porque el pool contenga 24 objetos.",
+    "ACTIVE_BUDGET": "presupuesto local por encuentro (A 2/2 + 2/2; B 5/5; P1 0/0; P2 2 activos/3 requests).",
+    "GLOBAL_CAP_6": "NO EXISTE en el contrato v2. Prohibido usarlo como criterio."
+  },
+  "cases": [
+    {
+      "id": "SH-01",
+      "name": "hatch-visible-telegraph",
+      "objective": "todo spawn estándar tiene un hatch visible con telegraph de al menos 0.65s",
+      "procedure": "durante un encuentro, registrar para cada spawn: estado del hatch (idle/telegraph/commit), duración del telegraph, canales del telegraph (forma animada + color)",
+      "metrics": ["hatch_states", "telegraph_duration_min", "telegraph_channels", "telegraph_visible_in_portrait"],
+      "pass": "todo spawn pasa por HATCH_TELEGRAPH; duración >= 0.65s; 2 canales (movimiento/forma + color); visible en 390x844",
+      "fail_severity": "P1 (brief v2 #4; ledger D1-D2)",
+      "regression_ref": "01B: spawns en coordenadas fijas sin hatch (AR-04)"
+    },
+    {
+      "id": "SH-02",
+      "name": "lifecycle-order",
+      "objective": "el orden del lifecycle se respeta en cada commit",
+      "procedure": "registrar la secuencia de estados por hatch y por spawn",
+      "metrics": ["lifecycle_sequences", "violations"],
+      "pass": "todas las secuencias = HATCH_IDLE -> HATCH_TELEGRAPH -> SPAWN_COMMIT -> ENEMY_ACTIVE; 0 violaciones",
+      "fail_severity": "P1 (ledger D1)"
+    },
+    {
+      "id": "SH-03",
+      "name": "bounded-queues",
+      "objective": "las colas de encuentro están acotadas; un request extra se difiere o rechaza determinísticamente",
+      "procedure": "en relay B (cola 5), observar el comportamiento cuando la cola está llena: requests vs commits",
+      "metrics": ["queue_max", "requests", "commits", "deferred", "rejected", "queue_growth_unbounded"],
+      "pass": "cola nunca crece sin límite; defer/reject determinista; queue_max <= presupuesto",
+      "fail_severity": "P1 (ledger D4; brief v2 #4)"
+    },
+    {
+      "id": "SH-04",
+      "name": "local-budgets-respected",
+      "objective": "los presupuestos locales se respetan por encuentro",
+      "procedure": "medir peak de activos y cola en A (onboarding y response) y en B",
+      "metrics": ["A_onboarding_active_max", "A_onboarding_queue_max", "A_response_active_max", "A_response_queue_max", "B_active_max", "B_queue_max", "P2_secondary_max", "P2_requests_total"],
+      "pass": "A <= 2/2 en ambos momentos; B <= 5/5; P2 <= 2 activos / <= 3 requests",
+      "fail_severity": "P1 (ledger D3; rubric ENEMIGOS)"
+    },
+    {
+      "id": "SH-05",
+      "name": "restart-clears-hatch",
+      "objective": "restart limpia hatch activo, timer y cola",
+      "procedure": "en el momento de un HATCH_TELEGRAPH (o con cola llena), restart; verificar estado de hatches/colas/timers",
+      "metrics": ["hatch_state_after_restart", "queue_after_restart", "timers_after_restart"],
+      "pass": "sin hatch activo, cola vacía, timers reseteados",
+      "fail_severity": "P1 (gate RESTART_SUCCESS; ledger D5)",
+      "notes": "corre también como adversarial AV-07"
+    },
+    {
+      "id": "SH-06",
+      "name": "checkpoint-restore-clears-residuals",
+      "objective": "checkpoint restore no deja residuos de cola/hatch",
+      "procedure": "morir con cola pendiente en relay B; retry checkpoint; verificar cola/hatch/proyectiles",
+      "metrics": ["queue_after_restore", "hatch_after_restore", "projectiles_after_restore", "effects_after_restore"],
+      "pass": "0 residuos de cualquier tipo",
+      "fail_severity": "P1 (gate CHECKPOINT_RESTORE; ledger D6)",
+      "notes": "corre también como adversarial AV-08"
+    },
+    {
+      "id": "SH-07",
+      "name": "safe-commit",
+      "objective": "el commit nunca ocurre dentro del radio del jugador; hatch inválido reintenta en hatch válido",
+      "procedure": "pararse en el hatch del próximo spawn; registrar a qué hatch va el commit y la distancia",
+      "metrics": ["commit_distance_min", "retried_hatches", "raw_coordinate_spawns"],
+      "pass": "distancia > radio; sin spawns en coordenada cruda; retry determinista en hatch válido",
+      "fail_severity": "P1 (ledger D7; brief v2 #4)"
+    },
+    {
+      "id": "SH-08",
+      "name": "spawn-during-pause",
+      "objective": "el lifecycle se congela durante la pausa (sin commits ni telegraphs avanzando)",
+      "procedure": "pausar durante un HATCH_TELEGRAPH; esperar 1s; verificar estado del hatch; resume",
+      "metrics": ["hatch_state_paused", "commits_during_pause", "telegraph_progress_during_pause"],
+      "pass": "sin commits ni progreso de telegraph durante la pausa",
+      "fail_severity": "P1 (gate PAUSE_RESUME; ledger F4)",
+      "notes": "corre también como adversarial AV-06"
+    }
+  ],
+  "expected_result": "3/3 PASS por caso; registrar spawn-hatch-results-v2.json al ejecutar",
+  "evidence": "capturas de hatch en telegraph (desktop + portrait) + serie de estados por spawn"
+}
