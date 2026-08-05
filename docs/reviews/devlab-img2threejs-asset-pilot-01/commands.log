@@ -19,3 +19,11 @@ FINAL node --test game-skills-benchmark-materializer + policy: 43/43 PASS
 FINAL node --test tests/hermes-capability-registry.test.mjs: 3/3 PASS
 FINAL visual-regression-mcp: 9/9 PASS
 FINAL topdown-shooter-kit: 33/33 PASS
+CLEAN CLONE git -c core.autocrlf=true clone --no-local: PASS
+CLEAN CLONE HEAD 4f74bf07f3e05446a3d8fa9dd19c7c155883616e: EXACT
+CLEAN CLONE corepack pnpm install --frozen-lockfile --offline: 193/193 REUSED, 0 DOWNLOADED
+CLEAN CLONE build/typecheck/tests: 6/6, 6/6, 253/253 PASS
+CLEAN CLONE Cinder reproduction: APPROVED
+CLEAN CLONE deterministic JSON/reports: 11/11 BYTE-IDENTICAL
+CLEAN CLONE PNG hashes: 28/28 IDENTICAL
+CLEAN CLONE tracked status: CLEAN

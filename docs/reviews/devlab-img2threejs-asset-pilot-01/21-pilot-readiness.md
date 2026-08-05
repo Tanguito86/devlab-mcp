@@ -10,5 +10,5 @@ No game integration, external asset, URL/CDN, remote generation, R3F, SparkJS,
 splat, Blender, shader system, editor, gameplay, or central DevLab contract change
 was introduced.
 
-Productionization is ready only after the clean-clone gate. WebGPU remains a
-separately visible optional adapter task.
+The clean-clone gate passes, so the pilot is ready for the separately authorized
+productionization decision. WebGPU remains a visible optional adapter task.
