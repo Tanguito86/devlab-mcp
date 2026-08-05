@@ -1,0 +1,21 @@
+PRECHECK git branch/head/origin/ahead-behind/status/index: PASS at 6c447e9448aee35fc5cb185e1f6f8a505ffb8903
+PRECHECK corepack pnpm --version: 9.15.4
+PRECHECK source HEAD/status: b604139f51d6831780240e8cf1d8b21a42401d0a CLEAN DETACHED
+BASELINE corepack pnpm -r build: 6/6 PASS
+BASELINE corepack pnpm -r typecheck: 6/6 PASS
+BASELINE corepack pnpm -r test: 245/245 PASS
+PILOT corepack pnpm --filter @tanguito/devlab-img2threejs-asset-forge build: PASS
+PILOT corepack pnpm --filter @tanguito/devlab-img2threejs-asset-forge test: 46/46 PASS
+PILOT node scripts/cinder-relay-drone-pilot.mjs: APPROVED
+PILOT RUN-A/RUN-B: 14/14 PNG, 14/14 RGBA, manifest byte match PASS
+PILOT WebGL 2 / ANGLE SwiftShader / calls 10 / renderer triangles 2504: PASS
+PILOT WebGPU adapter probe: UNAVAILABLE / OPTIONAL PENDING
+PILOT lifecycle create-render-capture-dispose: 100/100 PASS
+PILOT WEBGL_lose_context recovery and exact retry: PASS
+FINAL corepack pnpm -r build: 6/6 PASS
+FINAL corepack pnpm -r typecheck: 6/6 PASS
+FINAL corepack pnpm -r test: 253/253 PASS
+FINAL node --test game-skills-benchmark-materializer + policy: 43/43 PASS
+FINAL node --test tests/hermes-capability-registry.test.mjs: 3/3 PASS
+FINAL visual-regression-mcp: 9/9 PASS
+FINAL topdown-shooter-kit: 33/33 PASS
