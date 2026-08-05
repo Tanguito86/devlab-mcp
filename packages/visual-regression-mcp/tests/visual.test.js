@@ -36,8 +36,10 @@ for (let i = 0; i < green4x4.length; i += 4) { green4x4[i + 1] = 255; green4x4[i
 
 const redPath = join(testDir, "test-red.png");
 const greenPath = join(testDir, "test-green.png");
+const oversizedPath = join(testDir, "test-oversized.png");
 writeFileSync(redPath, writePng(red4x4, 4, 4));
 writeFileSync(greenPath, writePng(green4x4, 4, 4));
+writeFileSync(oversizedPath, writePng(Buffer.alloc(4097 * 4), 4097, 1));
 
 // ── ImageComparator tests ──
 
@@ -50,6 +52,11 @@ test("compareImages: identical images return 0 changed", async () => {
   assert.equal(result.passed, true);
   assert.equal(result.width, 4);
   assert.equal(result.height, 4);
+});
+
+test("readPng delegates hostile dimensions to the canonical bounded parser", async () => {
+  const { readPng } = await import("../dist/compare/ImageComparator.js");
+  assert.throws(() => readPng(oversizedPath), /dimensions outside policy/);
 });
 
 test("compareImages: different images return all changed", async () => {
@@ -126,5 +133,6 @@ test("ComparisonResult shape has required fields", () => {
 test("cleanup", () => {
   try { unlinkSync(redPath); } catch {}
   try { unlinkSync(greenPath); } catch {}
+  try { unlinkSync(oversizedPath); } catch {}
   assert.ok(true, "cleanup done");
 });

@@ -31,6 +31,7 @@
   },
   "packageManager": "pnpm@9.15.4",
   "devDependencies": {
-    "@changesets/cli": "^2.31.0"
+    "@changesets/cli": "^2.31.0",
+    "@tanguito/devlab-img2threejs-asset-forge": "workspace:*"
   }
 }

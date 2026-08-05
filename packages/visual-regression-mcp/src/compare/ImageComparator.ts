@@ -1,8 +1,9 @@
 // Visual regression — pure Node.js PNG comparison (zero native deps)
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { inflateSync, deflateSync } from "node:zlib";
+import { deflateSync } from "node:zlib";
 import { createHash } from "node:crypto";
+import { parsePngFile } from "@tanguito/devlab-img2threejs-asset-forge";
 
 // ── Minimal PNG parser (IHDR only) ──
 
@@ -16,74 +17,16 @@ export interface PngInfo {
 
 /** Read PNG dimensions and raw pixel data. Only supports RGBA 8-bit. */
 export function readPng(filePath: string): PngInfo {
-  const buf = readFileSync(filePath);
-
-  // Verify PNG signature
-  if (buf[0] !== 137 || buf[1] !== 80 || buf[2] !== 78 || buf[3] !== 71) {
-    throw new Error(`Not a PNG file: ${filePath}`);
+  const parsed = parsePngFile(filePath);
+  const rawPixels = Buffer.alloc(parsed.width * parsed.height * 4);
+  for (let pixel = 0; pixel < parsed.width * parsed.height; pixel += 1) {
+    const source = pixel * parsed.channels; const target = pixel * 4;
+    if (parsed.colorType === 0) rawPixels.set([parsed.pixels[source]!, parsed.pixels[source]!, parsed.pixels[source]!, 255], target);
+    else if (parsed.colorType === 2) rawPixels.set([parsed.pixels[source]!, parsed.pixels[source + 1]!, parsed.pixels[source + 2]!, 255], target);
+    else if (parsed.colorType === 4) rawPixels.set([parsed.pixels[source]!, parsed.pixels[source]!, parsed.pixels[source]!, parsed.pixels[source + 1]!], target);
+    else rawPixels.set(parsed.pixels.subarray(source, source + 4), target);
   }
-
-  let offset = 8; // skip signature
-  let width = 0, height = 0, bitDepth = 0, colorType = 0;
-  const idatChunks: Buffer[] = [];
-
-  while (offset < buf.length) {
-    const length = buf.readUInt32BE(offset);
-    const type = buf.toString("ascii", offset + 4, offset + 8);
-
-    if (type === "IHDR") {
-      width = buf.readUInt32BE(offset + 8);
-      height = buf.readUInt32BE(offset + 12);
-      bitDepth = buf[offset + 16];
-      colorType = buf[offset + 17];
-    }
-
-    if (type === "IDAT") {
-      idatChunks.push(buf.subarray(offset + 8, offset + 8 + length));
-    }
-
-    if (type === "IEND") break;
-    offset += 12 + length;
-  }
-
-  if (width === 0 || height === 0) throw new Error(`Invalid PNG: no IHDR in ${filePath}`);
-
-  // Decompress IDAT
-  const compressed = Buffer.concat(idatChunks);
-  const decompressed = inflateSync(compressed);
-
-  // Unfilter scanlines (filter byte per row)
-  const bytesPerPixel = colorType === 6 ? 4 : colorType === 2 ? 3 : 1;
-  const stride = width * bytesPerPixel;
-  const rawPixels = Buffer.alloc(height * stride);
-  const rowSize = stride + 1; // +1 for filter byte
-
-  for (let y = 0; y < height; y++) {
-    const filter = decompressed[y * rowSize];
-    const src = decompressed.subarray(y * rowSize + 1, (y + 1) * rowSize);
-    const dst = rawPixels.subarray(y * stride, (y + 1) * stride);
-
-    if (filter === 0) {
-      src.copy(dst);
-    } else if (filter === 1) {
-      // Sub filter
-      for (let x = 0; x < stride; x++) {
-        const left = x >= bytesPerPixel ? dst[x - bytesPerPixel] : 0;
-        dst[x] = (src[x] + left) & 0xff;
-      }
-    } else if (filter === 2) {
-      // Up filter
-      const prev = y > 0 ? rawPixels.subarray((y - 1) * stride, y * stride) : Buffer.alloc(stride);
-      for (let x = 0; x < stride; x++) {
-        dst[x] = (src[x] + prev[x]) & 0xff;
-      }
-    } else {
-      // Filters 3 (Average) and 4 (Paeth) — fallback: copy raw
-      src.copy(dst);
-    }
-  }
-
-  return { width, height, bitDepth, colorType, rawPixels };
+  return { width: parsed.width, height: parsed.height, bitDepth: parsed.bitDepth, colorType: parsed.colorType, rawPixels };
 }
 
 // ── Pixel comparison ──

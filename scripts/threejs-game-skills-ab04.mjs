@@ -27,7 +27,7 @@ import {
   sep,
 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { inflateSync } from "node:zlib";
+import { parsePng } from "@tanguito/devlab-img2threejs-asset-forge";
 
 const scriptPath = fileURLToPath(import.meta.url);
 export const repoRoot = resolve(dirname(scriptPath), "..");
@@ -1332,111 +1332,15 @@ export function validateJsonSchema(value, schema, path = "$") {
   }
 }
 
-function pngCrc32(bytes) {
-  let crc = 0xffffffff;
-  for (const byte of bytes) {
-    crc ^= byte;
-    for (let bit = 0; bit < 8; bit += 1) {
-      crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
-    }
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function paethPredictor(left, up, upperLeft) {
-  const estimate = left + up - upperLeft;
-  const leftDistance = Math.abs(estimate - left);
-  const upDistance = Math.abs(estimate - up);
-  const upperLeftDistance = Math.abs(estimate - upperLeft);
-  if (leftDistance <= upDistance && leftDistance <= upperLeftDistance) return left;
-  if (upDistance <= upperLeftDistance) return up;
-  return upperLeft;
-}
-
 function resultPngRgba(bytes, label, expectedViewport) {
-  const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  expectResult(bytes.length >= 45 && bytes.subarray(0, 8).equals(signature), `${label} is not a PNG`);
-  let offset = 8;
-  let dimensions = null;
-  const idatChunks = [];
-  let sawIend = false;
-  let chunkIndex = 0;
-  while (offset < bytes.length) {
-    expectResult(offset + 12 <= bytes.length, `${label} has a truncated PNG chunk`);
-    const length = bytes.readUInt32BE(offset);
-    const typeStart = offset + 4;
-    const dataStart = typeStart + 4;
-    const crcOffset = dataStart + length;
-    expectResult(crcOffset + 4 <= bytes.length, `${label} has a truncated PNG payload`);
-    const type = bytes.toString("ascii", typeStart, dataStart);
-    expectResult(/^[A-Za-z]{4}$/.test(type), `${label} has an invalid PNG chunk type`);
-    const observedCrc = bytes.readUInt32BE(crcOffset);
-    const expectedCrc = pngCrc32(bytes.subarray(typeStart, crcOffset));
-    expectResult(observedCrc === expectedCrc, `${label} has a PNG CRC mismatch`);
-    if (type === "IHDR") {
-      expectResult(chunkIndex === 0 && length === 13 && !dimensions, `${label} has an invalid IHDR`);
-      dimensions = { width: bytes.readUInt32BE(dataStart), height: bytes.readUInt32BE(dataStart + 4) };
-      expectResult(dimensions.width > 0 && dimensions.height > 0, `${label} has invalid PNG dimensions`);
-      expectResult(
-        bytes[dataStart + 8] === 8
-        && bytes[dataStart + 9] === 6
-        && bytes[dataStart + 10] === 0
-        && bytes[dataStart + 11] === 0
-        && bytes[dataStart + 12] === 0,
-        `${label} must be non-interlaced 8-bit RGBA PNG`,
-      );
-    } else if (type === "IDAT") {
-      expectResult(Boolean(dimensions) && !sawIend, `${label} has IDAT outside the image body`);
-      idatChunks.push(bytes.subarray(dataStart, crcOffset));
-    } else if (type === "IEND") {
-      expectResult(length === 0 && crcOffset + 4 === bytes.length, `${label} has an invalid IEND`);
-      sawIend = true;
-    } else if (/^[A-Z]/.test(type) && type !== "PLTE") {
-      expectResult(false, `${label} has unsupported critical PNG chunk ${type}`);
-    }
-    offset = crcOffset + 4;
-    chunkIndex += 1;
-    if (sawIend) break;
-  }
-  expectResult(dimensions && idatChunks.length > 0 && sawIend, `${label} is missing required PNG chunks`);
+  let parsed;
+  try { parsed = parsePng(bytes); } catch (error) { expectResult(false, `${label} failed canonical PNG admission: ${error.message}`); }
+  expectResult(parsed.colorType === 6 && parsed.channels === 4, `${label} must be an 8-bit RGBA PNG`);
   expectResult(
-    dimensions.width === expectedViewport.width && dimensions.height === expectedViewport.height,
+    parsed.width === expectedViewport.width && parsed.height === expectedViewport.height,
     `${label} dimensions do not match the expected viewport`,
   );
-  const bytesPerPixel = 4;
-  const rowBytes = dimensions.width * bytesPerPixel;
-  const expectedInflatedLength = dimensions.height * (rowBytes + 1);
-  let inflated;
-  try {
-    inflated = inflateSync(Buffer.concat(idatChunks), { maxOutputLength: expectedInflatedLength });
-  } catch {
-    expectResult(false, `${label} has invalid or oversized IDAT data`);
-  }
-  expectResult(inflated.length === expectedInflatedLength, `${label} has the wrong decompressed length`);
-  const rgba = Buffer.alloc(dimensions.width * dimensions.height * bytesPerPixel);
-  let sourceOffset = 0;
-  for (let row = 0; row < dimensions.height; row += 1) {
-    const filter = inflated[sourceOffset];
-    sourceOffset += 1;
-    expectResult(filter >= 0 && filter <= 4, `${label} has an unsupported PNG filter`);
-    const rowOffset = row * rowBytes;
-    for (let column = 0; column < rowBytes; column += 1) {
-      const raw = inflated[sourceOffset];
-      sourceOffset += 1;
-      const left = column >= bytesPerPixel ? rgba[rowOffset + column - bytesPerPixel] : 0;
-      const up = row > 0 ? rgba[rowOffset - rowBytes + column] : 0;
-      const upperLeft = row > 0 && column >= bytesPerPixel
-        ? rgba[rowOffset - rowBytes + column - bytesPerPixel]
-        : 0;
-      let predictor = 0;
-      if (filter === 1) predictor = left;
-      else if (filter === 2) predictor = up;
-      else if (filter === 3) predictor = Math.floor((left + up) / 2);
-      else if (filter === 4) predictor = paethPredictor(left, up, upperLeft);
-      rgba[rowOffset + column] = (raw + predictor) & 0xff;
-    }
-  }
-  return { ...dimensions, rgba };
+  return { width: parsed.width, height: parsed.height, rgba: Buffer.from(parsed.pixels) };
 }
 
 function verifyResultArtifactSet(

@@ -1,0 +1,15 @@
+2026-08-04 preflight: fetch/prune; local and origin 7b564353; divergence 0/0; clean/index empty; corepack pnpm 9.15.4
+2026-08-04 source: pin b604139f51d6831780240e8cf1d8b21a42401d0a; detached clean; 153 tracked; read-only inventory only
+2026-08-04 inventory: 3 unsafe TypeScript comment interpolations; 5 complete upstream PNG decoder copies
+2026-08-04 no-copy: boundary and threat model recorded before implementation
+2026-08-04 implementation: independent asset-forge package and H-01 through H-05 contracts
+2026-08-04 migration: visual-regression and AB-04 consumers delegate to canonical PNG parser
+2026-08-04 validation anomaly: root `corepack pnpm build` delegated to a bare pnpm wrapper resolving 11.9.0; stopped without repository mutation
+2026-08-04 validation policy: all final workspace commands invoked directly as `corepack pnpm -r ...`; effective version 9.15.4
+2026-08-04 gauntlet: security and technical critic iterations completed read-only; all required findings resolved
+2026-08-04 focused final: asset-forge build PASS; 38/38 PASS; visual consumer 9/9 PASS; AB-04 consumers 43/43 PASS
+2026-08-04 workspace final: frozen install PASS; build 6/6; typecheck 6/6; tests 245/245
+2026-08-04 registry final: 3/3 PASS
+2026-08-04 scans: JSON 6/6; secrets 0; >1MiB files 0; forbidden generation APIs 0; network APIs 0; noncanonical inflate 0
+2026-08-04 no-copy scan: 153 upstream tracked vs 14 DevLab package files; exact SHA-256 matches 0
+2026-08-04 source final: external pin unchanged and worktree clean; pilot not executed; upstream not installed or run

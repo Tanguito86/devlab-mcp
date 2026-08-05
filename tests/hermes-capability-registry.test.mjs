@@ -22,7 +22,8 @@ test("capability registry has the exact governed capability set", () => {
 
 test("external candidates remain uninstalled and outside the kit", () => {
   assert.equal(external.r3f.installed, false); assert.equal(external.r3f.topdownKitDependency, false);
-  assert.equal(external.img2threejs.installed, false); assert.equal(external.img2threejs.blockers.length, 3);
+  assert.equal(external.img2threejs.installed, false); assert.equal(external.img2threejs.status, "HARDENED_PILOT_READY"); assert.equal(external.img2threejs.blockers.length, 0);
+  assert.equal(external.img2threejs.upstreamCopiesModified, 0);
   assert.deepEqual(kit.runtimeDependencies, []);
 });
 

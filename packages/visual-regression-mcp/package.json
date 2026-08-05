@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@tanguito/devlab-img2threejs-asset-forge": "workspace:*",
     "@tanguito/devlab-shared": "workspace:*",
     "zod": "^4.1.13"
   },

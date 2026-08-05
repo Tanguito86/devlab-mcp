@@ -1,0 +1,23 @@
+{
+  "name": "@tanguito/devlab-img2threejs-asset-forge",
+  "version": "0.1.0",
+  "description": "Independent security and determinism contracts for a future img2threejs asset-forge adapter.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Tanguito86",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test tests/*.test.js",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": { "node": ">=20" }
+}

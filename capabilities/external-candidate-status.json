@@ -1,5 +1,5 @@
 {
   "schemaVersion": 1,
   "r3f": { "lane": "SEPARATE_ARCHITECTURE_LANE", "pin": "0a107412ac64667b1908422e859447952f57feef", "status": "RUNTIME_BENCHMARK_PENDING", "installed": false, "topdownKitDependency": false },
-  "img2threejs": { "lane": "ASSET_FACTORY_ADAPTER", "pin": "b604139f51d6831780240e8cf1d8b21a42401d0a", "status": "FIXES_AND_PILOT_REQUIRED", "installed": false, "blockers": ["sanitize TypeScript interpolations", "bound all five PNG parsers", "harden independent visual gates"], "groundBlade": "REJECTED_UNTIL_WINDING_FIX", "pmremGenerator": "ADAPTER_REQUIRED", "classicMaterials": "PORTABLE_THROUGH_NODE_LIBRARY", "presentationRuntime": "DEVLAB_ADAPTER_REQUIRED" }
+  "img2threejs": { "lane": "ASSET_FACTORY_ADAPTER", "pin": "b604139f51d6831780240e8cf1d8b21a42401d0a", "status": "HARDENED_PILOT_READY", "installed": false, "blockers": [], "hardeningPackage": "@tanguito/devlab-img2threejs-asset-forge", "upstreamCopiesModified": 0, "groundBlade": "REJECTED_UNTIL_WINDING_FIX", "pmremGenerator": "ADAPTER_REQUIRED", "classicMaterials": "PORTABLE_THROUGH_NODE_LIBRARY", "presentationRuntime": "DEVLAB_ADAPTER_REQUIRED" }
 }

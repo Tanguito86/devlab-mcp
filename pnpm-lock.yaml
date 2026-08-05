@@ -11,6 +11,9 @@ importers:
       '@changesets/cli':
         specifier: ^2.31.0
         version: 2.31.0(@types/node@24.12.4)
+      '@tanguito/devlab-img2threejs-asset-forge':
+        specifier: workspace:*
+        version: link:packages/img2threejs-asset-forge
 
   packages/android-dev-mcp:
     dependencies:
@@ -62,6 +65,15 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/img2threejs-asset-forge:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.12.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/shared:
     dependencies:
       '@modelcontextprotocol/sdk':
@@ -88,6 +100,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@4.4.3)
+      '@tanguito/devlab-img2threejs-asset-forge':
+        specifier: workspace:*
+        version: link:../img2threejs-asset-forge
       '@tanguito/devlab-shared':
         specifier: workspace:*
         version: link:../shared
