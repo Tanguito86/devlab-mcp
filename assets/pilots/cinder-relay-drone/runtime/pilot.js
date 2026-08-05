@@ -152,16 +152,16 @@ async function runLifecycleCycles(count) {
   scene.remove(asset.root); asset.dispose();
   renderer.setSize(64, 64, false); renderer.setClearColor(0x181c20, 1);
   const lifecycleCamera = new THREE.PerspectiveCamera(32, 1, 0.1, 20); lifecycleCamera.position.set(2.6, 1.6, 3.25); lifecycleCamera.lookAt(0, 0.2, 0);
-  let ownedRemaining = 0; let disposeErrors = 0; let doubleDisposeFailures = 0; let captures = 0; let cleanupMs = 0;
+  let ownedRemaining = 0; let disposeErrors = 0; let doubleDisposeFailures = 0; let captures = 0; let cleanupMs = 0; let maxCleanupMs = 0;
   for (let cycle = 0; cycle < count; cycle += 1) {
     const instance = await createCinderRelayDrone(SPEC, { three: THREE, factoryVersion: "1.0.0" });
     scene.add(instance.root); instance.applyRelayPulse(cycle % 120); renderer.render(scene, lifecycleCamera); rawRgbaTopDown(); captures += 1;
-    scene.remove(instance.root); const started = performance.now(); const first = instance.dispose(); const second = instance.dispose(); cleanupMs += performance.now() - started;
+    scene.remove(instance.root); const started = performance.now(); const first = instance.dispose(); const second = instance.dispose(); const cycleCleanupMs = performance.now() - started; cleanupMs += cycleCleanupMs; maxCleanupMs = Math.max(maxCleanupMs, cycleCleanupMs);
     disposeErrors += first.errors.length + second.errors.length; if (!second.alreadyDisposed) doubleDisposeFailures += 1;
     ownedRemaining += instance.resources.filter(({ resource }) => !resource || typeof resource.dispose !== "function").length;
   }
   renderer.renderLists.dispose();
-  return { cycles: count, captures, ownedRemaining, disposeErrors, doubleDisposeFailures, sharedResourcesPreserved: true, externalResourcesPreserved: true, renderTargetsCreated: 0, cleanupMs };
+  return { cycles: count, captures, ownedRemaining, disposeErrors, doubleDisposeFailures, sharedResourcesPreserved: true, externalResourcesPreserved: true, renderTargetsCreated: 0, cleanupMs, averageCleanupMs: cleanupMs / count, maxCleanupMs };
 }
 
 await initialize();
