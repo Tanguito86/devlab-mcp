@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "assetId": "cinder-relay-drone",
+  "assetType": "industrial-relay-drone",
+  "seed": "devlab-cinder-relay-drone-v1",
+  "scaleMeters": {
+    "width": 1.8,
+    "height": 1.35,
+    "depth": 1.2
+  },
+  "silhouette": {
+    "centralBody": "compact-armored-core",
+    "upperRelay": "broken-arc-antenna",
+    "sideStabilizers": 2,
+    "asymmetry": "controlled"
+  },
+  "materials": {
+    "primary": "charcoal-metal",
+    "secondary": "oxidized-steel",
+    "accent": "ember-orange",
+    "sensor": "cold-cyan"
+  },
+  "damage": {
+    "level": "used",
+    "missingPanels": 1,
+    "surfaceWear": "moderate"
+  },
+  "lighting": {
+    "emissiveCore": true,
+    "sensorLights": true
+  }
+}
