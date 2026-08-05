@@ -16,3 +16,7 @@ benchmarks/threejs-game-skills-ab/**/*.jpeg binary
 benchmarks/threejs-game-skills-ab/**/*.png binary
 benchmarks/threejs-game-skills-ab/**/*.wasm binary
 benchmarks/threejs-game-skills-ab/**/*.webp binary
+
+# P-02 byte-exact fixtures must materialize identically on every checkout.
+/packages/topdown-shooter-kit/fixtures/provenance.json text eol=lf
+/packages/topdown-shooter-kit/fixtures/signal-grid.txt text eol=lf

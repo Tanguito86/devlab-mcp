@@ -151,6 +151,24 @@ test("P-02 local registry verifies canonical order, bytes, hashes, and provenanc
   assert.equal(canonicalizeLocalAssetRegistry(registry), canonicalizeLocalAssetRegistry(JSON.parse(canonicalizeLocalAssetRegistry(registry))));
 });
 
+test("P-02 byte-exact fixtures declare LF checkout and retain canonical bytes", async () => {
+  const rules = [
+    "/packages/topdown-shooter-kit/fixtures/provenance.json text eol=lf",
+    "/packages/topdown-shooter-kit/fixtures/signal-grid.txt text eol=lf",
+  ];
+  const attributes = await readFile(new URL("../../.gitattributes", packageRoot), "utf8");
+  const declaredRules = new Set(attributes.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean));
+  for (const rule of rules) assert.ok(declaredRules.has(rule), `missing checkout contract: ${rule}`);
+
+  const registry = JSON.parse(await readFile(new URL("fixtures/local-asset-registry-v1.json", packageRoot), "utf8"));
+  for (const asset of registry.assets) {
+    const bytes = await readFile(new URL(asset.runtimePath, packageRoot));
+    assert.equal(bytes.byteLength, asset.byteSize, `${asset.runtimePath} byte size`);
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), asset.sha256, `${asset.runtimePath} SHA-256`);
+    assert.equal(bytes.includes(Buffer.from("\r\n")), false, `${asset.runtimePath} contains CRLF`);
+  }
+});
+
 test("P-02 rejects duplicates, remote paths, missing files, and incorrect hashes", async () => {
   const registry = JSON.parse(await readFile(new URL("fixtures/local-asset-registry-v1.json", packageRoot), "utf8"));
   const duplicate = structuredClone(registry); duplicate.assets[1].assetId = duplicate.assets[0].assetId;
