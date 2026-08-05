@@ -22,8 +22,8 @@ export interface GmRequestBase {
 }
 export interface GmStatusRequest extends GmRequestBase {}
 export interface GmInspectRequest extends GmRequestBase { readonly maxFiles?: number }
-export interface GmFileEdit { readonly path: string; readonly action: "modify" | "create"; readonly content: string }
-export interface GmPlanRequest extends GmRequestBase { readonly files: readonly GmFileEdit[] }
+export interface GmFileEdit { readonly path: string; readonly action: "modify" | "create"; readonly content?: string; readonly contentBase64?: string }
+export interface GmPlanRequest extends GmRequestBase { readonly files: readonly GmFileEdit[]; readonly allowedExtensions?: readonly string[] }
 export interface GmApplySafeRequest extends GmRequestBase { readonly plan: GmMutationPlan; readonly planHash: string; readonly confirm: boolean; readonly dryRun?: boolean; readonly faultAt?: "before-staging" | "during-staging" | "before-promotion" | "after-first-replace" | "leave-write-ahead-after-first-replace" }
 export interface IgorConfiguration { readonly executable: string; readonly runtimePath: string; readonly userDirectory: string; readonly projectTool: string; readonly worker?: string; readonly runtime?: "VM" | "YYC"; readonly target?: string }
 export interface GmVerifyRequest extends GmRequestBase { readonly plan?: GmMutationPlan; readonly planHash?: string; readonly levels: readonly VerificationLevel[]; readonly igor?: IgorConfiguration; readonly expectedRuntimeSignal?: string }

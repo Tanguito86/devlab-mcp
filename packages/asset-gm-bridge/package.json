@@ -1,16 +1,13 @@
 {
-  "name": "@tanguito/devlab-gm-ide-adapter",
+  "name": "@tanguito/devlab-asset-gm-bridge",
   "version": "0.1.0",
-  "description": "Governed, fail-closed GameMaker project adapter for DevLab.",
+  "description": "Governed composition bridge between the DevLab Asset Forge catalog and the GameMaker IDE adapter (ASSET_GM_BRIDGE_V1).",
   "type": "module",
   "license": "MIT",
   "author": "Tanguito86",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-    "./internal": { "types": "./dist/internal.d.ts", "default": "./dist/internal.js" }
-  },
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
   "files": ["dist", "schemas", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -18,6 +15,10 @@
     "test": "node --test tests/*.test.js",
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
     "pack:dry-run": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "@tanguito/devlab-gm-ide-adapter": "workspace:*",
+    "@tanguito/devlab-img2threejs-asset-forge": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

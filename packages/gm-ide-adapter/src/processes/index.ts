@@ -64,7 +64,11 @@ export async function runOwnedCommand(input: Readonly<{ executable: string; args
   if (!child.pid) fail("PROCESS_OWNERSHIP", "failed to obtain child PID");
   const expectedHash = commandHash(input.executable, input.args); let initial: RawProcess | undefined; const identityDeadline = Math.min(operationStarted + input.timeoutMs, Date.now() + 5_000);
   while (!initial && Date.now() < identityDeadline && child.exitCode === null) { if (input.cancellation?.aborted) { child.kill("SIGTERM"); fail("CANCELLED", "operation cancelled during process identity acquisition", true); } initial = (await input.ledger.inventory()).find(({ pid }) => pid === child.pid); if (!initial) await new Promise((resolve) => setTimeout(resolve, 50)); }
-  if (!initial) { if (child.exitCode === null) child.kill("SIGTERM"); fail("PROCESS_OWNERSHIP", "could not acquire the Igor OS creation token", true, { pid: child.pid }); }
+  if (!initial) {
+    if (child.exitCode === null) child.kill("SIGTERM");
+    if (Date.now() >= operationStarted + input.timeoutMs) throw new GmAdapterError("TIMEOUT", "owned process exceeded timeout during identity acquisition", true, { ownedPids: [child.pid] });
+    fail("PROCESS_OWNERSHIP", "could not acquire the Igor OS creation token", true, { pid: child.pid });
+  }
   const startToken = initial.creationDate;
   input.ledger.register(initial, input.transactionId, "igor", expectedHash);
   let stdout = ""; let stderr = ""; child.stdout.on("data", (chunk: Buffer) => { stdout += chunk.toString("utf8"); }); child.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString("utf8"); });

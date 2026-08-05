@@ -37,6 +37,22 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/asset-gm-bridge:
+    dependencies:
+      '@tanguito/devlab-gm-ide-adapter':
+        specifier: workspace:*
+        version: link:../gm-ide-adapter
+      '@tanguito/devlab-img2threejs-asset-forge':
+        specifier: workspace:*
+        version: link:../img2threejs-asset-forge
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.12.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/browser-dev-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':

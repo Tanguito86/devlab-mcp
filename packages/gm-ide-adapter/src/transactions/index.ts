@@ -36,6 +36,23 @@ export async function applyTransaction(projectsDir: string, request: GmApplySafe
   if (request.capability !== "GM_APPLY_SAFE_V1") fail("GATE_VIOLATION", "applySafe requires GM_APPLY_SAFE_V1"); if (!request.confirm) fail("GATE_VIOLATION", "SAFE_WRITE requires confirm=true"); assertPlan(request, request.plan);
   const dryRun = request.dryRun !== false; const plan = request.plan; if (!request.expectedProjectFingerprint || request.expectedProjectFingerprint !== plan.projectFingerprint) fail("PLAN_STALE", "request fingerprint is not bound to plan", true);
   const projectRoot = safeRelativePath(request.projectRoot); const evidenceRoot = safeRelativePath(request.evidenceRoot); if (evidenceRoot === projectRoot || evidenceRoot.startsWith(`${projectRoot}/`)) fail("AUTHZ_PROJECT_ROOT", "evidenceRoot must be outside projectRoot");
+  // Idempotent reapply: when every planned file already matches the plan's
+  // AFTER state, the mutation is fully applied; report NO_CHANGE without
+  // touching anything (this must precede the fingerprint/snapshot validation,
+  // which would otherwise reject the already-applied project). A DIFFERENT
+  // plan under the same transaction is still rejected downstream
+  // (MUTATION_ALREADY_APPLIED / PLAN_STALE).
+  const currentRoot = await resolveInsideRoot(projectsDir, projectRoot, { existing: true });
+  const afterStates = await Promise.all(plan.files.map(async (file) => {
+    const destination = await resolveInsideRoot(currentRoot, file.path);
+    const current = await readFile(destination).catch((error: NodeJS.ErrnoException) => error.code === "ENOENT" ? null : Promise.reject(error));
+    return (current ? sha256(current) : null) === file.afterSha256;
+  }));
+  if (afterStates.every(Boolean)) {
+    const snapshot = await inspectProject(projectsDir, { ...request, capability: "GM_INSPECT_V1", expectedProjectFingerprint: null }, inventory);
+    const planDigest = hashPlan(plan);
+    return Object.freeze({ schemaVersion: 1, transactionId: request.transactionId, applied: false, dryRun: false, state: "NO_CHANGE", planHash: planDigest, manifestPath: "", manifestSha256: canonicalHash({ planHash: planDigest, state: "NO_CHANGE" }), changedFiles: Object.freeze([]), rollbackAvailable: false, projectFingerprint: snapshot.fingerprint });
+  }
   const snapshot = await inspectProject(projectsDir, { ...request, capability: "GM_INSPECT_V1" }, inventory); if (snapshot.snapshotHash !== plan.snapshotHash) fail("PLAN_STALE", "snapshot changed since plan", true);
   for (const file of plan.files) if (!plan.allowlist.includes(file.path) || !request.allowlist.map((path) => safeRelativePath(path)).includes(file.path)) fail("FILE_NOT_ALLOWLISTED", "apply allowlist differs from plan", false, { path: file.path });
   const planDigest = hashPlan(plan); if (dryRun) return Object.freeze({ schemaVersion: 1, transactionId: request.transactionId, applied: false, dryRun: true, state: "DRY_RUN", planHash: planDigest, manifestPath: "", manifestSha256: canonicalHash({ planHash: planDigest, state: "DRY_RUN" }), changedFiles: Object.freeze([]), rollbackAvailable: false, projectFingerprint: snapshot.fingerprint });

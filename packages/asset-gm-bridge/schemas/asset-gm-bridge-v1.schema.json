@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tanguito.local/devlab/asset-gm-bridge-v1.schema.json",
+  "title": "DevLab governed Asset Forge -> GameMaker bridge v1",
+  "type": "object",
+  "$defs": {
+    "capability": { "const": "ASSET_GM_BRIDGE_V1" },
+    "requestBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "projectRoot", "evidenceRoot", "transactionId", "assetId", "assetVersion", "resourceName", "expectedProjectFingerprint", "expectedHead", "timeoutMs", "verificationPolicy"],
+      "properties": {
+        "capability": { "$ref": "#/$defs/capability" },
+        "projectRoot": { "type": "string", "minLength": 1 },
+        "evidenceRoot": { "type": "string", "minLength": 1 },
+        "transactionId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        "assetId": { "type": "string", "minLength": 1 },
+        "assetVersion": { "type": "string", "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$" },
+        "resourceName": { "type": "string", "pattern": "^spr_[A-Za-z0-9_]{1,63}$" },
+        "expectedProjectFingerprint": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+        "expectedHead": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40,64}$" },
+        "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 3600000 },
+        "verificationPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["projectLoad", "compile", "runtime"],
+          "properties": {
+            "projectLoad": { "type": "boolean" },
+            "compile": { "type": "boolean" },
+            "runtime": { "enum": ["required", "optional", "forbidden"] }
+          }
+        }
+      }
+    },
+    "inspectAssetRequest": { "$ref": "#/$defs/requestBase" },
+    "inspectTargetRequest": { "$ref": "#/$defs/requestBase" },
+    "planRequest": { "$ref": "#/$defs/requestBase" },
+    "applyRequest": {
+      "allOf": [
+        { "$ref": "#/$defs/requestBase" },
+        { "type": "object", "required": ["plan", "planHash", "bindingHash", "confirm"], "properties": { "plan": { "type": "object" }, "planHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "bindingHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "confirm": { "const": true }, "dryRun": { "type": "boolean" }, "faultAt": { "enum": ["before-staging", "during-staging", "before-promotion", "after-first-replace", "leave-write-ahead-after-first-replace"] } } }
+      ]
+    },
+    "verifyRequest": {
+      "allOf": [
+        { "$ref": "#/$defs/requestBase" },
+        { "type": "object", "required": ["plan", "planHash", "bindingHash", "levels"], "properties": { "plan": { "type": "object" }, "planHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "bindingHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "levels": { "type": "array", "items": { "enum": ["TEXT_VALID", "PROJECT_LOAD_VALID", "COMPILE_VALID", "RUNTIME_VALID"] }, "uniqueItems": true } } }
+      ]
+    },
+    "rollbackRequest": {
+      "allOf": [
+        { "$ref": "#/$defs/requestBase" },
+        { "type": "object", "required": ["planHash", "bindingHash", "confirm"], "properties": { "planHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "bindingHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "confirm": { "const": true } } }
+      ]
+    }
+  }
+}
