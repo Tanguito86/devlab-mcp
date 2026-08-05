@@ -1,0 +1,1 @@
+{"lifecycle":{"captures":100,"cycles":100,"disposeErrors":0,"doubleDisposeFailures":0,"externalResourcesPreserved":true,"ownedRemaining":0,"renderTargetsCreated":0,"sharedResourcesPreserved":true},"ownership":{"all":"OWNED","geometries":10,"materials":5,"renderTargets":0,"textures":0},"schema":"devlab-cinder-resource-ownership-v1"}
