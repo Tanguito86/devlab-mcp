@@ -18,4 +18,4 @@ BLOCKERS: 0
 
 The implementation adapts only abstract patterns. It contains no Mint code or assets, no Mint CDN dependency, no R3F, SparkJS or splat dependency, and no recognizable Mint identity. The external corpus remained read-only, pinned and clean.
 
-The authorized local commit is the only remaining closure action. Publication remains a separately authorized operation.
+The authorized local implementation commit was created as `03ca906`. Publication remains a separately authorized operation.
