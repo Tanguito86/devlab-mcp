@@ -56,3 +56,5 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 /fixtures/gamemaker/hermes-bridge-pilot/** text eol=lf
 /packages/gm-ide-adapter/** text eol=lf
 /docs/reviews/devlab-hermes-bridge-pilot-01/** text eol=lf
+/scripts/gm-hermes-bridge-pilot.mjs text eol=lf
+/capabilities/gm-ide-adapter-v1.json text eol=lf

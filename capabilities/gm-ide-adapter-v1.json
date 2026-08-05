@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "gm-ide-adapter",
+  "version": "1.0.0-pilot.1",
+  "publicCapabilities": ["GM_STATUS_V1", "GM_INSPECT_V1", "GM_PLAN_V1", "GM_APPLY_SAFE_V1", "GM_VERIFY_V1", "GM_ROLLBACK_V1"],
+  "publicHermesTools": 0,
+  "inputSchema": "packages/gm-ide-adapter/schemas/gm-adapter-v1.schema.json",
+  "authorizedRoots": "explicit relative projectRoot and evidenceRoot under constructor projectsDir",
+  "determinism": "snapshots, plans and transaction manifests are canonical and timestamp-free",
+  "timeout": "every process request is caller-bounded",
+  "reversibility": "SAFE_WRITE requires verified byte-exact backup and rollback",
+  "evidence": ["transaction manifest", "compile invocation/log", "process ledger", "verify result", "pilot summary"],
+  "errorTypes": ["AUTHZ_PROJECT_ROOT", "EXPECTED_HASH_MISMATCH", "EXPECTED_HEAD_MISMATCH", "PATH_ESCAPE", "FILE_NOT_ALLOWLISTED", "GATE_VIOLATION", "PLAN_STALE", "MUTATION_NOT_FOUND", "ROLLBACK_UNAVAILABLE", "PROCESS_OWNERSHIP", "TIMEOUT", "CANCELLED", "CONCURRENT_MODIFICATION"],
+  "actionGate": ["READ_ONLY", "PLAN_ONLY", "SAFE_WRITE", "COMPILE", "RUN", "DESTRUCTIVE"],
+  "destructiveEnabled": false,
+  "offlineRuntime": true,
+  "hermesRuntimeDependency": false
+}
