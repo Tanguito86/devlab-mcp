@@ -2,13 +2,13 @@ Options: C:\ProgramData\GameMakerStudio2\Cache\runtimes\runtime-2024.14.3.260\bi
 Options: C:\Users\Deposito\AppData\Roaming\GameMakerStudio2\divididoshastalaspelotas_4974629\local_settings.json
 Setting up the Asset compiler
 Found Project Format 2
-+++ GMSC serialisation:  SUCCESSFUL LOAD AND LINK TIME: 655.9296ms
++++ GMSC serialisation:  SUCCESSFUL LOAD AND LINK TIME: 698.8127ms
 Success
-finished adding assets from H:/Temp/Deposito/devlab-asset-bridge-01-gm-visual-final-20260805-1915/projects/negative-a/AssetBridgePilot.yyp.
+finished adding assets from H:/Temp/Deposito/devlab-asset-bridge-01-gm-critic-resolution-20260805-1945/projects/negative-a/AssetBridgePilot.yyp.
 Release build
-Options: H:\Temp\Deposito\devlab-asset-bridge-01-gm-visual-final-20260805-1915\projects\.evidence\transactions\bridge-negative\verification/cache\ExtensionOptions.json
+Options: H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945\projects\.evidence\transactions\bridge-negative\verification/cache\ExtensionOptions.json
 OptionsIni
-Options: H:\Temp\Deposito\devlab-asset-bridge-01-gm-visual-final-20260805-1915\projects\.evidence\transactions\bridge-negative\verification/cache\PlatformOptions.json
+Options: H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945\projects\.evidence\transactions\bridge-negative\verification/cache\PlatformOptions.json
 [Compile] Run asset compiler
 Looking for built-in fallback image in C:\ProgramData\GameMakerStudio2\Cache\runtimes\runtime-2024.14.3.260\bin\BuiltinImages
 Compile Constants...finished.
@@ -25,7 +25,7 @@ Compile Extensions...Compile UI Layers...finished.
 Global scripts...finished.
 collapsing enums.
 Final Compile...Final Compile finished.
-Saving IFF file... H:\Temp\Deposito\devlab-asset-bridge-01-gm-visual-final-20260805-1915\projects\.evidence\transactions\bridge-negative\verification\output\AssetBridgePilot\AssetBridgePilot.win
+Saving IFF file... H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945\projects\.evidence\transactions\bridge-negative\verification\output\AssetBridgePilot\AssetBridgePilot.win
 Writing Chunk... GEN8 size ... -0.00 MB
 option_game_speed=60
 Writing Chunk... OPTN size ... 0.00 MB
@@ -53,8 +53,8 @@ Writing Chunk... EMBI size ... 0.00 MB
 Writing Chunk... PSEM size ... 0.00 MB
 Writing Chunk... PSYS size ... 0.00 MB
 Writing Chunk... TPAGE size ... 0.00 MB
-Texture Group - __YY__0fallbacktexture.png_YYG_AUTO_GEN_TEX_GROUP_NAME_
 Texture Group - Default
+Texture Group - __YY__0fallbacktexture.png_YYG_AUTO_GEN_TEX_GROUP_NAME_
 Writing Chunk... TGIN size ... 0.00 MB
 Writing Chunk... CODE size ... 0.00 MB
 Writing Chunk... VARI size ... 0.00 MB
@@ -71,7 +71,7 @@ Writing Chunk... INST size ... 0.00 MB
 Writing Chunk... LOCL size ... 0.00 MB
 Writing Chunk... DFNC size ... 0.00 MB
 Writing Chunk... STRG size ... 0.00 MB
-Stats : GMA : Elapsed=224.4587
+Stats : GMA : Elapsed=234.5748
 Stats : GMA : sp=1,au=0,bk=0,pt=0,sc=0,sh=0,fo=0,tl=0,ob=2,ro=1,da=0,ex=0,ma=6,fm=0x800048844010
 C:\ProgramData\GameMakerStudio2\Cache\runtimes\runtime-2024.14.3.260/bin/assetcompiler/windows/x64/GMAssetCompiler.dll exited with non-zero status (1)
 

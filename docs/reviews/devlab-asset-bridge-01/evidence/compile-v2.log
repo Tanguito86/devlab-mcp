@@ -2,13 +2,13 @@ Options: C:\ProgramData\GameMakerStudio2\Cache\runtimes\runtime-2024.14.3.260\bi
 Options: C:\Users\Deposito\AppData\Roaming\GameMakerStudio2\divididoshastalaspelotas_4974629\local_settings.json
 Setting up the Asset compiler
 Found Project Format 2
-+++ GMSC serialisation:  SUCCESSFUL LOAD AND LINK TIME: 710.3705ms
++++ GMSC serialisation:  SUCCESSFUL LOAD AND LINK TIME: 680.9865ms
 Success
-finished adding assets from H:/Temp/Deposito/devlab-asset-bridge-01-gm-visual-final-20260805-1915/projects/pilot-a/AssetBridgePilot.yyp.
+finished adding assets from H:/Temp/Deposito/devlab-asset-bridge-01-gm-critic-resolution-20260805-1945/projects/pilot-a/AssetBridgePilot.yyp.
 Release build
-Options: H:\Temp\Deposito\devlab-asset-bridge-01-gm-visual-final-20260805-1915\projects\.evidence\transactions\bridge-v2\verification/cache\ExtensionOptions.json
+Options: H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945\projects\.evidence\transactions\bridge-v2\verification/cache\ExtensionOptions.json
 OptionsIni
-Options: H:\Temp\Deposito\devlab-asset-bridge-01-gm-visual-final-20260805-1915\projects\.evidence\transactions\bridge-v2\verification/cache\PlatformOptions.json
+Options: H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945\projects\.evidence\transactions\bridge-v2\verification/cache\PlatformOptions.json
 [Compile] Run asset compiler
 Looking for built-in fallback image in C:\ProgramData\GameMakerStudio2\Cache\runtimes\runtime-2024.14.3.260\bin\BuiltinImages
 Compile Constants...finished.
@@ -23,7 +23,7 @@ Compile Extensions...Compile UI Layers...finished.
 Global scripts...finished.
 collapsing enums.
 Final Compile...Final Compile finished.
-Saving IFF file... H:\Temp\Deposito\devlab-asset-bridge-01-gm-visual-final-20260805-1915\projects\.evidence\transactions\bridge-v2\verification\output\AssetBridgePilot\AssetBridgePilot.win
+Saving IFF file... H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945\projects\.evidence\transactions\bridge-v2\verification\output\AssetBridgePilot\AssetBridgePilot.win
 Writing Chunk... GEN8 size ... -0.00 MB
 option_game_speed=60
 Writing Chunk... OPTN size ... 0.00 MB
@@ -69,7 +69,7 @@ Writing Chunk... INST size ... 0.00 MB
 Writing Chunk... LOCL size ... 0.00 MB
 Writing Chunk... DFNC size ... 0.00 MB
 Writing Chunk... STRG size ... 0.00 MB
-Stats : GMA : Elapsed=233.2472
+Stats : GMA : Elapsed=229.682
 Stats : GMA : sp=1,au=0,bk=0,pt=0,sc=0,sh=0,fo=0,tl=0,ob=1,ro=1,da=0,ex=0,ma=6,fm=0x800048844010
 Igor complete.
 [Run] Run game
@@ -83,7 +83,7 @@ Set main thread priority to HIGHEST
 !!! Couldn't set process power settings
 Registered with MMCSS 'Games' task
 Set MMCSS thread priority to CRITICAL
-Reading File H:\Temp\Deposito\devlab-asset-bridge-01-gm-visual-final-20260805-1915\projects\.evidence\transactions\bridge-v2\verification\output\AssetBridgePilot\AssetBridgePilot.win took 1 ms
+Reading File H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945\projects\.evidence\transactions\bridge-v2\verification\output\AssetBridgePilot\AssetBridgePilot.win took 1 ms
 DirectX11: Using hardware device
 DXGI_FEATURE_PRESENT_ALLOW_TEARING is supported - variable refresh rate displays will work correctly
 Window overlaps with output 0 (\\.\DISPLAY1) by 93744 pixels
@@ -111,15 +111,15 @@ Finished PrepareGame()
 Run_Start
 Done g_EffectsManager.Init()
 Done RenderStateManager
-CreateColPairs took 0.000000s 0 usecs for 2 object types obj_col_numb=0 physobjcount=0 resizes 0 final size 0
+CreateColPairs took 0.000000s 1 usecs for 2 object types obj_col_numb=0 physobjcount=0 resizes 0 final size 0
 Done ObjectLists
 Done Extension_Initialize
 About to startroom
 GM_ASSET_BRIDGE_BEACON_VERSION=2
 GM_ASSET_BRIDGE_BEACON_APPLIED=1
-Total memory used = 10522440 (0x00a08f48) bytes 10.03MB
+Total memory used = 10555462 (0x00a11046) bytes 10.07MB
 Free memory = 6391336 (0x00618628) bytes 6.10MB
-Peak memory used = 11021509 (0x00a82cc5) bytes 10.51MB
+Peak memory used = 11021534 (0x00a82cde) bytes 10.51MB
 **********************************.
 Entering main loop.
 **********************************.

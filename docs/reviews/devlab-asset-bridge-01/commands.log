@@ -32,3 +32,11 @@ node scripts/gm-hermes-bridge-pilot.mjs --work-root H:\Temp\Deposito\devlab-asse
 positive compile/runtime PASS; negative compile exit 1; positive and negative rollback byteExact true; final owned process count 0
 
 Final full-suite, independent critic, resolution and clean-clone commands are appended after those gates run.
+
+Independent critic and mandatory resolution:
+opencode run --model deepseek/deepseek-v4-flash --variant high --agent plan <read-only prompt>  CHANGES REQUIRED: 1 BLOCKER, 4 REQUIRED, 5 OPTIONAL
+critic clone before/after: HEAD a712e0bcec60a60dfc3679635edf6b1317fe70a7, worktree clean, index empty
+corepack pnpm --filter @tanguito/devlab-gm-ide-adapter test       PASS 66/66
+corepack pnpm --filter @tanguito/devlab-asset-gm-bridge test      PASS 62/62
+node scripts/asset-bridge-pilot.mjs --work-root H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945 ...  PASS COMPLETED / ASSET_GM_BRIDGE_V1_PILOT_VERIFIED
+post-resolution pilot: initial/v1/v2/post-rollback compile+runtime PASS; NO_CHANGE idempotency; two byte-exact rollbacks; negative exit 1; GM PID sets [] -> []

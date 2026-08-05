@@ -32,6 +32,12 @@ The closed public error vocabulary contains 16 codes:
 `VERIFY_COMPILE_FAILED`, and `VERIFY_RUNTIME_FAILED`.
 
 The adapter plan contract was extended compatibly with optional binary
-`contentBase64` and optional `allowedExtensions`. Existing text callers retain
-their previous defaults. The bridge uses this formal plan input for PNG and
-`.resource_order` bytes; the public six-operation adapter surface is unchanged.
+`contentBase64` and optional input `allowedExtensions`. The normalized extension
+policy is stored inside the immutable plan, included in its hash, and revalidated
+again by apply. Existing text callers retain their previous defaults. The bridge
+uses this formal plan input for PNG and `.resource_order` bytes; the public
+six-operation adapter surface is unchanged.
+
+Fault injection is not part of `ASSET_GM_BRIDGE_V1`: the public schema and apply
+request have no `faultAt` field. Crash/recovery tests invoke the adapter's
+test-only request lane directly and then exercise governed bridge rollback.

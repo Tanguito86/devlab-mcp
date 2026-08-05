@@ -14,3 +14,7 @@ Catalog SHA-256:
 v1 frame hashes are `823aecc6...` and `4adf0e66...`; v2 frame hashes are
 `f496c4d7...` and `3e29dc6c...`; each file is 16,516 bytes. Full machine
 evidence is `evidence/forge-pilot-summary.json`.
+
+The fixed review secret and same-harness critic/resolver sequence are authority
+only for this fully generated synthetic fixture. They are not a production
+approval credential or a reusable consumer-asset approval path.

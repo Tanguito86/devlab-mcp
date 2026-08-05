@@ -58,3 +58,12 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 /docs/reviews/devlab-hermes-bridge-pilot-01/** text eol=lf
 /scripts/gm-hermes-bridge-pilot.mjs text eol=lf
 /capabilities/gm-ide-adapter-v1.json text eol=lf
+
+# DEVLAB-ASSET-BRIDGE-01 deterministic bridge, fixture and evidence.
+/fixtures/gamemaker/asset-bridge-pilot/** text eol=lf
+/packages/asset-gm-bridge/** text eol=lf
+/docs/reviews/devlab-asset-bridge-01/** text eol=lf
+/docs/reviews/devlab-asset-bridge-01/evidence/**/*.png binary
+/scripts/asset-bridge-forge-pilot.mjs text eol=lf
+/scripts/asset-bridge-pilot.mjs text eol=lf
+/capabilities/asset-gm-bridge-v1.json text eol=lf

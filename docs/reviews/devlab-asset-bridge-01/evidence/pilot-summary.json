@@ -4,15 +4,15 @@
   "toolchain": {
     "ide": "GameMaker-LTS2026 2026.0.0.16",
     "runtimeVersion": "2024.14.3.260",
-    "executable": "C:\\ProgramData\\GameMakerStudio2\\Cache\\runtimes\\runtime-2024.14.3.260\\bin\\igor\\windows\\x64\\Igor.exe",
-    "projectTool": "H:\\GameMaker-LTS2026\\packages\\gm-tools\\project-tool-win-x64\\ProjectTool.exe",
-    "userDirectory": "C:\\Users\\Deposito\\AppData\\Roaming\\GameMakerStudio2\\divididoshastalaspelotas_4974629"
+    "executable": "Igor.exe",
+    "projectTool": "ProjectTool.exe",
+    "userDirectory": "<explicit-redacted>"
   },
   "catalog": {
     "path": "../devlab-asset-bridge-01-forge-final2-20260805-1845/assets/catalog/asset-catalog.json",
     "sha256": "dc3a83d3692a1947f5c164ecd912ccac0d172d3802befbec7ace150cd7681653"
   },
-  "runtimeEvidenceDir": "H:\\Temp\\Deposito\\devlab-asset-bridge-01-gm-visual-final-20260805-1915\\runtime-evidence",
+  "runtimeEvidenceDir": "runtime-evidence",
   "cases": [
     {
       "case": "initial",
@@ -41,8 +41,8 @@
         }
       },
       "ownedPids": [
-        35516,
-        14668
+        14508,
+        29440
       ],
       "screenshot": "before.png"
     },
@@ -73,8 +73,8 @@
         }
       },
       "ownedPids": [
-        36796,
-        8036
+        32812,
+        24052
       ],
       "screenshot": "after-v1.png"
     },
@@ -111,8 +111,8 @@
         }
       },
       "ownedPids": [
-        27184,
-        30464
+        20988,
+        27684
       ],
       "screenshot": "after-v2.png",
       "bindingHashChanged": true
@@ -155,8 +155,8 @@
         }
       },
       "ownedPids": [
-        30188,
-        34408
+        21904,
+        22272
       ],
       "screenshot": "after-rollback.png"
     },
@@ -168,16 +168,22 @@
       "rollbackRequired": true,
       "rollbackByteExact": true,
       "ownedPids": [
-        11056
+        7172
       ]
     },
     {
       "case": "process-hygiene",
-      "initialGmProcesses": 0,
-      "finalGmProcesses": 0,
-      "foreignPreserved": false
+      "initialGmPids": [],
+      "finalGmPids": [],
+      "gmProcessSetPreserved": true,
+      "nonGmPopulationCompared": false,
+      "foreignRunnerPreservationEvidence": "asset-gm-bridge toctou unit test"
     }
   ],
-  "initialForeignNonGmProcesses": 279,
-  "finalForeignNonGmProcesses": 277
+  "processOwnership": {
+    "initialGmPids": [],
+    "finalGmPids": [],
+    "gmProcessSetPreserved": true,
+    "nonGmPopulationCompared": false
+  }
 }

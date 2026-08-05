@@ -65,4 +65,7 @@ historia completa y autocontenida, y su HEAD coincide exactamente con el baselin
 - No se creó tag para el respaldo.
 - El bundle no se incorpora al repositorio.
 - Prohibiciones del baseline respetadas: sin rebase, push, tag, force-push ni cambios
-  de origin; procesos ajenos preservados (no se cerró ninguno).
+  de origin. No se invocó cierre sobre ningún proceso ajeno. El piloto real exige
+  cero procesos GameMaker al inicio y al final; la preservación de un Runner ajeno
+  se prueba con identidad/PID en la suite, sin comparar la población cambiante de
+  procesos no-GameMaker del sistema.

@@ -33,7 +33,7 @@ import { copyFile, cp, mkdir, readdir, readFile, stat, writeFile } from "node:fs
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GovernedGameMakerIdeAdapter } from "../packages/gm-ide-adapter/dist/index.js";
-import { windowsProcessInventory } from "../packages/gm-ide-adapter/dist/processes/index.js";
+import { windowsProcessInventory } from "../packages/gm-ide-adapter/dist/internal.js";
 import { GovernedAssetGmBridge, parseGmJson } from "../packages/asset-gm-bridge/dist/index.js";
 import { AssetGmBridgeError } from "../packages/asset-gm-bridge/dist/errors.js";
 
@@ -96,7 +96,6 @@ async function main() {
   const initialInventory = await inventory();
   const initialForeign = initialInventory.filter(isGmProcess);
   if (initialForeign.length) throw new Error(`foreign GameMaker process exists before pilot: ${initialForeign.map(({ pid }) => pid).join(",")}`);
-  const initialForeignNonGm = initialInventory.length - initialForeign.length;
 
   const bridge = new GovernedAssetGmBridge(projectsDir, { catalogPath, repoRoot: assetsRoot });
   const adapter = new GovernedGameMakerIdeAdapter(projectsDir);
@@ -217,18 +216,20 @@ async function main() {
   const finalInventory = await inventory();
   const finalOwnedOrGm = finalInventory.filter(isGmProcess);
   if (finalOwnedOrGm.length) throw new Error(`orphan GameMaker processes after pilot: ${finalOwnedOrGm.map(({ pid }) => pid).join(",")}`);
-  const foreignPreserved = finalInventory.length - finalOwnedOrGm.length === initialForeignNonGm;
-  cases.push(caseResult("process-hygiene", { initialGmProcesses: initialForeign.length, finalGmProcesses: finalOwnedOrGm.length, foreignPreserved }));
+  const initialGmPids = initialForeign.map(({ pid }) => pid).sort((a, b) => a - b);
+  const finalGmPids = finalOwnedOrGm.map(({ pid }) => pid).sort((a, b) => a - b);
+  const gmProcessSetPreserved = JSON.stringify(initialGmPids) === JSON.stringify(finalGmPids);
+  if (!gmProcessSetPreserved) throw new Error("GameMaker process baseline changed during pilot");
+  cases.push(caseResult("process-hygiene", { initialGmPids, finalGmPids, gmProcessSetPreserved, nonGmPopulationCompared: false, foreignRunnerPreservationEvidence: "asset-gm-bridge toctou unit test" }));
 
   const report = Object.freeze({
     schemaVersion: 1,
     status: "COMPLETED / ASSET_GM_BRIDGE_V1_PILOT_VERIFIED",
-    toolchain: Object.freeze({ ide: "GameMaker-LTS2026 2026.0.0.16", runtimeVersion, executable: igor.executable, projectTool: igor.projectTool, userDirectory: igor.userDirectory }),
+    toolchain: Object.freeze({ ide: "GameMaker-LTS2026 2026.0.0.16", runtimeVersion, executable: basename(igor.executable), projectTool: basename(igor.projectTool), userDirectory: "<explicit-redacted>" }),
     catalog: Object.freeze({ path: relative(workRoot, catalogPath).split("\\").join("/"), sha256: sha256(await readFile(catalogPath)) }),
-    runtimeEvidenceDir,
+    runtimeEvidenceDir: relative(workRoot, runtimeEvidenceDir).split("\\").join("/"),
     cases: Object.freeze(cases),
-    initialForeignNonGmProcesses: initialForeignNonGm,
-    finalForeignNonGmProcesses: finalInventory.length - finalOwnedOrGm.length,
+    processOwnership: Object.freeze({ initialGmPids, finalGmPids, gmProcessSetPreserved, nonGmPopulationCompared: false }),
   });
   await writeFile(join(workRoot, "pilot-summary.json"), canonicalBytes(report));
   console.log(JSON.stringify(report, null, 2));

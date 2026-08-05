@@ -12,7 +12,9 @@ compile alone was insufficient. Captures:
 - `evidence/after-v2.png` - magenta beacon and version 2;
 - `evidence/after-rollback.png` - restored version 0.
 
-Final Igor/Runner count was zero. Adapter tests verify timeout, cancellation,
-PID/start-token ownership, nonzero exit preservation, and foreign Runner
-preservation. The timeout classification was corrected so expiry during WMI
+Initial and final GameMaker/Igor/Runner PID sets were both empty. The pilot does
+not compare the unrelated, naturally changing population of all non-GameMaker
+system processes. Adapter tests verify timeout, cancellation, PID/start-token
+ownership, nonzero exit preservation, and that a concrete foreign Runner PID
+remains alive. The timeout classification was corrected so expiry during WMI
 identity acquisition returns `TIMEOUT`, not `PROCESS_OWNERSHIP`.
