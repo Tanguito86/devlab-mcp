@@ -9,10 +9,10 @@ const SPEC = Object.freeze(await fetch("/spec.json", { cache: "no-store", creden
 const VIEWS = Object.freeze({
   V01_FRONT_THREE_QUARTER: Object.freeze({ file: "front-three-quarter.png", projection: "perspective", position: [2.35, 1.45, 2.85], target: [0, 0.2, 0], fov: 31, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
   V02_REAR_THREE_QUARTER: Object.freeze({ file: "rear-three-quarter.png", projection: "perspective", position: [-2.35, 1.35, -2.75], target: [0, 0.2, 0], fov: 31, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
-  V03_LEFT_PROFILE: Object.freeze({ file: "left-profile.png", projection: "perspective", position: [-3.25, 0.35, 0], target: [0, 0.18, 0], fov: 29, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
-  V04_RIGHT_PROFILE: Object.freeze({ file: "right-profile.png", projection: "perspective", position: [3.25, 0.35, 0], target: [0, 0.18, 0], fov: 29, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
-  V05_TOP: Object.freeze({ file: "top.png", projection: "perspective", position: [0.02, 3.45, 0.01], target: [0, 0.05, 0], up: [0, 0, -1], fov: 31, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
-  V06_BOTTOM: Object.freeze({ file: "bottom.png", projection: "perspective", position: [0.02, -3.45, 0.01], target: [0, -0.05, 0], up: [0, 0, 1], fov: 31, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
+  V03_LEFT_PROFILE: Object.freeze({ file: "left-profile.png", projection: "perspective", position: [-4.25, 0.35, 0], target: [0, 0.18, 0], fov: 30, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
+  V04_RIGHT_PROFILE: Object.freeze({ file: "right-profile.png", projection: "perspective", position: [4.25, 0.35, 0], target: [0, 0.18, 0], fov: 30, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
+  V05_TOP: Object.freeze({ file: "top.png", projection: "perspective", position: [0.02, 4.65, 0.01], target: [0, 0.05, 0], up: [0, 0, -1], fov: 32, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
+  V06_BOTTOM: Object.freeze({ file: "bottom.png", projection: "perspective", position: [0.02, -4.65, 0.01], target: [0, -0.05, 0], up: [0, 0, 1], fov: 32, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
   V07_ORTHOGRAPHIC_FRONT: Object.freeze({ file: "orthographic-front.png", projection: "orthographic", position: [0, 0.22, 3.2], target: [0, 0.22, 0], bounds: [-1.25, 1.25, 1.25, -1.25], near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 1024, height: 1024 }),
   V08_GAME_SCALE: Object.freeze({ file: "game-scale-256.png", projection: "perspective", position: [2.6, 1.6, 3.25], target: [0, 0.2, 0], fov: 32, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 256, height: 256 }),
   V09_THUMBNAIL: Object.freeze({ file: "thumbnail-128.png", projection: "perspective", position: [2.65, 1.62, 3.3], target: [0, 0.2, 0], fov: 32, near: 0.1, far: 20, scale: 1, background: 0x181c20, rig: "cinematic-neutral", width: 128, height: 128 }),
@@ -29,7 +29,7 @@ let restorationPromise = Promise.resolve();
 let factoryMs = 0;
 
 function addLights(targetScene) {
-  const hemisphere = new THREE.HemisphereLight(0xa9c1cb, 0x28180e, 1.15);
+  const hemisphere = new THREE.HemisphereLight(0xa9c1cb, 0x60442c, 1.35);
   hemisphere.name = "capture-hemisphere";
   const key = new THREE.DirectionalLight(0xffd4ac, 4.1); key.name = "capture-key"; key.position.set(3.2, 4.5, 4.1);
   const fill = new THREE.DirectionalLight(0x6f9fc3, 1.65); fill.name = "capture-fill"; fill.position.set(-4, 1.5, 2.4);

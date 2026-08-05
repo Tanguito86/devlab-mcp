@@ -22,7 +22,7 @@ const browserPackage = join(repo, "packages", "browser-dev-mcp", "package.json")
 const { chromium } = requireFromBrowser("playwright");
 const SPEC_PATH = "assets/pilots/cinder-relay-drone/cinder-relay-drone.spec.json";
 const FACTORY_VERSION = "1.0.0"; const THREE_VERSION = "0.185.1"; const SEED = "devlab-cinder-relay-drone-v1";
-const LIGHTING = Object.freeze({ key: "directional-warm-4.1", fill: "directional-cool-1.65", rim: "directional-ember-2.15", ambient: "hemisphere-1.15", shadows: false, background: "solid-neutral" });
+const LIGHTING = Object.freeze({ key: "directional-warm-4.1", fill: "directional-cool-1.65", rim: "directional-ember-2.15", ambient: "hemisphere-1.35-ground-60442c", shadows: false, background: "solid-neutral" });
 const ANIMATION_CAPTURES = Object.freeze([{ viewId: "V01_FRONT_THREE_QUARTER", frameIndex: 0, file: "relay-pulse-frame-000.png" }, { viewId: "V01_FRONT_THREE_QUARTER", frameIndex: 30, file: "relay-pulse-frame-030.png" }, { viewId: "V01_FRONT_THREE_QUARTER", frameIndex: 60, file: "relay-pulse-frame-060.png" }, { viewId: "V01_FRONT_THREE_QUARTER", frameIndex: 90, file: "relay-pulse-frame-090.png" }]);
 
 function sha(bytes) { return createHash("sha256").update(bytes).digest("hex"); }
