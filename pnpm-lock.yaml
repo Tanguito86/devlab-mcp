@@ -65,6 +65,15 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/gm-ide-adapter:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.12.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/img2threejs-asset-forge:
     devDependencies:
       '@types/node':
