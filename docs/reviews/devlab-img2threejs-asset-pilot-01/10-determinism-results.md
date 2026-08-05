@@ -1,7 +1,7 @@
 # Determinism results
 
 RUN-A and RUN-B were executed in fresh Chromium contexts with the same committed
-factory pin `9f1c797a567284376a91456630eebff5b24d25e0`, canonical spec, seed,
+factory pin `f1d68f864257c05473df083faa13031819ff1e12`, canonical spec, seed,
 camera/lighting hashes, dimensions, pixel ratio, WebGL backend, and logical frame
 indices.
 
