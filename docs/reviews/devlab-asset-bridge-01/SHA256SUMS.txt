@@ -1,0 +1,12 @@
+8205d33da36fcc8fd1704ad45421995be82a7400a259c0b9e2e1656405aebe7d  docs/reviews/devlab-asset-bridge-01/evidence/after-rollback.png
+16550eaaa917b00dadacb55b29be71866322d3dde91ff3265c820df4b3c031e4  docs/reviews/devlab-asset-bridge-01/evidence/after-v1.png
+9156c72c0ffd79392a5c4c6a3741da67d155b1c2fa67d5733a708653bba36a37  docs/reviews/devlab-asset-bridge-01/evidence/after-v2.png
+8205d33da36fcc8fd1704ad45421995be82a7400a259c0b9e2e1656405aebe7d  docs/reviews/devlab-asset-bridge-01/evidence/before.png
+583464449d7c012cefaf60b4c1f9188542762872bdf1c1050e87358dbd4e41f1  docs/reviews/devlab-asset-bridge-01/evidence/compile-after-rollback.log
+f92c2237b1f262af63f9b0b54b4f8990d1143d394af233d11a8d530f3b73864e  docs/reviews/devlab-asset-bridge-01/evidence/compile-initial.log
+fe47dd367e60abcf6de3f25ee4a02c76e383174bd8af6145fb028d5541391310  docs/reviews/devlab-asset-bridge-01/evidence/compile-negative.log
+0ab6d76b345cd9375decae8efabf2c3d4dbf4a8378ab27028ccee297d3f4e4b8  docs/reviews/devlab-asset-bridge-01/evidence/compile-v1.log
+fed95e6f4914db32580e0a0913761b48f0bc58274ed65cb294105d7bf4a36007  docs/reviews/devlab-asset-bridge-01/evidence/compile-v2.log
+7cd02328202ccc57a6e298e36064942bc7747b3c63ec1d290e30493ffb621efa  docs/reviews/devlab-asset-bridge-01/evidence/forge-pilot-summary.json
+3e46dee30c800980ae6953219780608f45ba0eb5a65f2dbb2faeefee3b69a05b  docs/reviews/devlab-asset-bridge-01/evidence/pilot-summary.json
+297730bc21b6c5a4e217992fe48c4556d124d5a9fce2376f8a55b851ec79aa21  EXTERNAL:H:\Temp\Deposito\devlab-asset-bridge-01-baseline-9af3d7d-20260805-153449.bundle

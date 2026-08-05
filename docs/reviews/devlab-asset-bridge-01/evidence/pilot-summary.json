@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "status": "COMPLETED / ASSET_GM_BRIDGE_V1_PILOT_VERIFIED",
+  "toolchain": {
+    "ide": "GameMaker-LTS2026 2026.0.0.16",
+    "runtimeVersion": "2024.14.3.260",
+    "executable": "C:\\ProgramData\\GameMakerStudio2\\Cache\\runtimes\\runtime-2024.14.3.260\\bin\\igor\\windows\\x64\\Igor.exe",
+    "projectTool": "H:\\GameMaker-LTS2026\\packages\\gm-tools\\project-tool-win-x64\\ProjectTool.exe",
+    "userDirectory": "C:\\Users\\Deposito\\AppData\\Roaming\\GameMakerStudio2\\divididoshastalaspelotas_4974629"
+  },
+  "catalog": {
+    "path": "../devlab-asset-bridge-01-forge-final2-20260805-1845/assets/catalog/asset-catalog.json",
+    "sha256": "dc3a83d3692a1947f5c164ecd912ccac0d172d3802befbec7ace150cd7681653"
+  },
+  "runtimeEvidenceDir": "H:\\Temp\\Deposito\\devlab-asset-bridge-01-gm-visual-final-20260805-1915\\runtime-evidence",
+  "cases": [
+    {
+      "case": "initial",
+      "fingerprint": "328b9f085905f5e015376ef7fc7b84c09c258e437a5c38df8c4a31edb257f2eb",
+      "status": "READY",
+      "verify": {
+        "TEXT_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-initial/verification/verify.json",
+          "detail": "GameMaker JSON and basic GML structure parsed"
+        },
+        "PROJECT_LOAD_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-initial/verification/compile.log",
+          "detail": "Igor accepted and processed the .yyp project"
+        },
+        "COMPILE_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-initial/verification/compile.log",
+          "detail": "Igor exited 0 after a current invocation"
+        },
+        "RUNTIME_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-initial/verification/compile.log",
+          "detail": "owned Runner emitted the expected signal"
+        }
+      },
+      "ownedPids": [
+        35516,
+        14668
+      ],
+      "screenshot": "before.png"
+    },
+    {
+      "case": "v1",
+      "state": "APPLIED",
+      "fingerprint": "208690a5a73ec9095897a192c717f2607cce7ab444912ecd01bba89d26ed80e6",
+      "verify": {
+        "TEXT_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-v1/verification/verify.json",
+          "detail": "GameMaker JSON and basic GML structure parsed"
+        },
+        "PROJECT_LOAD_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-v1/verification/compile.log",
+          "detail": "Igor accepted and processed the .yyp project"
+        },
+        "COMPILE_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-v1/verification/compile.log",
+          "detail": "Igor exited 0 after a current invocation"
+        },
+        "RUNTIME_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-v1/verification/compile.log",
+          "detail": "owned Runner emitted the expected signal"
+        }
+      },
+      "ownedPids": [
+        36796,
+        8036
+      ],
+      "screenshot": "after-v1.png"
+    },
+    {
+      "case": "idempotent-NO_CHANGE",
+      "state": "NO_CHANGE",
+      "changedFiles": 0,
+      "fingerprint": "208690a5a73ec9095897a192c717f2607cce7ab444912ecd01bba89d26ed80e6"
+    },
+    {
+      "case": "v2-update",
+      "state": "APPLIED",
+      "fingerprint": "03b23d3e1bb3a9b5f75e5192267b771c4898a4be51b93e30fcf05bed52cedb03",
+      "verify": {
+        "TEXT_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-v2/verification/verify.json",
+          "detail": "GameMaker JSON and basic GML structure parsed"
+        },
+        "PROJECT_LOAD_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-v2/verification/compile.log",
+          "detail": "Igor accepted and processed the .yyp project"
+        },
+        "COMPILE_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-v2/verification/compile.log",
+          "detail": "Igor exited 0 after a current invocation"
+        },
+        "RUNTIME_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-v2/verification/compile.log",
+          "detail": "owned Runner emitted the expected signal"
+        }
+      },
+      "ownedPids": [
+        27184,
+        30464
+      ],
+      "screenshot": "after-v2.png",
+      "bindingHashChanged": true
+    },
+    {
+      "case": "post-rollback-v2",
+      "byteExact": true,
+      "fingerprint": "208690a5a73ec9095897a192c717f2607cce7ab444912ecd01bba89d26ed80e6",
+      "restoredToV1": true
+    },
+    {
+      "case": "post-rollback-v1",
+      "byteExact": true,
+      "fingerprint": "328b9f085905f5e015376ef7fc7b84c09c258e437a5c38df8c4a31edb257f2eb",
+      "baselineRestored": true,
+      "treeEqualsBaseline": true
+    },
+    {
+      "case": "post-rollback-runtime",
+      "verify": {
+        "TEXT_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-postrollback/verification/verify.json",
+          "detail": "GameMaker JSON and basic GML structure parsed"
+        },
+        "PROJECT_LOAD_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-postrollback/verification/compile.log",
+          "detail": "Igor accepted and processed the .yyp project"
+        },
+        "COMPILE_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-postrollback/verification/compile.log",
+          "detail": "Igor exited 0 after a current invocation"
+        },
+        "RUNTIME_VALID": {
+          "passed": true,
+          "evidence": ".evidence/transactions/bridge-postrollback/verification/compile.log",
+          "detail": "owned Runner emitted the expected signal"
+        }
+      },
+      "ownedPids": [
+        30188,
+        34408
+      ],
+      "screenshot": "after-rollback.png"
+    },
+    {
+      "case": "negative-compile",
+      "code": "VERIFY_COMPILE_FAILED",
+      "compileExitCode": 1,
+      "compilePassed": false,
+      "rollbackRequired": true,
+      "rollbackByteExact": true,
+      "ownedPids": [
+        11056
+      ]
+    },
+    {
+      "case": "process-hygiene",
+      "initialGmProcesses": 0,
+      "finalGmProcesses": 0,
+      "foreignPreserved": false
+    }
+  ],
+  "initialForeignNonGmProcesses": 279,
+  "finalForeignNonGmProcesses": 277
+}

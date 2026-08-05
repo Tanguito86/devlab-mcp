@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "asset-gm-bridge",
+  "version": "1.0.0",
+  "publicCapabilities": ["ASSET_GM_BRIDGE_V1"],
+  "publicHermesTools": 0,
+  "inputSchema": "packages/asset-gm-bridge/schemas/asset-gm-bridge-v1.schema.json",
+  "actionGate": ["READ_ONLY", "PLAN_ONLY", "SAFE_WRITE", "COMPILE", "RUN"],
+  "destructiveEnabled": false,
+  "offlineRuntime": true,
+  "hermesRuntimeDependency": false,
+  "dependencies": ["ASSET_FORGE", "GM_ADAPTER"],
+  "determinism": "BYTE_DETERMINISTIC_OUTPUTS_OPERATIONAL_TIMINGS_EXCLUDED",
+  "timeout": "REQUEST_BOUNDED",
+  "reversibility": "byte-exact backup and rollback required (gm-ide-adapter model)",
+  "authorizedRoots": "explicit projectsDir + relative projectRoot/evidenceRoot per request; catalog and asset work root are explicit absolute config paths",
+  "evidence": ["bridge manifest", "binding record", "adapter plan", "compile invocation/log", "process ledger", "verify result", "pilot summary"],
+  "errorTypes": [
+    "ASSET_NOT_APPROVED", "ASSET_NOT_FOUND", "ASSET_HASH_MISMATCH", "ASSET_BUDGET_EXCEEDED",
+    "INVALID_ASSET_MANIFEST", "TARGET_PROJECT_MISMATCH", "TARGET_SNAPSHOT_CHANGED",
+    "STALE_OR_TAMPERED_PLAN", "PATH_NOT_ALLOWED", "RESOURCE_COLLISION", "CASE_COLLISION",
+    "APPLY_FAILED_RECOVERED", "APPLY_FAILED_RECOVERY_REQUIRED", "ROLLBACK_BLOCKED_CONCURRENT_CHANGE",
+    "VERIFY_COMPILE_FAILED", "VERIFY_RUNTIME_FAILED"
+  ]
+}

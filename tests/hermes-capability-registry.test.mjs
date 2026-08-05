@@ -5,12 +5,13 @@ import test from "node:test";
 
 const registry = JSON.parse(readFileSync(new URL("../capabilities/hermes-capability-manifest.json", import.meta.url), "utf8"));
 const gmAdapter = JSON.parse(readFileSync(new URL("../capabilities/gm-ide-adapter-v1.json", import.meta.url), "utf8"));
+const assetBridge = JSON.parse(readFileSync(new URL("../capabilities/asset-gm-bridge-v1.json", import.meta.url), "utf8"));
 const kit = JSON.parse(readFileSync(new URL("../capabilities/topdown-shooter-kit-v1.json", import.meta.url), "utf8"));
 const external = JSON.parse(readFileSync(new URL("../capabilities/external-candidate-status.json", import.meta.url), "utf8"));
 
 test("capability registry has the exact governed capability set", () => {
-  assert.equal(registry.capabilities.length, 14);
-  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 14);
+  assert.equal(registry.capabilities.length, 15);
+  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 15);
   for (const capability of registry.capabilities) {
     assert.ok(registry.allowedStatuses.includes(capability.status));
     for (const field of ["source", "sourcePin", "license", "evidencePath", "authority", "integrationMode", "runtimeStatus", "securityStatus", "nextPermittedAction"]) assert.equal(typeof capability[field], "string");
@@ -37,6 +38,23 @@ test("external candidates remain uninstalled and outside the kit", () => {
   assert.equal(external.img2threejs.installed, false); assert.equal(external.img2threejs.status, "PRODUCTION_CAPABILITY_VERIFIED"); assert.equal(external.img2threejs.blockers.length, 0);
   assert.equal(external.img2threejs.upstreamCopiesModified, 0);
   assert.deepEqual(kit.runtimeDependencies, []);
+});
+
+test("ASSET_GM_BRIDGE_V1 is a governed composition of ASSET_FORGE + GM_ADAPTER", () => {
+  assert.deepEqual(assetBridge.publicCapabilities, ["ASSET_GM_BRIDGE_V1"]);
+  assert.equal(assetBridge.publicHermesTools, 0);
+  assert.equal(assetBridge.destructiveEnabled, false);
+  assert.equal(assetBridge.hermesRuntimeDependency, false);
+  assert.equal(assetBridge.offlineRuntime, true);
+  assert.deepEqual(assetBridge.dependencies, ["ASSET_FORGE", "GM_ADAPTER"]);
+  assert.equal(assetBridge.errorTypes.length, 16);
+  for (const code of ["ASSET_NOT_APPROVED", "STALE_OR_TAMPERED_PLAN", "VERIFY_COMPILE_FAILED", "VERIFY_RUNTIME_FAILED"]) assert.ok(assetBridge.errorTypes.includes(code));
+  assert.doesNotThrow(() => readFileSync(new URL("../" + assetBridge.inputSchema, import.meta.url), "utf8"));
+  const entry = registry.capabilities.find(({ id }) => id === "ASSET_GM_BRIDGE_V1");
+  assert.ok(entry, "ASSET_GM_BRIDGE_V1 must be registered in the manifest");
+  assert.equal(entry.status, "IMPLEMENTING");
+  // The bridge never exposes raw GameMaker/Igor/Asset Forge tools to its callers.
+  assert.deepEqual(entry.prohibitedActions, ["raw GameMaker/Igor/Asset Forge tool exposure", "implicit toolchain", "implicit work root", "publish without authorization"]);
 });
 
 test("kit manifest contains every mandatory module without game content", () => {
