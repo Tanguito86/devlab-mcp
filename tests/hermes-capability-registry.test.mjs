@@ -52,7 +52,7 @@ test("ASSET_GM_BRIDGE_V1 is a governed composition of ASSET_FORGE + GM_ADAPTER",
   assert.doesNotThrow(() => readFileSync(new URL("../" + assetBridge.inputSchema, import.meta.url), "utf8"));
   const entry = registry.capabilities.find(({ id }) => id === "ASSET_GM_BRIDGE_V1");
   assert.ok(entry, "ASSET_GM_BRIDGE_V1 must be registered in the manifest");
-  assert.equal(entry.status, "IMPLEMENTING");
+  assert.equal(entry.status, "INTEGRATED");
   // The bridge never exposes raw GameMaker/Igor/Asset Forge tools to its callers.
   assert.deepEqual(entry.prohibitedActions, ["raw GameMaker/Igor/Asset Forge tool exposure", "implicit toolchain", "implicit work root", "publish without authorization"]);
 });

@@ -40,3 +40,20 @@ corepack pnpm --filter @tanguito/devlab-gm-ide-adapter test       PASS 66/66
 corepack pnpm --filter @tanguito/devlab-asset-gm-bridge test      PASS 62/62
 node scripts/asset-bridge-pilot.mjs --work-root H:\Temp\Deposito\devlab-asset-bridge-01-gm-critic-resolution-20260805-1945 ...  PASS COMPLETED / ASSET_GM_BRIDGE_V1_PILOT_VERIFIED
 post-resolution pilot: initial/v1/v2/post-rollback compile+runtime PASS; NO_CHANGE idempotency; two byte-exact rollbacks; negative exit 1; GM PID sets [] -> []
+
+Independent re-review and full pre-closure gates:
+opencode run --model deepseek/deepseek-v4-flash --variant high --agent plan <resolution prompt>  ACCEPTED AFTER RESOLUTION; BLOCKER 0; REQUIRED 0; OPTIONAL 2
+critic R2 clone before/after: HEAD 4a06a72b875517bf2ccc0db1db726d489233bcb1, worktree clean, index empty
+corepack pnpm -r build                                         PASS 8/8
+corepack pnpm -r typecheck                                     PASS 8/8
+corepack pnpm -r test                                          PASS 403/403
+node --test tests/*.test.mjs                                   PASS 77 + 1 intentional skip
+node --test tests/hermes-capability-registry.test.mjs          PASS 5/5
+corepack pnpm -r --if-present pack:dry-run                     PASS; Asset Bridge 43 files, 41.2 kB
+
+Final clean-clone protocol uses H:\Temp\Deposito\devlab-asset-bridge-01-clean-final-20260805-2030 and is the last gate before the final handoff.
+git diff --check                                              PASS
+secret candidate scan across 87 changed files                 PASS
+large-file scan > 1 MiB across 87 changed files               PASS 0
+forbidden Hermes/consumer path and content reference scan     PASS
+runtime network primitive/URL scan                            PASS

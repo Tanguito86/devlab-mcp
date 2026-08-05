@@ -30,4 +30,18 @@ Real post-resolution pilot:
 NO_CHANGE, v2 APPLIED, both rollbacks byte-exact, negative compile exit 1, runtime
 initial/v1/v2/post-rollback PASS, initial/final GM PID sets empty.
 
-Independent re-review: `PENDING`.
+Independent re-review: `ACCEPTED AFTER RESOLUTION` on clean detached clone
+`4a06a72b875517bf2ccc0db1db726d489233bcb1`; open BLOCKER 0, REQUIRED 0,
+OPTIONAL 2.
+
+Open optional observations, accepted as non-blocking:
+
+- `O6`: the JSON Schema `allOf` composition is syntactically valid but a strict
+  draft-2020-12 validator could reject derived apply/verify/rollback properties
+  because the referenced request base is closed. Runtime TypeScript gates are
+  unaffected; a future schema-only maintenance sprint can flatten the composed
+  request definitions and add a real validator dependency if authorized.
+- `O7`: tracked QA contains the exact Forge summary and hashes, while the full
+  synthetic catalog/build tree is intentionally external and disposable. The
+  clean-clone gate reproduces it fresh offline, so no original untracked state or
+  consumer asset is required.

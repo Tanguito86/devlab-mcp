@@ -39,3 +39,13 @@ composition subpath: it exposes read-only primitives, is not re-exported by the
 bridge barrel, and does not expand the six public GM capabilities.
 
 Required acceptance state after resolution: `ACCEPTED AFTER RESOLUTION`.
+
+## Resolution re-review
+
+DeepSeek repeated the review read-only on detached clean clone
+`4a06a72b875517bf2ccc0db1db726d489233bcb1`. The clone remained unchanged.
+It verified F1-F5 and O1-O5 against code, tests and exact Git blobs and returned:
+
+`VERDICT: ACCEPTED AFTER RESOLUTION`; open BLOCKER 0, REQUIRED 0, OPTIONAL 2.
+
+The two new optional observations are recorded in `19-critic-resolution.md`.

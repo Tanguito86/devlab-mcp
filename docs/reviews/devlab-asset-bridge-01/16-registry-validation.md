@@ -1,8 +1,8 @@
 # 16 - Registry validation
 
-The governed registry now has 15 unique entries: the previous 14 plus
-`ASSET_GM_BRIDGE_V1`. The new entry is `IMPLEMENTING` until independent review
-and final integration. Its evidence hash points to this builder-stage handoff.
+The governed registry has 15 unique entries: the previous 14 plus
+`ASSET_GM_BRIDGE_V1`. After independent acceptance and Codex resolution the new
+entry is `INTEGRATED`; its evidence hash points to `19-critic-resolution.md`.
 
 The bridge contract declares one public capability, zero Hermes tools, offline
 runtime, no destructive action, dependencies `ASSET_FORGE` and `GM_ADAPTER`,
