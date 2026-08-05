@@ -1,0 +1,26 @@
+PREFLIGHT git HEAD/origin/divergence/status/index: 76bdf3f81833f1a4e10558a8ca4dc396afca86b5 / 6c447e9448aee35fc5cb185e1f6f8a505ffb8903 / 0 11 / CLEAN / EMPTY
+PREFLIGHT corepack pnpm --version: 9.15.4
+PREFLIGHT source HEAD/status: b604139f51d6831780240e8cf1d8b21a42401d0a / CLEAN DETACHED
+BASELINE build/typecheck/tests/asset-forge: 6/6 / 6/6 / 253/253 / 46/46 PASS
+IMPLEMENTATION asset-forge package: build PASS; 68/68 PASS
+BUILD-A production-build-a: SUCCESS / promoted
+BUILD-B production-build-b: SUCCESS / byte-identical reuse
+MIXED BATCH production-mixed-fixtures: MIXED / 1 SUCCESS / 2 CHANGES_REQUIRED / 4 BLOCKED
+CATALOG BATCH production-catalog-batch: SUCCESS 1/1 / byte-identical reuse
+TECHNICAL CRITIC: APPROVED / 0 findings
+SECURITY CRITIC: APPROVED / 0 findings
+EXPORT CRITIC: APPROVED / 0 findings
+FINAL corepack pnpm -r build: 6/6 PASS
+FINAL corepack pnpm -r typecheck: 6/6 PASS
+FINAL corepack pnpm -r test: 275/275 PASS
+FINAL asset-forge: 68/68 PASS
+FINAL visual consumer: 9/9 PASS
+FINAL AB-04 focused: 43/43 PASS
+FINAL topdown: 33/33 PASS
+FINAL capability registry before production registration: 3/3 PASS
+FINAL capability registry after ASSET_FORGE registration: 3/3 PASS / 8 governed entries
+CLEAN CLONE --no-local core.autocrlf=true at 1ae12d05742e096c8639738a421d88a0ad35f083: PASS
+CLEAN CLONE offline install: 193/193 reused / 0 downloaded
+CLEAN CLONE build/typecheck/tests: 6/6 / 6/6 / 275/275 PASS
+CLEAN CLONE individual build / mixed batch / catalog batch / critics: PASS
+CLEAN CLONE tracked status: CLEAN

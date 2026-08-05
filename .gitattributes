@@ -46,3 +46,8 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 /packages/img2threejs-asset-forge/tests/production-pipeline.test.js text eol=lf
 /packages/img2threejs-asset-forge/tests/gltf-export.test.js text eol=lf
 /scripts/asset-forge.mjs text eol=lf
+/scripts/asset-forge-production-critic.mjs text eol=lf
+/capabilities/asset-forge-v1.json text eol=lf
+/capabilities/hermes-capability-manifest.json text eol=lf
+/capabilities/external-candidate-status.json text eol=lf
+/tests/hermes-capability-registry.test.mjs text eol=lf

@@ -8,8 +8,8 @@ const kit = JSON.parse(readFileSync(new URL("../capabilities/topdown-shooter-kit
 const external = JSON.parse(readFileSync(new URL("../capabilities/external-candidate-status.json", import.meta.url), "utf8"));
 
 test("capability registry has the exact governed capability set", () => {
-  assert.equal(registry.capabilities.length, 7);
-  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 7);
+  assert.equal(registry.capabilities.length, 8);
+  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 8);
   for (const capability of registry.capabilities) {
     assert.ok(registry.allowedStatuses.includes(capability.status));
     for (const field of ["source", "sourcePin", "license", "evidencePath", "authority", "integrationMode", "runtimeStatus", "securityStatus", "nextPermittedAction"]) assert.equal(typeof capability[field], "string");
@@ -22,7 +22,7 @@ test("capability registry has the exact governed capability set", () => {
 
 test("external candidates remain uninstalled and outside the kit", () => {
   assert.equal(external.r3f.installed, false); assert.equal(external.r3f.topdownKitDependency, false);
-  assert.equal(external.img2threejs.installed, false); assert.equal(external.img2threejs.status, "HARDENED_PILOT_READY"); assert.equal(external.img2threejs.blockers.length, 0);
+  assert.equal(external.img2threejs.installed, false); assert.equal(external.img2threejs.status, "PRODUCTION_CAPABILITY_VERIFIED"); assert.equal(external.img2threejs.blockers.length, 0);
   assert.equal(external.img2threejs.upstreamCopiesModified, 0);
   assert.deepEqual(kit.runtimeDependencies, []);
 });
