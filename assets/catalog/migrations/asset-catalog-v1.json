@@ -1,0 +1,1 @@
+{"from":null,"migrationId":"asset-catalog-v1","operations":["initialize-versioned-catalog","canonical-sort-by-asset-id-and-version","require-relative-paths-and-sha256-provenance"],"schemaVersion":1,"to":1}

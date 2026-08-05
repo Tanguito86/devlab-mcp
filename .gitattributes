@@ -32,3 +32,17 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 /packages/img2threejs-asset-forge/tests/cinder-relay-drone.test.js text eol=lf
 /scripts/cinder-relay-drone-critic.mjs text eol=lf
 /scripts/cinder-relay-drone-pilot.mjs text eol=lf
+
+# DEVLAB-ASSET-FORGE-PRODUCTIONIZATION-01 deterministic capability and evidence.
+/assets/catalog/** text eol=lf
+/assets/builds/**/*.json text eol=lf
+/assets/builds/**/*.gltf text eol=lf
+/assets/builds/**/*.glb binary
+/docs/reviews/devlab-asset-forge-productionization-01/** text eol=lf
+/packages/img2threejs-asset-forge/src/production.ts text eol=lf
+/packages/img2threejs-asset-forge/src/pipeline.ts text eol=lf
+/packages/img2threejs-asset-forge/src/export.ts text eol=lf
+/packages/img2threejs-asset-forge/tests/production-contracts.test.js text eol=lf
+/packages/img2threejs-asset-forge/tests/production-pipeline.test.js text eol=lf
+/packages/img2threejs-asset-forge/tests/gltf-export.test.js text eol=lf
+/scripts/asset-forge.mjs text eol=lf
