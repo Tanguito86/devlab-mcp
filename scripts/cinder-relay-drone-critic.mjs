@@ -37,7 +37,7 @@ if (mode === "technical") {
   const score = {
     silhouette: occupancyHealthy(thumb) ? 4.2 : 2.8,
     readability: occupancyHealthy(game) && game.luminanceContrast >= 30 ? 4.1 : 2.9,
-    function: bundle.assetReport.parts.some(({ canonicalId }) => canonicalId === "relay-arc-root") && bundle.assetReport.parts.filter(({ canonicalId }) => canonicalId.startsWith("stabilizer-")).length === 2 ? 4.1 : 2.5,
+    functionScore: bundle.assetReport.parts.some(({ canonicalId }) => canonicalId === "relay-arc-root") && bundle.assetReport.parts.filter(({ canonicalId }) => canonicalId.startsWith("stabilizer-")).length === 2 ? 4.1 : 2.5,
     materials: bundle.assetReport.materials.materials === 5 && diagnostic.luminanceContrast >= 35 && diagnostic.colorSpread >= 40 ? 4.0 : 2.8,
     proportions: clipped.length === 0 && bundle.assetReport.geometry.objectCount <= 80 ? 4.0 : 2.8,
     originality: bundle.brief.noCopy === true && bundle.assetReport.parts.length === 11 ? 4.4 : 2.5,
