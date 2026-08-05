@@ -10,7 +10,7 @@ the WebGL harness, performed readback, detached the asset, and disposed it twice
 - double-dispose failures: 0;
 - shared/external resources: preserved;
 - asset textures/render targets: 0/0;
-- average/max cleanup: about 0.222 ms / 0.4 ms in the final run.
+- average/max cleanup: about 0.235 ms / 0.6 ms in the final run.
 
 The WebGL renderer reports one internal texture; the asset ownership manifest
 correctly reports zero textures. Renderer infrastructure is not misclassified as
