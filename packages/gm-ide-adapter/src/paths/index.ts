@@ -8,7 +8,7 @@ export function safeRelativePath(candidate: string, field = "path"): string {
   if (candidate.includes("/") && candidate.includes("\\")) fail("PATH_ESCAPE", `${field} cannot mix separators`);
   const normalized = candidate.replace(/\\/g, "/");
   const parts = normalized.split("/");
-  if (parts.length > 64 || parts.some((part) => !part || part === "." || part === ".." || part.includes(":") || part.endsWith(".") || reserved.test(part) || /%2e|%2f|%5c/i.test(part))) fail("PATH_ESCAPE", `${field} contains a forbidden segment`);
+  if (parts.length > 64 || parts.some((part) => !part || part === "." || part === ".." || part.includes(":") || part.endsWith(".") || part.endsWith(" ") || reserved.test(part) || /%2e|%2f|%5c/i.test(part))) fail("PATH_ESCAPE", `${field} contains a forbidden segment`);
   return normalized;
 }
 export function safeTransactionId(value: string): string { if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value)) fail("INVALID_REQUEST", "transactionId is invalid"); return value; }

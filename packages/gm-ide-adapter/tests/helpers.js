@@ -1,7 +1,8 @@
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { GovernedGameMakerIdeAdapter, planHash } from "../dist/index.js";
+import { GovernedGameMakerIdeAdapter } from "../dist/index.js";
+import { planHash } from "../dist/planning/index.js";
 
 export const fixtureSource = new URL("../../../fixtures/gamemaker/hermes-bridge-pilot/", import.meta.url);
 export const targetFile = "objects/obj_gm_bridge_pilot/Create_0.gml";

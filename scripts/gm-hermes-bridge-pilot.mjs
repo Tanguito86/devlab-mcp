@@ -1,24 +1,20 @@
-import { cp, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { cp, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  GovernedGameMakerIdeAdapter, canonicalBytes, planHash, windowsProcessInventory,
-} from "../packages/gm-ide-adapter/dist/index.js";
+import { GovernedGameMakerIdeAdapter } from "../packages/gm-ide-adapter/dist/index.js";
+import { planHash } from "../packages/gm-ide-adapter/dist/planning/index.js";
+import { windowsProcessInventory } from "../packages/gm-ide-adapter/dist/processes/index.js";
+import { canonicalBytes } from "../packages/gm-ide-adapter/dist/transactions/canonical.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const value = (flag) => { const index = process.argv.indexOf(flag); return index >= 0 ? process.argv[index + 1] : undefined; };
 const required = (flag) => { const result = value(flag); if (!result) throw new Error(`${flag} is required`); return resolve(result); };
 const workRoot = required("--work-root");
-const runtimeJson = JSON.parse(await readFile("C:/ProgramData/GameMakerStudio2/runtime.json", "utf8"));
-const runtimeVersion = process.env.GM_RUNTIME_VERSION || runtimeJson.active;
-const runtimePath = process.env.GM_RUNTIME_ROOT || `C:/ProgramData/GameMakerStudio2/Cache/runtimes/runtime-${runtimeVersion}`;
-const executable = process.env.GM_IGOR_EXE || `${runtimePath}/bin/igor/windows/x64/Igor.exe`;
-const projectTool = process.env.GM_PROJECT_TOOL || "H:/GameMaker-LTS2026/packages/gm-tools/project-tool-win-x64/ProjectTool.exe";
-const roaming = process.env.APPDATA || "C:/Users/Deposito/AppData/Roaming";
-const userBase = `${roaming}/GameMakerStudio2`;
-const candidates = (await readdir(userBase, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !/^unknownUser_/i.test(entry.name)).map((entry) => `${userBase}/${entry.name}`).sort();
-let detectedUserDirectory; for (const candidate of candidates) if (await stat(`${candidate}/local_settings.json`).catch(() => null)) { detectedUserDirectory = candidate; break; }
-const userDirectory = process.env.GM_USER_DIRECTORY || detectedUserDirectory || candidates[0];
+const runtimePath = required("--runtime-root");
+const executable = required("--igor");
+const projectTool = required("--project-tool");
+const userDirectory = required("--user-dir");
+const runtimeVersion = basename(runtimePath).replace(/^runtime-/, "");
 for (const [name, path] of Object.entries({ executable, runtimePath, projectTool, userDirectory })) if (!path || !(await stat(path).catch(() => null))) throw new Error(`missing ${name}: ${path}`);
 
 await mkdir(workRoot, { recursive: true });

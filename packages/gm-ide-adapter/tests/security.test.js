@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { mkdir, symlink, writeFile } from "node:fs/promises";
 import test from "node:test";
-import { GovernedGameMakerIdeAdapter, safeRelativePath } from "../dist/index.js";
+import { GovernedGameMakerIdeAdapter } from "../dist/index.js";
+import { safeRelativePath } from "../dist/paths/index.js";
 import { base, join, sandbox, setupPlan, targetFile } from "./helpers.js";
 
 for (const [label, path] of [["traversal", "../escape"], ["absolute", "C:/escape"], ["UNC", "\\\\server\\share"], ["mixed separators", "objects/x\\y.gml"], ["NUL", "objects/x\0.gml"], ["ADS", "objects/x.gml:stream"], ["encoded traversal", "%2e%2e/escape"], ["reserved device", "objects/NUL.gml"]]) test(`PATH SAFETY: rejects ${label}`, () => { assert.throws(() => safeRelativePath(path), (error) => error.code === "PATH_ESCAPE"); });
+test("PATH SAFETY: rejects Windows trailing-space alias", () => { assert.throws(() => safeRelativePath("objects/alias /Create_0.gml"), (error) => error.code === "PATH_ESCAPE"); });
 test("PATH SAFETY: accepts spaces and Unicode", () => { assert.equal(safeRelativePath("Mi Proyecto ñ/objeto válido.gml"), "Mi Proyecto ñ/objeto válido.gml"); });
 test("PLAN: file outside allowlist is rejected", async () => { const box = await sandbox(); try { const { adapter, snapshot, current } = await setupPlan(box); await assert.rejects(() => adapter.plan({ ...base(box.projectRoot, "outside", "GM_PLAN_V1"), expectedProjectFingerprint: snapshot.fingerprint, files: [{ path: targetFile, action: "modify", content: current }], allowlist: ["rooms/rm_gm_bridge_pilot/rm_gm_bridge_pilot.yy"] }), (error) => error.code === "FILE_NOT_ALLOWLISTED"); } finally { await box.cleanup(); } });
 test("SYMLINK SAFETY: project tree link escaping root is rejected", async (t) => { const box = await sandbox(); try { const outside = join(box.root, "outside"); await mkdir(outside); await writeFile(join(outside, "outside.gml"), "x"); try { await symlink(outside, join(box.root, box.projectRoot, "linked"), process.platform === "win32" ? "junction" : "dir"); } catch (error) { t.skip(`symlink unavailable: ${error.code}`); return; } const adapter = new GovernedGameMakerIdeAdapter(box.root, async () => []); await assert.rejects(() => adapter.inspect(base(box.projectRoot, "symlink", "GM_INSPECT_V1")), (error) => error.code === "PATH_ESCAPE"); } finally { await box.cleanup(); } });

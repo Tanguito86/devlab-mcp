@@ -1,5 +1,5 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { promisify } from "node:util";
 import type { GmProcessSnapshot } from "../contracts/index.js";
 import { GmAdapterError, fail } from "../errors/index.js";
@@ -59,17 +59,20 @@ export class ProcessLedger {
 export interface OwnedCommandResult { readonly exitCode: number; readonly stdout: string; readonly stderr: string; readonly timedOut: boolean; readonly cancelled: boolean; readonly ownedPids: readonly number[]; readonly observedRunners: readonly OwnedProcessRecord[]; readonly startToken: string }
 export async function runOwnedCommand(input: Readonly<{ executable: string; args: readonly string[]; cwd: string; transactionId: string; timeoutMs: number; cancellation?: AbortSignal; ledger: ProcessLedger; expectedRuntimeSignal?: string }>): Promise<OwnedCommandResult> {
   if (input.cancellation?.aborted) fail("CANCELLED", "operation cancelled before process start", true);
-  const before = await input.ledger.inventory(); const beforeRunnerIds = new Set(before.filter(({ name }) => /^Runner(?:\.exe)?$/i.test(name)).map(({ pid }) => pid));
+  const operationStarted = Date.now(); const before = await input.ledger.inventory(); const beforeRunnerIds = new Set(before.filter(({ name }) => /^Runner(?:\.exe)?$/i.test(name)).map(({ pid }) => pid));
   const child = spawn(input.executable, [...input.args], { cwd: input.cwd, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
   if (!child.pid) fail("PROCESS_OWNERSHIP", "failed to obtain child PID");
-  const startToken = randomBytes(16).toString("hex"); const expectedHash = commandHash(input.executable, input.args);
-  const initial = (await input.ledger.inventory()).find(({ pid }) => pid === child.pid) ?? { pid: child.pid, parentPid: process.pid, name: "Igor.exe", executable: input.executable, commandLine: [input.executable, ...input.args].join(" "), creationDate: startToken };
+  const expectedHash = commandHash(input.executable, input.args); let initial: RawProcess | undefined; const identityDeadline = Math.min(operationStarted + input.timeoutMs, Date.now() + 5_000);
+  while (!initial && Date.now() < identityDeadline && child.exitCode === null) { if (input.cancellation?.aborted) { child.kill("SIGTERM"); fail("CANCELLED", "operation cancelled during process identity acquisition", true); } initial = (await input.ledger.inventory()).find(({ pid }) => pid === child.pid); if (!initial) await new Promise((resolve) => setTimeout(resolve, 50)); }
+  if (!initial) { if (child.exitCode === null) child.kill("SIGTERM"); fail("PROCESS_OWNERSHIP", "could not acquire the Igor OS creation token", true, { pid: child.pid }); }
+  const startToken = initial.creationDate;
   input.ledger.register(initial, input.transactionId, "igor", expectedHash);
   let stdout = ""; let stderr = ""; child.stdout.on("data", (chunk: Buffer) => { stdout += chunk.toString("utf8"); }); child.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString("utf8"); });
   const observed = new Map<number, OwnedProcessRecord>(); let settled = false; let timedOut = false; let cancelled = false; let polling = false;
   const poll = setInterval(() => { if (polling) return; polling = true; void input.ledger.inventory().then((rows) => { for (const row of rows) if (/^Runner(?:\.exe)?$/i.test(row.name) && !beforeRunnerIds.has(row.pid) && !observed.has(row.pid)) observed.set(row.pid, input.ledger.register(row, input.transactionId, "runner")); }).catch(() => undefined).finally(() => { polling = false; }); }, 250); poll.unref();
-  const timeout = setTimeout(() => { timedOut = true; void input.ledger.terminateOwned(child, input.transactionId).catch(() => undefined); }, input.timeoutMs); timeout.unref();
+  const timeout = setTimeout(() => { timedOut = true; void input.ledger.terminateOwned(child, input.transactionId).catch(() => undefined); }, Math.max(1, input.timeoutMs - (Date.now() - operationStarted))); timeout.unref();
   const onAbort = (): void => { cancelled = true; void input.ledger.terminateOwned(child, input.transactionId).catch(() => undefined); }; input.cancellation?.addEventListener("abort", onAbort, { once: true });
+  if (input.cancellation?.aborted) onAbort();
   const exitCode = await new Promise<number>((resolve, reject) => { child.once("error", reject); child.once("exit", (code) => { settled = true; resolve(code ?? -1); }); }).finally(() => { clearInterval(poll); clearTimeout(timeout); input.cancellation?.removeEventListener("abort", onAbort); });
   input.ledger.markExited(child.pid, exitCode);
   for (const record of observed.values()) if (!(await input.ledger.identityMatches(record))) input.ledger.markExited(record.pid, 0);

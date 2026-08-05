@@ -20,6 +20,7 @@
     "asset-forge:validate": "node scripts/asset-forge.mjs validate-catalog",
     "asset-forge:build:cinder": "node scripts/asset-forge.mjs build cinder-relay-drone --version 1.0.0-pilot.1",
     "asset-forge:batch": "node scripts/asset-forge.mjs build-batch catalog",
+    "gm-bridge:pilot": "corepack pnpm --filter @tanguito/devlab-gm-ide-adapter build && node scripts/gm-hermes-bridge-pilot.mjs",
     "contract:ash-relay:v2:verify": "node --test tests/ash-relay-contract-v2.test.mjs",
     "contract:capabilities:verify": "node --test tests/hermes-capability-registry.test.mjs",
     "clean": "pnpm -r clean",
