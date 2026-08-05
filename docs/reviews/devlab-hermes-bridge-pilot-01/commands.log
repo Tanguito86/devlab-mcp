@@ -1,0 +1,19 @@
+PREFLIGHT git HEAD/origin/divergence/status/index: 3ce8abc85f9cb72be63a3d938211dffd71e3a7e8 / 6c447e9448aee35fc5cb185e1f6f8a505ffb8903 / 0 16 / CLEAN / EMPTY
+PREFLIGHT corepack pnpm --version: 9.15.4
+BLUEPRINT required documents: 13/13 reconciled; SHA256SUMS 25/25 PASS
+HERMES source pin: 0c33684772627e14e0fe488d7b44d81bf52050cd verified; source not modified
+BUILDER adapter pre-critic: 57/57 PASS; real positive compile/runtime PASS; negative exit 1; byte-exact rollback PASS
+DEEPSEEK initial critic: deepseek/deepseek-v4-flash / read-only / 1 BLOCKER / 8 REQUIRED / 7 OPTIONAL / no edits
+CODEX resolution: all GM-01 through GM-16 resolved; adapter 64/64 PASS
+REAL resolved pilot: COMPLETED / HERMES_BRIDGE_PILOT_VERIFIED; positive exit 0/runtime signal; negative exit 1; two byte-exact restores; zero remaining processes
+DEEPSEEK resolved recheck: ACCEPTED AFTER RESOLUTION / prior findings closed / 0 new BLOCKER / 0 new REQUIRED / 4 OPTIONAL / no edits
+CODEX optional closure: OPT-1 through OPT-4 resolved; adapter 64/64 PASS
+FINAL workspace build/typecheck/test: 7/7 / 7/7 / 339/339 PASS
+FINAL root contract/security tests: 76 PASS / 1 intentional skip / 0 fail
+FINAL focused: Asset Forge 68/68 / visual 9/9 / AB-04 43/43 / topdown 33/33 PASS
+FINAL capability registry: 4/4 PASS / 14 governed entries / exactly six GM entries / 0 Hermes tools
+FINAL pack dry-run: 7/7 PASS
+SCANS: secret hits 0 / changed files over 1 MiB 0 / runtime network APIs 0
+NO-COPY: Hermes pin 317 tracked blobs vs 33 adapter/fixture boundary files / exact blob matches 0
+CLEAN CLONE core.autocrlf=true --no-local: offline frozen install / build / typecheck / tests / registry / real GameMaker pilot / clean worktree PASS
+GIT: local commits only; no push / force-push / rebase / tag / release

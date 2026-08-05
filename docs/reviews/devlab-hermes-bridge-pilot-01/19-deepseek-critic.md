@@ -35,3 +35,14 @@ The critic returned these findings in the required structured review:
 
 DeepSeek was restricted to inspection and critique. Codex remained the only
 builder and integrator.
+
+## Post-resolution recheck
+
+The same model independently reviewed clean detached commit `44a7b03`, again
+with edit permission denied. It cryptographically recomputed both STATE-A/B
+fingerprints, plan/content hashes, invocation command hashes, manifest-ledger
+bindings and the capability evidence pin. Its verdict was `ACCEPTED AFTER
+RESOLUTION`: all prior findings closed, no new BLOCKER or REQUIRED, and four
+new OPTIONAL precision/hardening notes (`OPT-1` through `OPT-4`). Those four
+notes are resolved in the final Codex integration and listed in
+`20-critic-resolution.md`. Edits made by DeepSeek: none.
