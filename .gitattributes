@@ -20,3 +20,15 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 # P-02 byte-exact fixtures must materialize identically on every checkout.
 /packages/topdown-shooter-kit/fixtures/provenance.json text eol=lf
 /packages/topdown-shooter-kit/fixtures/signal-grid.txt text eol=lf
+
+# DEVLAB-IMG2THREEJS-ASSET-PILOT-01 deterministic source and evidence.
+/assets/pilots/cinder-relay-drone/**/*.json text eol=lf
+/assets/pilots/cinder-relay-drone/**/*.html text eol=lf
+/assets/pilots/cinder-relay-drone/**/*.js text eol=lf
+/assets/pilots/cinder-relay-drone/**/*.txt text eol=lf
+/assets/pilots/cinder-relay-drone/**/*.png binary
+/docs/reviews/devlab-img2threejs-asset-pilot-01/** text eol=lf
+/packages/img2threejs-asset-forge/src/cinder-relay-drone.ts text eol=lf
+/packages/img2threejs-asset-forge/tests/cinder-relay-drone.test.js text eol=lf
+/scripts/cinder-relay-drone-critic.mjs text eol=lf
+/scripts/cinder-relay-drone-pilot.mjs text eol=lf
