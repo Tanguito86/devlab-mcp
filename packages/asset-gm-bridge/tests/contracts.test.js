@@ -42,6 +42,7 @@ test("input schema is valid JSON Schema and admits the request kinds", () => {
     assert.ok(schema.$defs[kind], `missing ${kind}`);
   }
   assert.equal(schema.$defs.applyRequest.allOf[1].properties.confirm.const, true);
+  assert.equal("faultAt" in schema.$defs.applyRequest.allOf[1].properties, false, "fault injection must not be public");
   assert.equal(schema.$defs.rollbackRequest.allOf[1].properties.confirm.const, true);
 });
 

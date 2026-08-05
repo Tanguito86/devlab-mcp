@@ -13,7 +13,7 @@
         "capability": { "$ref": "#/$defs/capability" },
         "projectRoot": { "type": "string", "minLength": 1 },
         "evidenceRoot": { "type": "string", "minLength": 1 },
-        "transactionId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        "transactionId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
         "assetId": { "type": "string", "minLength": 1 },
         "assetVersion": { "type": "string", "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$" },
         "resourceName": { "type": "string", "pattern": "^spr_[A-Za-z0-9_]{1,63}$" },
@@ -38,7 +38,7 @@
     "applyRequest": {
       "allOf": [
         { "$ref": "#/$defs/requestBase" },
-        { "type": "object", "required": ["plan", "planHash", "bindingHash", "confirm"], "properties": { "plan": { "type": "object" }, "planHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "bindingHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "confirm": { "const": true }, "dryRun": { "type": "boolean" }, "faultAt": { "enum": ["before-staging", "during-staging", "before-promotion", "after-first-replace", "leave-write-ahead-after-first-replace"] } } }
+        { "type": "object", "required": ["plan", "planHash", "bindingHash", "confirm"], "properties": { "plan": { "type": "object" }, "planHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "bindingHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "confirm": { "const": true }, "dryRun": { "type": "boolean" } } }
       ]
     },
     "verifyRequest": {

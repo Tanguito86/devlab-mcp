@@ -11,7 +11,17 @@ export function safeRelativePath(candidate: string, field = "path"): string {
   if (parts.length > 64 || parts.some((part) => !part || part === "." || part === ".." || part.includes(":") || part.endsWith(".") || part.endsWith(" ") || reserved.test(part) || /%2e|%2f|%5c/i.test(part))) fail("PATH_ESCAPE", `${field} contains a forbidden segment`);
   return normalized;
 }
-export function safeTransactionId(value: string): string { if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value)) fail("INVALID_REQUEST", "transactionId is invalid"); return value; }
+export function safeTransactionId(value: string): string { if (!/^[a-z0-9][a-z0-9._-]{0,127}$/.test(value)) fail("INVALID_REQUEST", "transactionId must use canonical lowercase ASCII"); return value; }
+const DEFAULT_ALLOWED_EXTENSIONS = Object.freeze(["gml", "yy", "yyp", "json"]);
+export function safeAllowedExtensions(input: readonly string[] | undefined): readonly string[] {
+  const raw = input ?? DEFAULT_ALLOWED_EXTENSIONS;
+  if (!raw.length || raw.length > 32) fail("INVALID_REQUEST", "allowedExtensions is outside policy");
+  const normalized = [...new Set(raw.map((extension) => {
+    if (typeof extension !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,15}$/.test(extension)) fail("INVALID_REQUEST", "allowedExtensions contains an invalid extension");
+    return extension.toLowerCase();
+  }))].sort();
+  return Object.freeze(normalized);
+}
 export async function resolveRealRoot(root: string): Promise<string> { const absolute = resolve(root); const info = await lstat(absolute).catch(() => null); if (!info?.isDirectory() || info.isSymbolicLink()) fail("AUTHZ_PROJECT_ROOT", "projectsDir must be an existing real directory"); return realpath(absolute); }
 export async function resolveInsideRoot(root: string, candidate: string, options: Readonly<{ existing?: boolean; rejectFinalSymlink?: boolean }> = {}): Promise<string> {
   const normalized = safeRelativePath(candidate); const realRoot = await resolveRealRoot(root); const target = resolve(realRoot, ...normalized.split("/")); const back = relative(realRoot, target);

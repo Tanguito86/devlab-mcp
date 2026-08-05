@@ -4,7 +4,7 @@ import { dirname, relative } from "node:path";
 import type { GmApplyResult, GmApplySafeRequest, GmMutationPlan, GmRollbackRequest, GmRollbackResult } from "../contracts/index.js";
 import { GmAdapterError, fail } from "../errors/index.js";
 import { inspectProject } from "../inspection/index.js";
-import { resolveInsideRoot, safeRelativePath, safeTransactionId } from "../paths/index.js";
+import { resolveInsideRoot, safeAllowedExtensions, safeRelativePath, safeTransactionId } from "../paths/index.js";
 import type { ProcessInventory } from "../processes/index.js";
 import { planHash as hashPlan } from "../planning/index.js";
 import { canonicalBytes, canonicalHash, sha256 } from "./canonical.js";
@@ -29,12 +29,30 @@ async function transactionPaths(projectsDir: string, evidenceRoot: string, proje
   const evidence = safeRelativePath(evidenceRoot, "evidenceRoot"); const root = await resolveInsideRoot(projectsDir, evidence); await mkdir(root, { recursive: true }); const tx = safeTransactionId(transactionId); const relativeRoot = `${evidence}/transactions/${tx}`; const transactionRoot = await resolveInsideRoot(projectsDir, relativeRoot); return Object.freeze({ root: transactionRoot, relativeRoot, staging: `${transactionRoot}/staging`, backups: `${transactionRoot}/backups`, manifest: `${transactionRoot}/manifest.json`, ledger: `${transactionRoot}/ledger.json`, lock: `${root}/locks/${sha256(Buffer.from(safeRelativePath(projectRoot)))}.lock` });
 }
 function assertPlan(request: GmApplySafeRequest | GmRollbackRequest, plan?: GmMutationPlan): asserts plan is GmMutationPlan { if (!plan || hashPlan(plan) !== request.planHash || plan.transactionId !== request.transactionId || plan.projectRoot !== request.projectRoot) fail("PLAN_STALE", "plan hash or binding is invalid", true); }
+function assertApplyPlanPolicy(plan: GmMutationPlan): void {
+  safeTransactionId(plan.transactionId);
+  if (!plan.files.length || plan.files.length > 64) fail("LIMIT_EXCEEDED", "plan file count is outside policy");
+  const allowedExtensions = safeAllowedExtensions(plan.allowedExtensions);
+  if (JSON.stringify(allowedExtensions) !== JSON.stringify(plan.allowedExtensions)) fail("PLAN_STALE", "allowed extension policy is not canonical", true);
+  const identities = new Set<string>();
+  for (const file of plan.files) {
+    const path = safeRelativePath(file.path);
+    const identity = path.toLowerCase();
+    if (identities.has(identity)) fail("PLAN_STALE", "plan has duplicate path identities", true, { path });
+    identities.add(identity);
+    const extension = path.split(".").pop()?.toLowerCase() ?? "";
+    if (!allowedExtensions.includes(extension)) fail("FILE_NOT_ALLOWLISTED", "file extension is not writable", false, { path });
+    const after = Buffer.from(file.afterContentBase64, "base64");
+    if (after.byteLength > 4 * 1024 * 1024) fail("LIMIT_EXCEEDED", "planned content exceeds per-file limit");
+    if (sha256(after) !== file.afterSha256) fail("PLAN_STALE", "planned content hash is invalid", true, { path });
+  }
+}
 async function writeManifest(paths: Awaited<ReturnType<typeof transactionPaths>>, manifest: TransactionManifest): Promise<string> { await writeCanonical(paths.manifest, manifest); const digest = sha256(await readFile(paths.manifest)); await writeCanonical(paths.ledger, { schemaVersion: 1, transactionId: manifest.transactionId, manifestSha256: digest, state: manifest.state } satisfies Ledger); return digest; }
 async function loadManifest(paths: Awaited<ReturnType<typeof transactionPaths>>): Promise<TransactionManifest> { if (!(await exists(paths.manifest)) || !(await exists(paths.ledger))) fail("MUTATION_NOT_FOUND", "transaction evidence is missing", true); const bytes = await readFile(paths.manifest); const ledger = JSON.parse(await readFile(paths.ledger, "utf8")) as Ledger; if (sha256(bytes) !== ledger.manifestSha256) fail("ROLLBACK_UNAVAILABLE", "transaction manifest was altered", false); return JSON.parse(bytes.toString("utf8")) as TransactionManifest; }
 
 export async function applyTransaction(projectsDir: string, request: GmApplySafeRequest, inventory?: ProcessInventory): Promise<GmApplyResult> {
   if (request.capability !== "GM_APPLY_SAFE_V1") fail("GATE_VIOLATION", "applySafe requires GM_APPLY_SAFE_V1"); if (!request.confirm) fail("GATE_VIOLATION", "SAFE_WRITE requires confirm=true"); assertPlan(request, request.plan);
-  const dryRun = request.dryRun !== false; const plan = request.plan; if (!request.expectedProjectFingerprint || request.expectedProjectFingerprint !== plan.projectFingerprint) fail("PLAN_STALE", "request fingerprint is not bound to plan", true);
+  const dryRun = request.dryRun !== false; const plan = request.plan; assertApplyPlanPolicy(plan); if (!request.expectedProjectFingerprint || request.expectedProjectFingerprint !== plan.projectFingerprint) fail("PLAN_STALE", "request fingerprint is not bound to plan", true);
   const projectRoot = safeRelativePath(request.projectRoot); const evidenceRoot = safeRelativePath(request.evidenceRoot); if (evidenceRoot === projectRoot || evidenceRoot.startsWith(`${projectRoot}/`)) fail("AUTHZ_PROJECT_ROOT", "evidenceRoot must be outside projectRoot");
   // Idempotent reapply: when every planned file already matches the plan's
   // AFTER state, the mutation is fully applied; report NO_CHANGE without

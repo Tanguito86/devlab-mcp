@@ -44,7 +44,7 @@ export interface PlannedFile { readonly path: string; readonly action: "modify" 
 export interface GmMutationPlan {
   readonly schemaVersion: 1; readonly transactionId: string; readonly operation: "apply-safe"; readonly capability: "GM_APPLY_SAFE_V1";
   readonly gate: "PLAN_ONLY"; readonly projectRoot: string; readonly snapshotHash: string; readonly projectFingerprint: string;
-  readonly expectedHead: string | null; readonly allowlist: readonly string[]; readonly files: readonly PlannedFile[];
+  readonly expectedHead: string | null; readonly allowlist: readonly string[]; readonly allowedExtensions: readonly string[]; readonly files: readonly PlannedFile[];
   readonly verification: VerificationPolicy; readonly rollback: Readonly<{ required: true }>;
 }
 export interface GmApplyResult { readonly schemaVersion: 1; readonly transactionId: string; readonly applied: boolean; readonly dryRun: boolean; readonly state: "DRY_RUN" | "NO_CHANGE" | "APPLIED" | "FAILED"; readonly planHash: string; readonly manifestPath: string; readonly manifestSha256: string; readonly changedFiles: readonly string[]; readonly rollbackAvailable: boolean; readonly projectFingerprint: string }

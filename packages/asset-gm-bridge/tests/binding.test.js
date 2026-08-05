@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { canonicalJson } from "../../img2threejs-asset-forge/dist/index.js";
+import { planHash as adapterPlanHash } from "../../gm-ide-adapter/dist/internal.js";
 import { GovernedAssetGmBridge } from "../dist/index.js";
 import { baseRequest, expectBridgeError, makeWorkspace } from "./helpers.js";
 
@@ -46,6 +48,29 @@ test("swapping the plan object invalidates the plan", async () => {
   const other = await bridge.planImport({ ...request, transactionId: "test-tx-0002" });
   // The plan hash no longer matches the binding record's adapter plan hash.
   await expectBridgeError(apply(bridge, request, other, plan.bindingHash), "STALE_OR_TAMPERED_PLAN");
+});
+
+test("same-transaction plan substitution is rejected by apply and verify", async () => {
+  const { bridge, request, plan } = await setup();
+  const hostile = Buffer.from("hostile same-transaction content", "utf8");
+  const first = plan.plan.files[0];
+  const forgedPlan = {
+    ...plan.plan,
+    files: [{
+      ...first,
+      afterContentBase64: hostile.toString("base64"),
+      afterSha256: createHash("sha256").update(hostile).digest("hex"),
+    }, ...plan.plan.files.slice(1)],
+  };
+  const forgedHash = adapterPlanHash(forgedPlan);
+  await expectBridgeError(
+    bridge.applyImport({ ...request, plan: forgedPlan, planHash: forgedHash, bindingHash: plan.bindingHash, confirm: true, dryRun: false }),
+    "STALE_OR_TAMPERED_PLAN",
+  );
+  await expectBridgeError(
+    bridge.verifyImport({ ...request, plan: forgedPlan, planHash: forgedHash, bindingHash: plan.bindingHash, levels: ["TEXT_VALID"] }),
+    "STALE_OR_TAMPERED_PLAN",
+  );
 });
 
 test("reusing a plan on another fixture fails closed", async () => {

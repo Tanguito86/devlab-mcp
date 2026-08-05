@@ -4,7 +4,7 @@ import {
   GovernedGameMakerIdeAdapter, type GmApplyResult, type GmMutationPlan, type GmProjectSnapshot,
   type GmVerificationResult,
 } from "@tanguito/devlab-gm-ide-adapter";
-import { planHash as adapterPlanHash, resolveInsideRoot, safeRelativePath, type ProcessInventory } from "@tanguito/devlab-gm-ide-adapter/internal";
+import { planHash as adapterPlanHash, resolveInsideRoot, safeRelativePath, safeTransactionId, type ProcessInventory } from "@tanguito/devlab-gm-ide-adapter/internal";
 import {
   type AssetCatalog, AssetForgeError, validateAssetCatalog, scanCatalogProvenance, parsePng,
 } from "@tanguito/devlab-img2threejs-asset-forge";
@@ -161,7 +161,7 @@ export class GovernedAssetGmBridge {
   }
 
   private async bridgeEvidenceRoot(evidenceRoot: string, transactionId: string): Promise<string> {
-    const relative = `${safeRelativePath(evidenceRoot)}/asset-bridge/${safeRelativePath(transactionId, "transactionId")}`;
+    const relative = `${safeRelativePath(evidenceRoot)}/asset-bridge/${safeTransactionId(transactionId)}`;
     return resolveInsideRoot(this.projectsDir, relative);
   }
 
@@ -172,6 +172,8 @@ export class GovernedAssetGmBridge {
     const handle = await open(temporary, "wx", 0o600);
     try { await handle.writeFile(canonicalBytes(value)); await handle.sync(); } finally { await handle.close(); }
     await rename(temporary, path);
+    const directory = await open(dirname(path), "r").catch(() => null);
+    if (directory) try { await directory.sync().catch((error: NodeJS.ErrnoException) => { if (error.code !== "EPERM" && error.code !== "EINVAL") throw error; }); } finally { await directory.close(); }
     return sha256(await readFile(path));
   }
 
@@ -261,6 +263,7 @@ export class GovernedAssetGmBridge {
     if (!provenanceScan || provenanceScan.errors.length) fail("INVALID_ASSET_MANIFEST", `catalog provenance errors: ${(provenanceScan?.errors ?? ["missing"]).join(", ")}`);
     const spec = validateBridgeTestBeaconSpec(JSON.parse(loaded.specBytes.toString("utf8")));
     if (spec.frameCount !== loaded.frames.length) fail("INVALID_ASSET_MANIFEST", "spec frame count does not match exported frames");
+    if (loaded.frames.some((frame) => frame.width !== spec.width || frame.height !== spec.height || frame.channels !== 4)) fail("INVALID_ASSET_MANIFEST", "spec dimensions or channel count do not match exported frames");
     if (spec.version !== entry.version) fail("INVALID_ASSET_MANIFEST", "spec version does not match the catalog entry");
     const target = await this.readTargetProject(request.projectRoot);
     if (target.snapshot.fingerprint !== request.expectedProjectFingerprint) fail("TARGET_SNAPSHOT_CHANGED", "target project changed since inspection");
@@ -350,7 +353,7 @@ export class GovernedAssetGmBridge {
       assetExportHash: loaded.exportHash,
       assetManifestHash: sha256(loaded.artifactBytes),
       assetForgeProfile: Object.freeze({
-        operationContracts: Object.freeze(["asset_forge.validate_spec", "asset_forge.build", "asset_forge.export", "asset_forge.inspect", "asset_forge.critic", "asset_forge.resolve"]),
+        operationContracts: Object.freeze(["asset_forge.validate_spec", "asset_forge.build", "asset_forge.build_batch", "asset_forge.capture", "asset_forge.critic", "asset_forge.resolve", "asset_forge.export", "asset_forge.inspect"]),
         budgetProfile: "bridge-sprite-v1",
       }),
       sourceProvenance: Object.freeze({
@@ -376,7 +379,7 @@ export class GovernedAssetGmBridge {
       boundingBox: Object.freeze({ left: spriteContext.boundingBox.left, top: spriteContext.boundingBox.top, right: spriteContext.boundingBox.right, bottom: spriteContext.boundingBox.bottom, mode: "auto" }),
       collisionPolicy: spec.collisionPolicy,
       compressionPolicy: spec.compressionPolicy,
-      estimatedDecodedBytes: spec.width * spec.height * 4 * spec.frameCount,
+      estimatedDecodedBytes: loaded.frames.reduce((sum, frame) => sum + frame.width * frame.height * frame.channels, 0),
       allowlist: Object.freeze([...plan.allowlist]),
       transactionId: request.transactionId,
       createdByCapability: ASSET_GM_BRIDGE_CAPABILITY,
@@ -445,8 +448,9 @@ export class GovernedAssetGmBridge {
   async applyImport(request: AssetGmBridgeApplyRequest): Promise<AssetGmBridgeApplyResult> {
     this.gate(request.capability);
     if (!request.confirm) fail("GATE_VIOLATION", "applyImport requires confirm=true");
-    const { manifest } = await this.loadBindingChain(request.evidenceRoot, request.transactionId, request.bindingHash, "apply");
+    const { manifest, record } = await this.loadBindingChain(request.evidenceRoot, request.transactionId, request.bindingHash, "apply");
     if (request.planHash !== adapterPlanHash(request.plan)) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the provided plan");
+    if (request.planHash !== record.adapterPlanHash) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the binding record");
     if (request.plan.transactionId !== request.transactionId) fail("STALE_OR_TAMPERED_PLAN", "plan transaction id does not match the request");
     const catalog = await this.loadCatalog();
     const entry = this.catalogEntry(catalog, request.assetId, request.assetVersion);
@@ -479,7 +483,6 @@ export class GovernedAssetGmBridge {
         planHash: request.planHash,
         confirm: true,
         dryRun: request.dryRun,
-        faultAt: request.faultAt,
       });
     } catch (error) { return mapAdapterError(error, { phase: "apply" }); }
     return Object.freeze({
@@ -499,8 +502,9 @@ export class GovernedAssetGmBridge {
 
   async verifyImport(request: AssetGmBridgeVerifyRequest): Promise<GmVerificationResult> {
     this.gate(request.capability);
-    const { manifest } = await this.loadBindingChain(request.evidenceRoot, request.transactionId, request.bindingHash, "verify");
+    const { manifest, record } = await this.loadBindingChain(request.evidenceRoot, request.transactionId, request.bindingHash, "verify");
     if (request.planHash !== adapterPlanHash(request.plan)) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the provided plan");
+    if (request.planHash !== record.adapterPlanHash) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the binding record");
     const signal = runtimeSignalFor(manifest);
     let result: GmVerificationResult;
     try {

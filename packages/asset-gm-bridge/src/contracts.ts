@@ -59,7 +59,6 @@ export interface AssetGmBridgeApplyRequest extends AssetGmBridgeRequestBase {
   readonly bindingHash: string;
   readonly confirm: boolean;
   readonly dryRun?: boolean;
-  readonly faultAt?: "before-staging" | "during-staging" | "before-promotion" | "after-first-replace" | "leave-write-ahead-after-first-replace";
 }
 export interface AssetGmBridgeVerifyRequest extends AssetGmBridgeRequestBase {
   readonly capability: typeof ASSET_GM_BRIDGE_CAPABILITY;

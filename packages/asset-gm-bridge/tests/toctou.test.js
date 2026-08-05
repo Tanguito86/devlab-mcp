@@ -5,7 +5,25 @@ import test from "node:test";
 import { GovernedAssetGmBridge } from "../dist/index.js";
 import { baseRequest, expectBridgeError, makeWorkspace } from "./helpers.js";
 
-const apply = (bridge, request, plan, faultAt) => bridge.applyImport({ ...request, plan: plan.plan, planHash: plan.planHash, bindingHash: plan.bindingHash, confirm: true, dryRun: false, faultAt });
+const apply = (bridge, request, plan) => bridge.applyImport({ ...request, plan: plan.plan, planHash: plan.planHash, bindingHash: plan.bindingHash, confirm: true, dryRun: false });
+// Fault injection belongs to the adapter's test-only request lane. It is
+// intentionally absent from ASSET_GM_BRIDGE_V1's public request/schema.
+const applyAdapterFault = (bridge, request, plan, faultAt) => bridge.adapter.applySafe({
+  capability: "GM_APPLY_SAFE_V1",
+  projectRoot: request.projectRoot,
+  expectedProjectFingerprint: plan.plan.projectFingerprint,
+  expectedHead: plan.plan.expectedHead,
+  allowlist: plan.plan.allowlist,
+  transactionId: request.transactionId,
+  timeoutMs: request.timeoutMs,
+  verificationPolicy: request.verificationPolicy,
+  evidenceRoot: request.evidenceRoot,
+  plan: plan.plan,
+  planHash: plan.planHash,
+  confirm: true,
+  dryRun: false,
+  faultAt,
+});
 
 async function setup() {
   const workspace = makeWorkspace({});
@@ -25,35 +43,35 @@ const rollbackTo = async (bridge, request, plan, expected) => {
 
 test("fault before the first write: APPLY_FAILED_RECOVERED, no project mutation", async () => {
   const { bridge, request, plan, baseline } = await setup();
-  await expectBridgeError(apply(bridge, request, plan, "before-staging"), "APPLY_FAILED_RECOVERED");
+  await assert.rejects(() => applyAdapterFault(bridge, request, plan, "before-staging"), (error) => error.code === "ATOMIC_PROMOTION_FAILED");
   const target = await bridge.inspectTarget(request);
   assert.equal(target.fingerprint, baseline);
 });
 
 test("fault during staging: APPLY_FAILED_RECOVERED, no project mutation", async () => {
   const { bridge, request, plan, baseline } = await setup();
-  await expectBridgeError(apply(bridge, request, plan, "during-staging"), "APPLY_FAILED_RECOVERED");
+  await assert.rejects(() => applyAdapterFault(bridge, request, plan, "during-staging"), (error) => error.code === "ATOMIC_PROMOTION_FAILED");
   const target = await bridge.inspectTarget(request);
   assert.equal(target.fingerprint, baseline);
 });
 
 test("fault before promotion: APPLY_FAILED_RECOVERED, no project mutation", async () => {
   const { bridge, request, plan, baseline } = await setup();
-  await expectBridgeError(apply(bridge, request, plan, "before-promotion"), "APPLY_FAILED_RECOVERED");
+  await assert.rejects(() => applyAdapterFault(bridge, request, plan, "before-promotion"), (error) => error.code === "ATOMIC_PROMOTION_FAILED");
   const target = await bridge.inspectTarget(request);
   assert.equal(target.fingerprint, baseline);
 });
 
 test("fault after the first replace: adapter auto-recovers; rollback returns to baseline", async () => {
   const { bridge, request, plan, baseline } = await setup();
-  await expectBridgeError(apply(bridge, request, plan, "after-first-replace"), "APPLY_FAILED_RECOVERED");
+  await assert.rejects(() => applyAdapterFault(bridge, request, plan, "after-first-replace"), (error) => error.code === "ATOMIC_PROMOTION_FAILED");
   const target = await bridge.inspectTarget(request);
   assert.equal(target.fingerprint, baseline);
 });
 
 test("crash with WRITE_AHEAD partial (leave-write-ahead): recovery via rollback restores byte-exact", async () => {
   const { bridge, request, plan, baseline } = await setup();
-  await expectBridgeError(apply(bridge, request, plan, "leave-write-ahead-after-first-replace"), "APPLY_FAILED_RECOVERY_REQUIRED");
+  await assert.rejects(() => applyAdapterFault(bridge, request, plan, "leave-write-ahead-after-first-replace"), (error) => error.code === "ATOMIC_PROMOTION_FAILED");
   // The project is partially promoted; the adapter's rollback lane recovers from WRITE_AHEAD.
   await rollbackTo(bridge, request, plan, baseline);
   const target = await bridge.inspectTarget(request);
