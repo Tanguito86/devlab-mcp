@@ -1,0 +1,33 @@
+DEVLAB-MINT-PATTERN-SELECTION-01 command ledger
+2026-08-04 A preflight: git rev-parse/status/fetch/rev-list (PASS; 9284eb50; 0/0; clean)
+2026-08-04 B source: read-only inventory and git pin/status (PASS; dbce43c; clean)
+2026-08-04 B intake: artifact SHA-256 verification (PASS; 23/23)
+2026-08-04 C boundaries: created signed NO-COPY boundaries before product-code changes
+2026-08-04 D-F architecture: inspected kit lifecycle, fixed step, RNG, device host, manifests and tests
+2026-08-04 D-F decisions: additive lifecycle adapter, local registry v1, product capsule v2, bounded fog pilot
+2026-08-04 G package compile: PASS
+2026-08-04 H first focused tests: 24/26 PASS; two fixture/test-isolation corrections required
+2026-08-04 H focused corrections: diagnostics isolated; grid radii expose all four tiers
+2026-08-04 H focused tests after correction: 26/26 PASS
+2026-08-04 I global validation before critic fixes: build 5/5; typecheck 5/5; tests 199/199; registry 3/3
+2026-08-04 J critic provisional: 5 REQUIRED; fog atomicity/canonical restore/hidden startup/path hardening/QA alignment
+2026-08-04 J resolutions: all 5 REQUIRED implemented with adversarial regression probes
+2026-08-04 H focused tests after critic fixes: 30/30 PASS
+2026-08-04 I stable global validation: build 5/5; typecheck 5/5; tests 203/203; registry 3/3; Ash v2 7 pass/1 intentional skip
+2026-08-04 I schemas: Draft 2020-12 meta-validation 2/2; instances 3/3
+2026-08-04 I package dry-run: PASS; 123 entries; no bundled dependency
+2026-08-04 I static: no runtime network/Mint/R3F/SparkJS/splat/Math.random references; lockfile unchanged
+2026-08-04 I hygiene: prospective files 569; secrets fallback 0; files over 10 MiB 0; exact Mint blob matches 0
+2026-08-04 J critic final pass 1: 0 BLOCKER; 5 REQUIRED; 4 OPTIONAL; NO-COPY PASS
+2026-08-04 J required pass 2: whitespace schemes, provenance wording, SemVer/schema parity, distribution root, v2 closed-set policy resolved
+2026-08-04 J optional pass 2: pre-start manual pause, fixed-step fog driver, transition/pending snapshot relation implemented
+2026-08-04 H fixed-step probe first run: 31/32; exact float comparison corrected to 1e-12 tolerance
+2026-08-04 J critic final pass 2: 0 BLOCKER; 2 REQUIRED; SemVer alphanumeric and schema/runtime path/safe-integer parity
+2026-08-04 J required pass 3: standard alphanumeric prerelease branch, empty-segment rejection, and safe-integer maxima implemented
+2026-08-04 H focused final: build PASS; tests 32/32 PASS
+2026-08-04 I global final: build 5/5; typecheck 5/5; tests 205/205; registry 3/3; Ash v2 7 pass/1 intentional skip
+2026-08-04 I schema final: valid SemVer edges 3/3; runtime/schema adversarial parity 7/7
+2026-08-04 J critic final recheck: READY; 0 BLOCKER; 0 REQUIRED; 0 OPTIONAL
+2026-08-04 K final static: git diff --check PASS; runtime Mint/framework/Math.random/network references 0; lockfile changes 0
+2026-08-04 K final hygiene: prospective files 574; secrets fallback 0; files over 10 MiB 0; exact Mint blob matches 0
+2026-08-04 K external source final: dbce43c045d69cdf78cbfc4f0c4aec0c3e9fd0c8; clean

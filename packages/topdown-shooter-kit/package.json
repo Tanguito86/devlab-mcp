@@ -7,7 +7,7 @@
   "author": "Tanguito86",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": ["dist", "schemas", "examples", "fixtures", "README.md"],
   "scripts": {
     "build": "..\\shared\\node_modules\\.bin\\tsc.cmd -p tsconfig.json",
     "typecheck": "..\\shared\\node_modules\\.bin\\tsc.cmd -p tsconfig.json --noEmit",

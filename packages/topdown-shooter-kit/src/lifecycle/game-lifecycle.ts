@@ -8,6 +8,7 @@ export class GameLifecycle {
   readonly resources = new ResourceOwner();
   constructor(private readonly adapter: LifecycleAdapter) {}
   start(): void { this.assertOpen(); if (this.started) return; this.started = true; this.startLoop() }
+  startPaused(): void { this.assertOpen(); if (this.started) return; this.started = true; this.pausedValue = true }
   pause(): void { this.assertOpen(); if (!this.started || this.pausedValue) return; this.pausedValue = true; this.stopLoop() }
   resume(): void { this.assertOpen(); if (!this.started || !this.pausedValue) return; this.pausedValue = false; this.startLoop() }
   restart(): void { this.assertOpen(); this.adapter.restartSimulation(); this.adapter.clearTransientInfrastructure(); if (this.started && !this.pausedValue) this.startLoop() }

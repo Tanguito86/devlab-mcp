@@ -11,3 +11,5 @@ Hard boundaries:
 - bots and human acceptance are distinct evidence levels.
 
 Import from `@tanguito/devlab-topdown-shooter-kit`. Camera-specific screen/world conversion is supplied through `DirectionTransform`; the kit never owns a camera.
+
+Selective product contracts are additive: `VisibilityLifecycleAdapter` centralizes document visibility without consuming hidden ticks, the local asset registry verifies offline bytes while requiring provenance metadata, and `ExperienceV2` describes a concise publishable capsule. Capsule resource paths are resolved from an explicit consumer-supplied experience distribution root, never implicitly from the capsule file. `FogSystem` is a renderer-independent tactical pilot with explicit tiers, bounded deterministic sweeps, canonical snapshots, and a replaceable text renderer.

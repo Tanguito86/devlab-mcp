@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "experienceId": "signal-grid",
+  "title": "Signal Grid",
+  "version": "0.1.0",
+  "entryCapability": "TOPDOWN_SHOOTER_KIT",
+  "session": { "targetDurationSeconds": 60, "restartable": true },
+  "input": { "primaryGesture": "move pointer to reposition the visibility source" },
+  "simulation": { "fixedTimestepHz": 60, "deterministic": true, "seedPolicy": "fixed" },
+  "lifecycle": { "visibilityPolicy": "freeze" },
+  "assetsRegistry": "fixtures/local-asset-registry-v1.json",
+  "offline": true,
+  "provenance": { "manifest": "fixtures/provenance.json" }
+}

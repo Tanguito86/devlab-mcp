@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "assetId": "pilot.provenance",
+      "runtimePath": "fixtures/provenance.json",
+      "sha256": "21484d1d00d4e0b2bd40f049b0cff6b8268147b0352b10c6255c551f7b434953",
+      "mediaType": "application/json",
+      "byteSize": 162,
+      "source": { "kind": "authored", "reference": "authored-in-devlab" },
+      "runtime": { "preload": false, "required": true }
+    },
+    {
+      "assetId": "pilot.signal-grid",
+      "runtimePath": "fixtures/signal-grid.txt",
+      "sha256": "a1853f7849125c05f11ad8780e69edfee8971d2ce56d1a8dc66a8efd17625572",
+      "mediaType": "text/plain",
+      "byteSize": 33,
+      "source": { "kind": "authored", "reference": "fixtures/provenance.json" },
+      "runtime": { "preload": true, "required": true }
+    }
+  ]
+}

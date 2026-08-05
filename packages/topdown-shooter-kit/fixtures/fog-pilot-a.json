@@ -1,0 +1,21 @@
+{
+  "scenarioId": "signal-grid-pilot-a",
+  "width": 7,
+  "height": 5,
+  "seed": 424242,
+  "updateBudgetCells": 6,
+  "obstacles": [
+    { "x": 3, "y": 1 },
+    { "x": 3, "y": 2 },
+    { "x": 3, "y": 3 }
+  ],
+  "frames": [
+    [
+      { "id": "alpha", "x": 1, "y": 2, "revealRadius": 1.5, "detectionRadius": 2.4 }
+    ],
+    [
+      { "id": "alpha", "x": 2, "y": 2, "revealRadius": 1.5, "detectionRadius": 2.4 },
+      { "id": "beta", "x": 5, "y": 2, "revealRadius": 1.1, "detectionRadius": 1.8 }
+    ]
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:devlab:experience:v2",
+  "title": "DevLab Experience Capsule v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "experienceId", "title", "version", "entryCapability", "session", "input", "simulation", "lifecycle", "assetsRegistry", "offline", "provenance"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "experienceId": { "type": "string", "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$" },
+    "title": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$" },
+    "entryCapability": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetDurationSeconds", "restartable"],
+      "properties": {
+        "targetDurationSeconds": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "restartable": { "type": "boolean" }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primaryGesture"],
+      "properties": { "primaryGesture": { "type": "string", "minLength": 1, "pattern": "\\S" } }
+    },
+    "simulation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixedTimestepHz", "deterministic", "seedPolicy"],
+      "properties": {
+        "fixedTimestepHz": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "deterministic": { "const": true },
+        "seedPolicy": { "enum": ["fixed", "session", "explicit"] }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visibilityPolicy"],
+      "properties": { "visibilityPolicy": { "const": "freeze" } }
+    },
+    "assetsRegistry": { "type": "string", "minLength": 1, "description": "Path relative to the consumer-supplied experience distribution root, not to the capsule file.", "pattern": "^(?!\\s)(?!.*\\s$)(?!.*[\\u0000-\\u001F\\u007F])(?!/)(?!.*//)(?!.*\\/$)(?![A-Za-z][A-Za-z0-9+.-]*:)(?!.*[%?#])(?!.*(?:^|/)\\.\\.?(/|$))(?!.*\\\\).+$" },
+    "offline": { "const": true },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest"],
+      "properties": { "manifest": { "type": "string", "minLength": 1, "description": "Path relative to the consumer-supplied experience distribution root, not to the capsule file.", "pattern": "^(?!\\s)(?!.*\\s$)(?!.*[\\u0000-\\u001F\\u007F])(?!/)(?!.*//)(?!.*\\/$)(?![A-Za-z][A-Za-z0-9+.-]*:)(?!.*[%?#])(?!.*(?:^|/)\\.\\.?(/|$))(?!.*\\\\).+$" } }
+    }
+  }
+}

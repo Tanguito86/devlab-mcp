@@ -3,8 +3,8 @@
   "package": "@tanguito/devlab-topdown-shooter-kit",
   "status": "V1_VERIFIED",
   "runtimeDependencies": [],
-  "modules": ["simulation", "input", "combat", "pooling", "encounters", "spawning", "checkpoints", "boss-fsm", "lifecycle", "gpu", "audio", "capture", "testing", "contracts"],
-  "interfaces": ["TopdownSimulation", "InputSnapshot", "PlayerController", "ProjectilePool", "EffectPool", "EncounterDirector", "SpawnDirector", "CheckpointProvider", "BossStateMachine", "GameLifecycle", "CaptureStateProvider", "BotObjectiveAdapter"],
+  "modules": ["simulation", "input", "combat", "pooling", "encounters", "spawning", "checkpoints", "boss-fsm", "lifecycle", "gpu", "audio", "capture", "testing", "contracts", "assets", "product", "fog"],
+  "interfaces": ["TopdownSimulation", "InputSnapshot", "PlayerController", "ProjectilePool", "EffectPool", "EncounterDirector", "SpawnDirector", "CheckpointProvider", "BossStateMachine", "GameLifecycle", "VisibilityLifecycleAdapter", "LocalAssetRegistry", "ExperienceV2", "FogSystem", "FogSnapshot", "CaptureStateProvider", "BotObjectiveAdapter"],
   "contentExclusions": ["enemy names", "maps", "coordinates", "balance", "palette", "story", "final HUD", "concrete audio", "tutorial copy"],
-  "qaContracts": ["TITLE_TO_VICTORY", "SOFTLOCKS", "RESTART_CLEAN", "CHECKPOINT_RESTORE", "PAUSE_FREEZE", "FROZEN_DETERMINISM", "POOL_BOUNDS", "HATCH_QUEUE_BOUNDS", "BOSS_FSM_PROGRESS", "LISTENER_DUPLICATION", "LOOP_DUPLICATION", "AUDIO_DUPLICATION", "RESOURCE_GROWTH", "DEVICE_LOSS_RECOVERY", "TOUCH_MAIN_PATH"]
+  "qaContracts": ["TITLE_TO_VICTORY", "SOFTLOCKS", "RESTART_CLEAN", "CHECKPOINT_RESTORE", "PAUSE_FREEZE", "FROZEN_DETERMINISM", "VISIBILITY_EXACT_FREEZE", "LOCAL_ASSET_INTEGRITY", "EXPERIENCE_V2_VALID", "FOG_REPLAY_DETERMINISM", "POOL_BOUNDS", "HATCH_QUEUE_BOUNDS", "BOSS_FSM_PROGRESS", "LISTENER_DUPLICATION", "LOOP_DUPLICATION", "AUDIO_DUPLICATION", "RESOURCE_GROWTH", "DEVICE_LOSS_RECOVERY", "TOUCH_MAIN_PATH"]
 }

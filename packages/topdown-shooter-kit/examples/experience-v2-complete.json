@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "experienceId": "signal-grid-pilot-a",
+  "title": "Signal Grid — Fog Tier Pilot",
+  "version": "1.0.0-pilot.1",
+  "entryCapability": "TOPDOWN_SHOOTER_KIT",
+  "session": { "targetDurationSeconds": 180, "restartable": true },
+  "input": { "primaryGesture": "move the visibility emitter across the tactical grid" },
+  "simulation": { "fixedTimestepHz": 60, "deterministic": true, "seedPolicy": "explicit" },
+  "lifecycle": { "visibilityPolicy": "freeze" },
+  "assetsRegistry": "fixtures/local-asset-registry-v1.json",
+  "offline": true,
+  "provenance": { "manifest": "fixtures/provenance.json" }
+}
