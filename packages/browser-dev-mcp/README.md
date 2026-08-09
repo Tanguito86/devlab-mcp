@@ -72,7 +72,7 @@ Canvas elements render to a bitmap — there's no DOM tree to query inside the c
 2. **Keyboard/Mouse input** — `browser_press_key`, `browser_click_percent` (ideal for games where coordinates matter).
 3. **evaluate_js** — Read game state from JavaScript globals (`window.game`, `window.score`, etc.).
 4. **Debug hooks** — Games can expose functions like `window.__GR_DEBUG_JUMP_TO_LEVEL(N)` for test automation. `evaluate_js` or `evaluate_game_state` calls them.
-5. **FPS capture** — `browser_capture_fps` reads common FPS counter patterns (`#fps-counter`, `window.__fps`).
+5. **Page FPS counter reader** — `browser_capture_fps` only reads common counters already exposed by the page (`#fps-counter`, `window.__fps`). It does not sample `requestAnimationFrame` or measure browser performance.
 6. **Canvas change detection** — `browser_wait_for_canvas_change` polls until the canvas bitmap changes.
 
 **What it does NOT do:**
@@ -133,8 +133,10 @@ For reliable game testing, expose debug hooks in your game code (level skip, god
 | Tool | Description |
 |------|-------------|
 | `browser_wait_for_canvas_change` | Poll canvas until its content changes (toDataURL comparison). Useful for frame updates. |
-| `browser_capture_fps` | Try to read FPS from the page (looks for `#fps-counter`, `.fps`, `window.__fps`, `window.fpsCounter`). |
-| `browser_record_trace` | Capture screenshots at 100ms intervals for N seconds. Saves first frame + frame-count metadata. |
+| `browser_capture_fps` | Read an FPS counter already exposed by the page (`#fps-counter`, `.fps`, `window.__fps`, `window.fpsCounter`). Not a performance measurement. |
+| `browser_record_trace` | Capture screenshots at 100ms intervals for N seconds. Despite the compatibility name, this is not a Chrome performance trace. |
+
+For real Galaxy Raiders Canvas2D render measurement, see [Galaxy Raiders render benchmark](docs/galaxy-raiders-render-benchmark.md).
 
 ### Sessions & Evidence
 | Tool | Description |

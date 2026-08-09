@@ -449,8 +449,8 @@ export const registerCaptureFps: RegisterTool = (server) => {
   server.registerTool(
     "browser_capture_fps",
     {
-      title: "Capture FPS",
-      description: "Try to read FPS counter from the page (looks for #fps-counter, .fps, window.__fps, window.fpsCounter). Returns null if unavailable."
+      title: "Read page FPS counter",
+      description: "Read an FPS value already exposed by the page (#fps-counter, .fps, window.__fps, window.fpsCounter). This tool does not sample requestAnimationFrame or measure browser performance. Returns null if unavailable."
     },
     async () => {
       try {
@@ -471,8 +471,8 @@ export const registerRecordTrace: RegisterTool = (server) => {
   server.registerTool(
     "browser_record_trace",
     {
-      title: "Record short trace",
-      description: "Capture screenshots at 100ms intervals for N seconds. Saves first frame + frame-count metadata.",
+      title: "Capture screenshot sequence",
+      description: "Capture screenshots at 100ms intervals for N seconds. Saves the first frame plus frame-count metadata; this is not a Chrome performance trace.",
       inputSchema: {
         seconds: z.number().int().min(1).max(30).describe("Duration in seconds"),
         name: z.string().min(1).describe("Name for the trace")
@@ -482,9 +482,9 @@ export const registerRecordTrace: RegisterTool = (server) => {
       try {
         const session = getSession();
         const filePath = await session.recordTrace(seconds, name);
-        return textResponse(`Trace recorded: ${filePath} (${seconds}s, 100ms interval).`);
+        return textResponse(`Screenshot sequence recorded: ${filePath} (${seconds}s, 100ms interval).`);
       } catch (error) {
-        return textResponse(`Trace recording failed:\n${formatError(error)}`);
+        return textResponse(`Screenshot sequence capture failed:\n${formatError(error)}`);
       }
     }
   );

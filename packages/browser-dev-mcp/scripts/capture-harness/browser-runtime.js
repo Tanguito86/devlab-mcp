@@ -93,14 +93,18 @@ export function validateNativeWebGpuOrigin(pageUrl, expectedBaseUrl) {
   return page.origin;
 }
 
-export async function launchCaptureBrowser({ requireNativeWebGPU = false, backend = "cpu" } = {}) {
+export async function launchCaptureBrowser({
+  requireNativeWebGPU = false,
+  backend = "cpu",
+  headless = true,
+} = {}) {
   if (requireNativeWebGPU) {
     const executablePath = resolveFullChromiumExecutable();
     const executableSha256 = createHash("sha256")
       .update(readFileSync(executablePath))
       .digest("hex");
     const browser = await chromium.launch({
-      headless: true,
+      headless,
       executablePath,
       // Extension isolation is required for deterministic localhost capture;
       // it does not alter GPU selection or enable an unsafe WebGPU feature.
@@ -116,6 +120,7 @@ export async function launchCaptureBrowser({ requireNativeWebGPU = false, backen
         launchMode: "full-chromium-native-webgpu",
         launchArgs: ["--disable-extensions"],
         requestedBackend: "native-webgpu",
+        headless,
       },
     };
   }
@@ -123,7 +128,7 @@ export async function launchCaptureBrowser({ requireNativeWebGPU = false, backen
   const args = backend === "gpu"
     ? ["--use-angle=d3d11", "--enable-gpu-rasterization", "--ignore-gpu-blocklist"]
     : ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"];
-  const browser = await chromium.launch({ headless: true, args });
+  const browser = await chromium.launch({ headless, args });
   return {
     browser,
     metadata: {
@@ -133,6 +138,7 @@ export async function launchCaptureBrowser({ requireNativeWebGPU = false, backen
       executableSha256: null,
       launchMode: "playwright-default",
       requestedBackend: backend,
+      headless,
     },
   };
 }
