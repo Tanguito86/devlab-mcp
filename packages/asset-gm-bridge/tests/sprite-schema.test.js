@@ -35,7 +35,7 @@ const spriteContext = Object.freeze({
   width: 64,
   height: 64,
   frameCount: 2,
-  originIndex: 1,
+  origin: Object.freeze({ x: 32, y: 0 }),
   boundingBox: Object.freeze({ left: 0, top: 0, right: 63, bottom: 63 }),
 });
 

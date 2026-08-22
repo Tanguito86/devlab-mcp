@@ -12,7 +12,7 @@ const schema = JSON.parse(readFileSync(new URL("../schemas/asset-gm-bridge-v1.sc
 
 test("capability contract: one small versioned public capability", () => {
   assert.equal(ASSET_GM_BRIDGE_CAPABILITY, "ASSET_GM_BRIDGE_V1");
-  assert.equal(ASSET_GM_BRIDGE_VERSION, "1.1.0");
+  assert.equal(ASSET_GM_BRIDGE_VERSION, "1.2.0");
   assert.equal(ASSET_GM_BRIDGE_CAPABILITY_CONTRACT.publicCapabilities.length, 1);
   assert.equal(ASSET_GM_BRIDGE_CAPABILITY_CONTRACT.publicCapabilities[0], ASSET_GM_BRIDGE_CAPABILITY);
   assert.equal(ASSET_GM_BRIDGE_CAPABILITY_CONTRACT.publicHermesTools, 0);

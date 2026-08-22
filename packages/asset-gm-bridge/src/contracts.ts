@@ -1,7 +1,7 @@
 import type { GmMutationPlan, VerificationPolicy } from "@tanguito/devlab-gm-ide-adapter";
 
 export const ASSET_GM_BRIDGE_CAPABILITY = "ASSET_GM_BRIDGE_V1" as const;
-export const ASSET_GM_BRIDGE_VERSION = "1.1.0" as const;
+export const ASSET_GM_BRIDGE_VERSION = "1.2.0" as const;
 
 /**
  * Optional pilot instrumentation.

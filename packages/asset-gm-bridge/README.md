@@ -22,6 +22,12 @@ GameMaker, Igor or Asset Forge tools.
 - APPROVED-only lifecycle gate (all six catalog states tested; no bypass).
 - Reuses the gm-ide-adapter transaction model: lock, WRITE_AHEAD, recovery,
   byte-exact rollback, TOCTOU and concurrency protection.
+- The spec's sprite origin reaches the engine. GameMaker's pivot lives in the
+  sequence's `xorigin`/`yorigin`, **not** in the top-level `origin` index, which
+  is IDE metadata the engine ignores — measured against the installed runtime,
+  where a sprite with index 1 and a sequence pivot of (0,0) reports an offset of
+  0. Before 1.2.0 the renderer wrote a fixed index and a zero pivot, so every
+  imported sprite silently had its origin at the top-left corner.
 - Explicit asset budgets evaluated before any write.
 - Path safety reuses `safeRelativePath`/`resolveInsideRoot` and adds
   case/Unicode (NFKC) collision detection.
