@@ -62,8 +62,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared + browser + gamemaker
-        run: pnpm --filter @tanguito/devlab-shared --filter @tanguito/browser-dev-mcp --filter @tanguito/gamemaker-dev-mcp build
+      # gamemaker-dev-mcp compiles against gm-ide-adapter's emitted types, so the
+      # adapter must be in the filtered set or tsc cannot resolve the module.
+      - name: Build doctor targets
+        run: pnpm --filter @tanguito/devlab-shared --filter @tanguito/browser-dev-mcp --filter @tanguito/devlab-gm-ide-adapter --filter @tanguito/gamemaker-dev-mcp build
 
       - name: Doctor (browser)
         run: pnpm --filter @tanguito/browser-dev-mcp run doctor
