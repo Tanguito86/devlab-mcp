@@ -33,3 +33,7 @@ examples/galaxy-visual-regression/actual/
 examples/galaxy-visual-regression/baseline/
 examples/galaxy-visual-regression/diffs/
 examples/galaxy-visual-regression/reports/
+
+# Igor writes a build tree next to its working directory when one is not
+# supplied explicitly. Never a source artifact.
+/output/
