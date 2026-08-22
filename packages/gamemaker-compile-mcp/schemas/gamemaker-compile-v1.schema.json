@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tanguito.local/devlab/gamemaker-compile-v1.schema.json",
+  "title": "DevLab GameMaker build-tier MCP server v1",
+  "type": "object",
+  "$defs": {
+    "tool": { "enum": ["gamemaker_toolchain_status", "gamemaker_verify_build"] },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 1024 },
+    "toolchainStatusRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "verifyBuildRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "expectedProjectFingerprint"],
+      "properties": {
+        "projectPath": { "$ref": "#/$defs/relativePath" },
+        "expectedProjectFingerprint": { "$ref": "#/$defs/digest" },
+        "expectedRuntimeSignal": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "levelOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "detail"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "detail": { "type": "string" }
+      }
+    },
+    "verifyBuildResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok", "schemaVersion", "requestId", "capability", "serverGate", "igorInvoked",
+        "compileExitCode", "levels", "highestLevel", "runtimeObserved", "ownedProcessCount",
+        "rollbackRequired", "evidencePath", "transactionId"
+      ],
+      "properties": {
+        "ok": { "const": true },
+        "schemaVersion": { "const": 1 },
+        "requestId": { "type": ["string", "number"] },
+        "capability": { "const": "GM_VERIFY_V1" },
+        "serverGate": { "const": "RUN" },
+        "igorInvoked": { "const": true },
+        "compileExitCode": { "type": ["integer", "null"] },
+        "levels": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "TEXT_VALID": { "$ref": "#/$defs/levelOutcome" },
+            "PROJECT_LOAD_VALID": { "$ref": "#/$defs/levelOutcome" },
+            "COMPILE_VALID": { "$ref": "#/$defs/levelOutcome" },
+            "RUNTIME_VALID": { "$ref": "#/$defs/levelOutcome" }
+          }
+        },
+        "highestLevel": { "type": ["string", "null"] },
+        "runtimeObserved": { "type": "boolean" },
+        "ownedProcessCount": { "type": "integer", "minimum": 0 },
+        "rollbackRequired": { "type": "boolean" },
+        "evidencePath": { "type": "string", "minLength": 1 },
+        "transactionId": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

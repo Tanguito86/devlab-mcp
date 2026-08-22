@@ -1,0 +1,39 @@
+{
+  "name": "@tanguito/gamemaker-compile-mcp",
+  "version": "0.1.0",
+  "description": "Local MCP server for governed GameMaker build verification through a real Igor invocation. Windows-only, opt-in, process-owning.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Tanguito86",
+  "main": "dist/index.js",
+  "bin": {
+    "gamemaker-compile-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "scripts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test tests/*.test.js",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "start": "node dist/index.js",
+    "doctor": "node scripts/doctor.js",
+    "pack:dry-run": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@tanguito/devlab-gm-ide-adapter": "workspace:*",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
