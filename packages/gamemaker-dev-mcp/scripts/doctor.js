@@ -15,7 +15,13 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(__dirname, "..");
 const binPath = join(packageRoot, "dist", "index.js");
-const EXPECTED_TOOLS = ["gamemaker_inspect", "gamemaker_plan", "gamemaker_status"];
+const EXPECTED_TOOLS = [
+  "gamemaker_inspect",
+  "gamemaker_plan",
+  "gamemaker_plan_new_object",
+  "gamemaker_plan_new_script",
+  "gamemaker_status",
+];
 
 const ok = [];
 const warn = [];

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
 import {
@@ -11,12 +12,25 @@ import {
 } from "@tanguito/devlab-gm-ide-adapter";
 import {
   planHash,
+  resolveInsideRoot,
   resolveRealRoot,
+  safeRelativePath,
 } from "@tanguito/devlab-gm-ide-adapter/internal";
+import {
+  authorObject,
+  authorScript,
+  GmAuthoringError,
+  parseGmJson,
+  type AuthoredResource,
+  type ProjectTexts,
+} from "@tanguito/devlab-gm-authoring";
 
 import type {
+  AuthoredPlanOutput,
   InspectInput,
   InspectOutput,
+  NewObjectInput,
+  NewScriptInput,
   PlanInput,
   PlanOutput,
   StatusInput,
@@ -28,6 +42,12 @@ export const PROJECTS_DIR_ENV = "DEVLAB_GM_PROJECTS_DIR";
 const EVIDENCE_ROOT = ".devlab-gamemaker-mcp-readonly";
 const TIMEOUT_MS = 5_000;
 const PLAN_EXTENSIONS = Object.freeze(["gml", "json", "yy", "yyp"]);
+/**
+ * Authoring additionally touches `.resource_order`, the IDE's ordering file.
+ * The hypothetical-edit tool keeps the narrower set: it edits existing files
+ * and has no business rewriting project ordering metadata.
+ */
+const AUTHORING_EXTENSIONS = Object.freeze(["gml", "json", "resource_order", "yy", "yyp"]);
 const VERIFICATION_POLICY = Object.freeze({
   projectLoad: false,
   compile: false,
@@ -243,6 +263,7 @@ export class ReadonlyGameMakerService {
       };
     });
     return {
+      plan: JSON.parse(JSON.stringify(plan)),
       ok: true,
       schemaVersion: 1,
       requestId,
@@ -258,6 +279,94 @@ export class ReadonlyGameMakerService {
       changes,
       planHash: planHash(plan),
     };
+  }
+
+  /**
+   * Reads the project texts the authoring layer needs. `inspect` supplies the
+   * file and reference inventory; the .yyp and .resource_order bodies have to
+   * be read directly, inside the authorized root.
+   */
+  private async projectTexts(projectsDir: string, projectPath: string, fingerprint: string, signal: AbortSignal): Promise<ProjectTexts> {
+    const adapter = new GovernedGameMakerIdeAdapter(projectsDir);
+    const snapshot = await adapter.inspect({
+      ...baseRequest(projectPath, "GM_INSPECT_V1", { projectPath }, signal),
+      expectedProjectFingerprint: fingerprint,
+    });
+    const root = await resolveInsideRoot(projectsDir, safeRelativePath(projectPath), { existing: true });
+    const yyp = await readFile(await resolveInsideRoot(root, snapshot.projectFile), "utf8");
+    const parsed = parseGmJson(yyp) as { "%Name"?: unknown; name?: unknown };
+    const projectName = String(parsed["%Name"] ?? parsed.name ?? "");
+    if (!projectName) throw new GmMcpError("GM_INTERNAL_ERROR", "The project file declares no name.", false);
+    const orderPath = `${projectName}.resource_order`;
+    const resourceOrder = snapshot.files.some(({ path }) => path === orderPath)
+      ? await readFile(await resolveInsideRoot(root, orderPath), "utf8")
+      : undefined;
+    return {
+      identity: { projectName, projectFile: snapshot.projectFile },
+      yyp,
+      ...(resourceOrder === undefined ? {} : { resourceOrder }),
+      existingFiles: snapshot.files.map(({ path }) => path),
+      existingReferences: [...snapshot.references],
+    };
+  }
+
+  /** Turns an authored resource into an immutable GM_PLAN_V1 plan. */
+  private async planAuthored(
+    input: Readonly<{ projectPath: string; expectedProjectFingerprint: string }>,
+    authored: AuthoredResource,
+    requestId: PublicRequestId,
+    signal: AbortSignal,
+    rawInput: unknown,
+  ): Promise<AuthoredPlanOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const adapter = new GovernedGameMakerIdeAdapter(projectsDir);
+    const plan = await adapter.plan({
+      ...baseRequest(input.projectPath, "GM_PLAN_V1", rawInput, signal),
+      expectedProjectFingerprint: input.expectedProjectFingerprint,
+      allowlist: [...authored.allowlist],
+      files: authored.files.map(({ path, action, content }) => ({ path, action, content })),
+      allowedExtensions: AUTHORING_EXTENSIONS,
+    });
+    return {
+      ok: true,
+      schemaVersion: 1,
+      requestId,
+      capability: "GM_PLAN_V1",
+      serverGate: "PLAN_ONLY",
+      immutable: true,
+      resourceKind: authored.resourceKind,
+      resourceName: authored.resourceName,
+      resourcePath: authored.resourcePath,
+      projectPath: plan.projectRoot,
+      projectFingerprint: plan.projectFingerprint,
+      snapshotHash: plan.snapshotHash,
+      allowlist: [...plan.allowlist],
+      changes: plan.files.map(({ path, action, beforeSha256, afterSha256 }) => ({ path, action, beforeSha256, afterSha256 })),
+      planHash: planHash(plan),
+      plan: JSON.parse(JSON.stringify(plan)),
+    };
+  }
+
+  async planNewScript(input: NewScriptInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
+    return this.planAuthored(input, authorScript(texts, { name: input.name, gml: input.gml }), requestId, signal, input);
+  }
+
+  async planNewObject(input: NewObjectInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
+    const authored = authorObject(texts, {
+      name: input.name,
+      events: input.events,
+      options: {
+        spriteName: input.spriteName ?? null,
+        ...(input.persistent === undefined ? {} : { persistent: input.persistent }),
+        ...(input.visible === undefined ? {} : { visible: input.visible }),
+        ...(input.solid === undefined ? {} : { solid: input.solid }),
+      },
+    });
+    return this.planAuthored(input, authored, requestId, signal, input);
   }
 }
 
@@ -280,6 +389,16 @@ export function mapToolError(error: unknown, requestId: PublicRequestId): ToolOu
         message: ADAPTER_PUBLIC_MESSAGES[error.code],
         recoverable: error.recoverable,
       },
+    };
+  }
+  // Authoring refusals are the caller's to fix -- a bad identifier, an
+  // unsupported event, a name already taken -- so they keep their own message.
+  if (error instanceof GmAuthoringError) {
+    return {
+      ok: false,
+      schemaVersion: 1,
+      requestId,
+      error: { code: error.code, message: error.message, recoverable: true },
     };
   }
   const type = error instanceof Error ? error.name : typeof error;

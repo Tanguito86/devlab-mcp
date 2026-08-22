@@ -76,7 +76,7 @@ async function inMemoryClient(env = {}) {
   };
 }
 
-test("MCP CONTRACT: tools/list exposes exactly three stable read-only tools", async () => {
+test("MCP CONTRACT: tools/list exposes exactly the stable read-only and plan-only tools", async () => {
   const session = await inMemoryClient();
   try {
     const listed = await session.client.listTools();
@@ -130,7 +130,7 @@ test("MCP CONTRACT: unknown and malformed inputs are rejected by the protocol sc
 test("CONFIG: tools/list works without configuration and calls fail with GM_CONFIG_REQUIRED", async () => {
   const session = await inMemoryClient({});
   try {
-    assert.equal((await session.client.listTools()).tools.length, 3);
+    assert.equal((await session.client.listTools()).tools.length, TOOL_NAMES.length);
     const result = await session.client.callTool({
       name: "gamemaker_inspect",
       arguments: { projectPath: "Project" },
@@ -251,8 +251,22 @@ test("FUNCTION: status, inspect, and plan preserve the complete project tree byt
     assert.equal(planned.capability, "GM_PLAN_V1");
     assert.equal(planned.serverGate, "PLAN_ONLY");
     assert.match(planned.planHash, /^[a-f0-9]{64}$/);
-    assert.equal(JSON.stringify(planned).includes("afterContentBase64"), false);
-    assert.equal(JSON.stringify(planned).includes("GM_APPLY_SAFE_V1"), false);
+
+    // This tool originally returned a summary with no content, so that the
+    // read tier could not hand out anything applicable. That made the tiers
+    // impossible to compose: gamemaker_apply needs the whole plan, and there
+    // was no way to obtain one. The plan is now emitted in full. It grants no
+    // new capability -- this server still writes nothing, the content is what
+    // the caller just supplied, and the write tier revalidates every field
+    // against real on-disk state before touching a file.
+    assert.equal(planned.plan.capability, "GM_APPLY_SAFE_V1");
+    assert.equal(planned.plan.gate, "PLAN_ONLY");
+    assert.equal(planned.plan.files[0].afterContentBase64.length > 0, true);
+    assert.equal(planned.plan.rollback.required, true);
+    // The summary stays free of content, and nothing leaks the host root.
+    assert.equal(JSON.stringify(planned.changes).includes("afterContentBase64"), false);
+    assert.equal(JSON.stringify(planned).includes(box.root), false);
+
     assert.deepEqual(await treeState(join(box.root, box.projectPath)), before);
   } finally {
     await box.cleanup();
