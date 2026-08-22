@@ -71,3 +71,8 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 # DEVLAB-GAMEMAKER-MCP-READONLY-SLICE-01 local stdio capability.
 /packages/gamemaker-dev-mcp/** text eol=lf
 /capabilities/gamemaker-dev-mcp-v1.json text eol=lf
+
+# GM-MCP-WRITE-01 local stdio write tier. The manifest binds this package's
+# README by SHA-256, so its bytes must materialize identically on every checkout.
+/packages/gamemaker-write-mcp/** text eol=lf
+/capabilities/gamemaker-write-mcp-v1.json text eol=lf
