@@ -1,7 +1,24 @@
 import type { GmMutationPlan, VerificationPolicy } from "@tanguito/devlab-gm-ide-adapter";
 
 export const ASSET_GM_BRIDGE_CAPABILITY = "ASSET_GM_BRIDGE_V1" as const;
-export const ASSET_GM_BRIDGE_VERSION = "1.0.0" as const;
+export const ASSET_GM_BRIDGE_VERSION = "1.1.0" as const;
+
+/**
+ * Optional pilot instrumentation.
+ *
+ * `PILOT_BEACON_V1` rewrites three GML files of `obj_asset_bridge_pilot` so a
+ * headless run emits a version marker and screenshots itself. That is pilot
+ * scaffolding, not an import: it only makes sense against the bridge pilot
+ * fixture, and running it against a real project would overwrite object code
+ * with `game_end()`. Real imports use `NONE`, which is the default.
+ */
+export const ASSET_GM_BRIDGE_INSTRUMENTATION = Object.freeze(["NONE", "PILOT_BEACON_V1"] as const);
+export type AssetGmBridgeInstrumentation = typeof ASSET_GM_BRIDGE_INSTRUMENTATION[number];
+export const PILOT_INSTRUMENTED_PATHS = Object.freeze([
+  "objects/obj_asset_bridge_pilot/Create_0.gml",
+  "objects/obj_asset_bridge_pilot/Draw_0.gml",
+  "objects/obj_asset_bridge_pilot/Step_0.gml",
+] as const);
 export const ASSET_GM_BRIDGE_CAPABILITY_CONTRACT = Object.freeze({
   schemaVersion: 1,
   id: "asset-gm-bridge",
@@ -51,6 +68,8 @@ export interface AssetGmBridgeInspectTargetRequest extends AssetGmBridgeRequestB
 }
 export interface AssetGmBridgePlanRequest extends AssetGmBridgeRequestBase {
   readonly capability: typeof ASSET_GM_BRIDGE_CAPABILITY;
+  /** Defaults to "NONE". See ASSET_GM_BRIDGE_INSTRUMENTATION. */
+  readonly instrumentation?: AssetGmBridgeInstrumentation;
 }
 export interface AssetGmBridgeApplyRequest extends AssetGmBridgeRequestBase {
   readonly capability: typeof ASSET_GM_BRIDGE_CAPABILITY;
@@ -100,6 +119,7 @@ export interface AssetGmBridgeManifest {
   readonly plannedPaths: readonly string[];
   readonly resourceName: string;
   readonly resourceType: "sprite";
+  readonly instrumentation: AssetGmBridgeInstrumentation;
   readonly dimensions: Readonly<{ width: number; height: number }>;
   readonly frameCount: number;
   readonly origin: Readonly<{ x: number; y: number }>;

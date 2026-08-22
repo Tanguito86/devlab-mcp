@@ -94,6 +94,10 @@ test("external candidates remain uninstalled and outside the kit", () => {
 
 test("ASSET_GM_BRIDGE_V1 is a governed composition of ASSET_FORGE + GM_ADAPTER", () => {
   assert.deepEqual(assetBridge.publicCapabilities, ["ASSET_GM_BRIDGE_V1"]);
+  // Imports accept any catalog sprite, and rewriting object code stays opt-in.
+  assert.equal(assetBridge.spriteSpec, "GENERIC_SPRITE_SPEC_V1");
+  assert.deepEqual(assetBridge.instrumentationModes, ["NONE", "PILOT_BEACON_V1"]);
+  assert.equal(assetBridge.defaultInstrumentation, "NONE");
   assert.equal(assetBridge.publicHermesTools, 0);
   assert.equal(assetBridge.destructiveEnabled, false);
   assert.equal(assetBridge.hermesRuntimeDependency, false);

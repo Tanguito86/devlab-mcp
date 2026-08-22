@@ -5,6 +5,11 @@ export { BRIDGE_SPRITE_BUDGET, evaluateSpriteBudget, assertBudgetPasses, type Sp
 export { computePlanBinding, bindingPayload, manifestHash, hashBytes } from "./binding.js";
 export { normalizePathIdentity, scanPathCollisions, assertNoPathCollisions, assertResourceNameAvailable } from "./paths.js";
 export {
+  validateSpriteSpec, canonicalResourceName, SPRITE_SPEC_REQUIRED_FIELDS, SPRITE_SPEC_OPTIONAL_FIELDS,
+  SPRITE_COLLISION_POLICIES, SPRITE_COMPRESSION_POLICIES, SPRITE_BUDGET_PROFILES,
+  SPRITE_MAX_DIMENSION, SPRITE_MAX_FRAMES, type SpriteSpec,
+} from "./sprite-spec.js";
+export {
   BRIDGE_TEST_BEACON_ASSET_ID, BRIDGE_TEST_BEACON_RESOURCE_NAME, BRIDGE_TEST_BEACON_FACTORY,
   createBridgeTestBeacon, validateBridgeTestBeaconSpec, encodePng, type BeaconFactory, type BridgeTestBeaconAsset,
   type BridgeTestBeaconSpec,

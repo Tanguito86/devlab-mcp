@@ -1,8 +1,8 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { join } from "node:path";
 import test from "node:test";
 import { GovernedAssetGmBridge } from "../dist/index.js";
-import { baseRequest, expectBridgeError, makeWorkspace } from "./helpers.js";
+import { baseRequest, expectBridgeError, makeWorkspace, PILOT_INSTRUMENTED } from "./helpers.js";
 
 async function setup(overrides = {}) {
   const workspace = makeWorkspace(overrides);
@@ -46,8 +46,27 @@ test("budget limits are evaluated against real decoded bytes", async () => {
 
 test("file count and resource count budget is enforced at plan time", async () => {
   const { bridge, request } = await setup();
-  // The pilot import plans 8 files and 1 resource; both are within the budget.
+  // A plain import plans the sprite .yy, the .yyp, the .resource_order and two
+  // images per frame -- and nothing else. No object code is touched.
   const plan = await bridge.planImport(request);
-  assert.equal(plan.files.length, 10);
+  assert.equal(plan.files.length, 7);
+  assert.equal(plan.manifest.instrumentation, "NONE");
+  assert.equal(plan.files.some(({ path }) => path.endsWith(".gml")), false);
   assert.ok(plan.manifest.assetForgeProfile.budgetProfile === "bridge-sprite-v1");
+});
+
+test("pilot instrumentation adds exactly the three pilot GML files", async () => {
+  const { bridge, request } = await setup();
+  const plain = await bridge.planImport(request);
+  const instrumented = await bridge.planImport({ ...request, ...PILOT_INSTRUMENTED, transactionId: "test-tx-instrumented" });
+  assert.equal(instrumented.files.length, plain.files.length + 3);
+  assert.equal(instrumented.manifest.instrumentation, "PILOT_BEACON_V1");
+  assert.deepEqual(
+    instrumented.files.map(({ path }) => path).filter((path) => path.endsWith(".gml")).sort(),
+    [
+      "objects/obj_asset_bridge_pilot/Create_0.gml",
+      "objects/obj_asset_bridge_pilot/Draw_0.gml",
+      "objects/obj_asset_bridge_pilot/Step_0.gml",
+    ],
+  );
 });

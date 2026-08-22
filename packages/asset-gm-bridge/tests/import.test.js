@@ -1,15 +1,15 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { GovernedAssetGmBridge } from "../dist/index.js";
-import { baseRequest, makeWorkspace } from "./helpers.js";
+import { baseRequest, makeWorkspace, PILOT_INSTRUMENTED } from "./helpers.js";
 
 async function setup() {
   const workspace = makeWorkspace({});
   const bridge = new GovernedAssetGmBridge(workspace.projectsDir, { catalogPath: workspace.catalogPath, repoRoot: workspace.root });
   const target = await bridge.inspectTarget(baseRequest(workspace));
-  const request = { ...baseRequest(workspace), expectedProjectFingerprint: target.fingerprint };
+  const request = { ...baseRequest(workspace), ...PILOT_INSTRUMENTED, expectedProjectFingerprint: target.fingerprint };
   const plan = await bridge.planImport(request);
   return { bridge, request, plan, workspace, baselineFingerprint: target.fingerprint };
 }
@@ -47,7 +47,7 @@ test("positive import applies, is idempotent (NO_CHANGE), and rolls back byte-ex
   assert.equal(yyp.resources.filter((resource) => resource.id.path === "sprites/spr_bridge_test_beacon/spr_bridge_test_beacon.yy").length, 1);
   assert.match(afterFirst["objects/obj_asset_bridge_pilot/Create_0.gml"], /GM_ASSET_BRIDGE_BEACON_VERSION 1/);
 
-  // Idempotency: same plan again → NO_CHANGE, zero file changes, zero new IDs, zero duplicates.
+  // Idempotency: same plan again â†’ NO_CHANGE, zero file changes, zero new IDs, zero duplicates.
   const second = await apply(bridge, request, plan);
   assert.equal(second.state, "NO_CHANGE");
   assert.equal(second.changedFiles.length, 0);
@@ -57,7 +57,7 @@ test("positive import applies, is idempotent (NO_CHANGE), and rolls back byte-ex
   const yyp2 = JSON.parse(afterSecond["AssetBridgePilot.yyp"].replace(/,\s*([}\]])/g, "$1"));
   assert.equal(yyp2.resources.filter((resource) => resource.id.path === "sprites/spr_bridge_test_beacon/spr_bridge_test_beacon.yy").length, 1);
 
-  // Rollback → byte-exact restore of the baseline.
+  // Rollback â†’ byte-exact restore of the baseline.
   const current = await bridge.inspectTarget(request);
   const rollback = await bridge.rollbackImport({ ...request, planHash: plan.planHash, bindingHash: plan.bindingHash, confirm: true, expectedProjectFingerprint: current.fingerprint });
   assert.equal(rollback.byteExact, true);

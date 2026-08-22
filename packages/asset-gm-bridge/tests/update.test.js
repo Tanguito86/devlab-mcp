@@ -1,9 +1,9 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { GovernedAssetGmBridge } from "../dist/index.js";
-import { baseRequest, makeWorkspace, SPEC_V1, SPEC_V2 } from "./helpers.js";
+import { baseRequest, makeWorkspace, SPEC_V1, SPEC_V2, PILOT_INSTRUMENTED } from "./helpers.js";
 
 const apply = (bridge, request, plan) => bridge.applyImport({ ...request, plan: plan.plan, planHash: plan.planHash, bindingHash: plan.bindingHash, confirm: true, dryRun: false });
 
@@ -12,7 +12,7 @@ test("v1 -> v2 update: new manifest/plan, v1 plan invalidated, identity preserve
   const workspace = makeWorkspace({ spec: SPEC_V2, version: "2.0.0", extraVersions: [{ spec: SPEC_V1 }] });
   const bridge = new GovernedAssetGmBridge(workspace.projectsDir, { catalogPath: workspace.catalogPath, repoRoot: workspace.root });
   const target = await bridge.inspectTarget(baseRequest(workspace));
-  const request = { ...baseRequest(workspace), expectedProjectFingerprint: target.fingerprint };
+  const request = { ...baseRequest(workspace), ...PILOT_INSTRUMENTED, expectedProjectFingerprint: target.fingerprint };
 
   // v1 import
   const planV1 = await bridge.planImport(request);
@@ -72,7 +72,7 @@ test("v1 plan cannot be applied against the v2 asset (stale binding)", async () 
   const workspace = makeWorkspace({ spec: SPEC_V2, version: "2.0.0", extraVersions: [{ spec: SPEC_V1 }] });
   const bridge = new GovernedAssetGmBridge(workspace.projectsDir, { catalogPath: workspace.catalogPath, repoRoot: workspace.root });
   const target = await bridge.inspectTarget(baseRequest(workspace));
-  const request = { ...baseRequest(workspace), expectedProjectFingerprint: target.fingerprint };
+  const request = { ...baseRequest(workspace), ...PILOT_INSTRUMENTED, expectedProjectFingerprint: target.fingerprint };
   const planV1 = await bridge.planImport(request);
   const target2 = await bridge.inspectTarget(request);
   const request2 = { ...request, expectedProjectFingerprint: target2.fingerprint, assetVersion: "2.0.0", transactionId: "test-tx-0002" };
