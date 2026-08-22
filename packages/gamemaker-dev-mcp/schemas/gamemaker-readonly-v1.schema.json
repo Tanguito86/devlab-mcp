@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://devlab.local/schemas/gamemaker-readonly-v1.schema.json",
+  "title": "GameMaker read-only MCP v1 schema catalog",
+  "$defs": {
+    "projectPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "description": "Project directory relative to DEVLAB_GM_PROJECTS_DIR"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "schemaVersion", "requestId", "error"],
+      "properties": {
+        "ok": { "const": false },
+        "schemaVersion": { "const": 1 },
+        "requestId": { "type": ["string", "number"] },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message", "recoverable"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" },
+            "recoverable": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "statusInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath"],
+      "properties": { "projectPath": { "$ref": "#/$defs/projectPath" } }
+    },
+    "inspectInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath"],
+      "properties": { "projectPath": { "$ref": "#/$defs/projectPath" } }
+    },
+    "planInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "expectedProjectFingerprint", "allowlist", "changes"],
+      "properties": {
+        "projectPath": { "$ref": "#/$defs/projectPath" },
+        "expectedProjectFingerprint": { "$ref": "#/$defs/digest" },
+        "allowlist": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": { "type": "string", "minLength": 1, "maxLength": 1024 }
+        },
+        "changes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "content"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1, "maxLength": 1024 },
+              "content": { "type": "string", "maxLength": 1048576 }
+            }
+          }
+        }
+      }
+    },
+    "statusOutput": {
+      "description": "Structured status success or the common typed error",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["ok", "capability", "serverGate", "projectFingerprint", "processes"],
+          "properties": {
+            "ok": { "const": true },
+            "capability": { "const": "GM_STATUS_V1" },
+            "serverGate": { "const": "READ_ONLY" },
+            "projectFingerprint": { "$ref": "#/$defs/digest" },
+            "processes": { "type": "object" }
+          }
+        },
+        { "$ref": "#/$defs/error" }
+      ]
+    },
+    "inspectOutput": {
+      "description": "Canonical snapshot success or the common typed error",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["ok", "capability", "serverGate", "files", "fingerprint", "snapshotHash"],
+          "properties": {
+            "ok": { "const": true },
+            "capability": { "const": "GM_INSPECT_V1" },
+            "serverGate": { "const": "READ_ONLY" },
+            "files": { "type": "array" },
+            "fingerprint": { "$ref": "#/$defs/digest" },
+            "snapshotHash": { "$ref": "#/$defs/digest" }
+          }
+        },
+        { "$ref": "#/$defs/error" }
+      ]
+    },
+    "planOutput": {
+      "description": "Sanitized non-applicable plan summary or the common typed error",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["ok", "capability", "serverGate", "immutable", "changes", "planHash"],
+          "properties": {
+            "ok": { "const": true },
+            "capability": { "const": "GM_PLAN_V1" },
+            "serverGate": { "const": "PLAN_ONLY" },
+            "immutable": { "const": true },
+            "changes": { "type": "array" },
+            "planHash": { "$ref": "#/$defs/digest" }
+          }
+        },
+        { "$ref": "#/$defs/error" }
+      ]
+    }
+  }
+}

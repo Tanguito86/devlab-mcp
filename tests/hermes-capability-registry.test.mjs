@@ -5,13 +5,14 @@ import test from "node:test";
 
 const registry = JSON.parse(readFileSync(new URL("../capabilities/hermes-capability-manifest.json", import.meta.url), "utf8"));
 const gmAdapter = JSON.parse(readFileSync(new URL("../capabilities/gm-ide-adapter-v1.json", import.meta.url), "utf8"));
+const gmMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-dev-mcp-v1.json", import.meta.url), "utf8"));
 const assetBridge = JSON.parse(readFileSync(new URL("../capabilities/asset-gm-bridge-v1.json", import.meta.url), "utf8"));
 const kit = JSON.parse(readFileSync(new URL("../capabilities/topdown-shooter-kit-v1.json", import.meta.url), "utf8"));
 const external = JSON.parse(readFileSync(new URL("../capabilities/external-candidate-status.json", import.meta.url), "utf8"));
 
 test("capability registry has the exact governed capability set", () => {
-  assert.equal(registry.capabilities.length, 15);
-  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 15);
+  assert.equal(registry.capabilities.length, 16);
+  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 16);
   for (const capability of registry.capabilities) {
     assert.ok(registry.allowedStatuses.includes(capability.status));
     for (const field of ["source", "sourcePin", "license", "evidencePath", "authority", "integrationMode", "runtimeStatus", "securityStatus", "nextPermittedAction"]) assert.equal(typeof capability[field], "string");
@@ -20,6 +21,30 @@ test("capability registry has the exact governed capability set", () => {
     assert.equal(createHash("sha256").update(evidence).digest("hex"), capability.evidenceSha256);
     assert.ok(Array.isArray(capability.prohibitedActions));
   }
+});
+
+test("GameMaker MCP registry exposes only the local read-only stdio slice", () => {
+  assert.equal(gmMcp.package, "@tanguito/gamemaker-dev-mcp");
+  assert.equal(gmMcp.transport, "STDIO");
+  assert.deepEqual(gmMcp.publicTools, ["gamemaker_status", "gamemaker_inspect", "gamemaker_plan"]);
+  assert.deepEqual(gmMcp.internalCapabilities, ["GM_STATUS_V1", "GM_INSPECT_V1", "GM_PLAN_V1"]);
+  assert.equal(gmMcp.mode, "READ_ONLY_AND_PLAN_ONLY");
+  assert.equal(gmMcp.writeTools, 0);
+  assert.equal(gmMcp.resources, 0);
+  assert.equal(gmMcp.prompts, 0);
+  assert.deepEqual(gmMcp.dependencies, ["@tanguito/devlab-gm-ide-adapter"]);
+  assert.equal(gmMcp.runtimeStatus, "LOCAL_VERIFIED");
+  assert.equal(gmMcp.productionVerified, false);
+  assert.equal(gmMcp.assetBridgeAvailable, false);
+  assert.equal(gmMcp.networkAccess, false);
+  assert.equal(gmMcp.persistentState, false);
+  assert.doesNotThrow(() => readFileSync(new URL("../" + gmMcp.inputSchema, import.meta.url), "utf8"));
+  const entry = registry.capabilities.find(({ id }) => id === "GAMEMAKER_MCP_READONLY_V1");
+  assert.ok(entry);
+  assert.equal(entry.status, "LOCAL_VERIFIED");
+  assert.equal(entry.integrationMode, "STDIO_MCP_SERVER");
+  assert.ok(entry.prohibitedActions.includes("write tools"));
+  assert.ok(entry.prohibitedActions.includes("Asset-GM Bridge exposure"));
 });
 
 test("GameMaker registry exposes exactly six governed capabilities and no Hermes tools", () => {

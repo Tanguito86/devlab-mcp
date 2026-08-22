@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "gamemaker-dev-mcp-readonly",
+  "version": "0.1.0",
+  "package": "@tanguito/gamemaker-dev-mcp",
+  "transport": "STDIO",
+  "publicTools": ["gamemaker_status", "gamemaker_inspect", "gamemaker_plan"],
+  "internalCapabilities": ["GM_STATUS_V1", "GM_INSPECT_V1", "GM_PLAN_V1"],
+  "mode": "READ_ONLY_AND_PLAN_ONLY",
+  "writeTools": 0,
+  "resources": 0,
+  "prompts": 0,
+  "inputSchema": "packages/gamemaker-dev-mcp/schemas/gamemaker-readonly-v1.schema.json",
+  "configuration": "DEVLAB_GM_PROJECTS_DIR absolute existing real directory",
+  "dependencies": ["@tanguito/devlab-gm-ide-adapter"],
+  "runtimeStatus": "LOCAL_VERIFIED",
+  "productionVerified": false,
+  "assetBridgeAvailable": false,
+  "networkAccess": false,
+  "persistentState": false,
+  "prohibitedOperations": [
+    "apply",
+    "verify",
+    "rollback",
+    "import",
+    "Igor execution",
+    "Runner execution",
+    "Asset Forge",
+    "Asset-GM Bridge"
+  ]
+}
