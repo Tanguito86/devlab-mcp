@@ -14,7 +14,8 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { after, test } from "node:test";
+import { after, before, test } from "node:test";
+import { pathToFileURL } from "node:url";
 import { deflateSync } from "node:zlib";
 
 import {
@@ -28,7 +29,6 @@ import {
   compareBaselines,
   compareResultPair,
   contractPath,
-  contractSha256,
   materialize,
   readCanonicalText,
   readGuidance,
@@ -38,20 +38,30 @@ import {
   verifyMaterializedBaseline,
   verifyResult,
 } from "../../../scripts/threejs-game-skills-ab04.mjs";
+import { createSyntheticGuidanceFixture } from "./fixtures/ab04-synthetic-guidance-fixture.js";
 
 const committedContract = readJson(contractPath);
-const committedVerification = verifyContract();
+let committedVerification;
+let guidanceFixture;
 const brokerKeyHex = "42".repeat(32);
 const scaffoldRoot = join(
   benchmarkRoot,
   ...committedContract.scaffold.relativePath.split("/"),
 );
 const tempRoots = [];
+const runtimeBases = new WeakMap();
+
+before(() => {
+  const hermeticVerification = verifyContract();
+  guidanceFixture = createSyntheticGuidanceFixture(committedContract, hermeticVerification);
+  committedVerification = guidanceFixture.buildVerification();
+});
 
 after(() => {
   for (const root of tempRoots.reverse()) {
     rmSync(root, { recursive: true, force: true });
   }
+  guidanceFixture?.cleanup();
 });
 
 function makeTempRoot(prefix = "devlab-ab04-test-") {
@@ -61,18 +71,35 @@ function makeTempRoot(prefix = "devlab-ab04-test-") {
 }
 
 function testContract(allowedBase) {
-  const contract = structuredClone(committedContract);
-  contract.materialization.allowedRunRootBase = allowedBase;
+  const contract = structuredClone(guidanceFixture.contract);
   contract.materialization.productionRunRootName = "production-run";
   contract.materialization.validationRunRootPrefix = "validation-run-";
+  runtimeBases.set(contract, allowedBase);
   return contract;
 }
 
 function testContext(contract) {
+  const contractText = `${JSON.stringify(contract, null, 2)}\n`;
+  const verification = {
+    ...committedVerification,
+    contractSha256: sha256(Buffer.from(contractText, "utf8")),
+  };
+  Object.defineProperty(verification, "contract", { value: contract, enumerable: false });
+  Object.defineProperty(verification, "snapshots", {
+    value: {
+      ...committedVerification.snapshots,
+      contract: { text: contractText, sha256: verification.contractSha256 },
+    },
+    enumerable: false,
+  });
   return {
     contract,
     scaffoldRoot,
-    verification: committedVerification,
+    verification,
+    runtimeConfig: {
+      checkout: guidanceFixture.checkout,
+      runRootBase: runtimeBases.get(contract),
+    },
     brokerKeyHex,
     mediaViewports: {
       desktop: { width: 2, height: 2 },
@@ -139,6 +166,18 @@ function pngFixture(width, height, rgba) {
     pngChunk("IEND", Buffer.alloc(0)),
   ]);
 }
+
+test("importing the AB-04 module performs no external checkout or runtime configuration access", () => {
+  const cwd = makeTempRoot("devlab-ab04-import-");
+  const script = resolve(benchmarkRoot, "..", "..", "scripts", "threejs-game-skills-ab04.mjs");
+  const output = execFileSync(process.execPath, [
+    "--input-type=module",
+    "--eval",
+    `await import(${JSON.stringify(pathToFileURL(script).href)}); process.stdout.write("IMPORTED\\n");`,
+  ], { cwd, encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+  assert.equal(output, "IMPORTED\n");
+  assert.deepEqual(readdirSync(cwd), []);
+});
 
 function makeResultFixture({ base, contract, leg, repoHead, pairId }) {
   const productionRoot = join(base, contract.materialization.productionRunRootName);
@@ -212,7 +251,7 @@ function makeResultFixture({ base, contract, leg, repoHead, pairId }) {
     artifacts.push(entry);
     return entry;
   };
-  artifact("contract", {}, readCanonicalText(contractPath));
+  artifact("contract", {}, `${JSON.stringify(contract, null, 2)}\n`);
   artifact("prompt", {}, readCanonicalText(join(benchmarkRoot, contract.prompt.generatedFile)));
   artifact("scoring-rubric", {}, committedVerification.snapshots.scoringRubric.text);
   artifact("acceptance-gates", {}, readCanonicalText(join(benchmarkRoot, "acceptance-gates.md")));
@@ -266,7 +305,7 @@ function makeResultFixture({ base, contract, leg, repoHead, pairId }) {
     const manifest = committedVerification.snapshots.selectedGuidanceManifest.value;
     broker = readGuidance(
       { path: manifest.allowedFiles[0].path, pairId, runId },
-      { contract, verification: committedVerification, brokerKeyHex },
+      { ...testContext(contract), brokerKeyHex },
     );
     const ledgerPath = join(productionRoot, ...broker.brokerLogRelativePath.split("/"));
     artifact("guidance-broker-log", {}, readFileSync(ledgerPath));
@@ -274,7 +313,7 @@ function makeResultFixture({ base, contract, leg, repoHead, pairId }) {
   const result = {
     schemaVersion: 2,
     contractVersion: contract.contractVersion,
-    contractSha256: contractSha256(),
+    contractSha256: sha256(Buffer.from(`${JSON.stringify(contract, null, 2)}\n`, "utf8")),
     benchmark: contract.benchmark,
     leg,
     runId,
@@ -422,8 +461,45 @@ test("relative and run-root path traversal fail closed", () => {
   }
   const escaped = resolve(base, "..", contract.materialization.productionRunRootName);
   assert.throws(
-    () => assertAuthorizedRunRoot(escaped, contract),
+    () => assertAuthorizedRunRoot(escaped, contract, testContext(contract).runtimeConfig),
     hasCode("RUN_ROOT_OUTSIDE_ALLOWLIST"),
+  );
+});
+
+test("runtime run-root configuration is explicit, existing and disjoint", () => {
+  const base = makeTempRoot();
+  const contract = testContract(base);
+  const runRoot = join(base, contract.materialization.productionRunRootName);
+  assert.equal(
+    assertAuthorizedRunRoot(runRoot, contract, testContext(contract).runtimeConfig),
+    runRoot,
+  );
+  const missingBase = join(base, "missing-base");
+  assert.throws(
+    () => assertAuthorizedRunRoot(runRoot, contract, { runRootBase: missingBase }),
+    hasCode("RUN_ROOT_BASE_INVALID"),
+  );
+  assert.throws(
+    () => assertAuthorizedRunRoot(runRoot, contract),
+    hasCode("RUN_ROOT_CONFIG_REQUIRED"),
+  );
+  assert.throws(
+    () => assertAuthorizedRunRoot(join(benchmarkRoot, "validation-run-overlap"), contract, {
+      runRootBase: benchmarkRoot,
+    }),
+    hasCode("RUNTIME_PATH_OVERLAP"),
+  );
+});
+
+test("a Windows drive path is never resolved relative to the package on POSIX", () => {
+  const base = makeTempRoot();
+  const contract = testContract(base);
+  const candidate = process.platform === "win32"
+    ? "relative/windows-like"
+    : "H:/host-local/devlab-runs/production-run";
+  assert.throws(
+    () => assertAuthorizedRunRoot(candidate, contract, testContext(contract).runtimeConfig),
+    hasCode("RUN_ROOT_NOT_ABSOLUTE"),
   );
 });
 
@@ -454,23 +530,15 @@ test("scaffold verification rejects an unexpected committed tree hash", () => {
   assert.throws(() => verifyScaffold(contract), hasCode("SCAFFOLD_HASH_MISMATCH"));
 });
 
-test("authorized run root rejects a symlink or junction when the host supports it", (t) => {
+test("authorized run root rejects a symlink or junction", () => {
   const base = makeTempRoot();
   const outside = makeTempRoot("devlab-ab04-outside-");
   const contract = testContract(base);
   const linked = join(base, "validation-run-linked");
-  try {
-    symlinkSync(outside, linked, process.platform === "win32" ? "junction" : "dir");
-  } catch (error) {
-    if (["EPERM", "EACCES", "UNKNOWN"].includes(error.code)) {
-      t.skip(`symlink/junction creation unavailable: ${error.code}`);
-      return;
-    }
-    throw error;
-  }
+  symlinkSync(outside, linked, process.platform === "win32" ? "junction" : "dir");
   try {
     assert.throws(
-      () => assertAuthorizedRunRoot(linked, contract),
+      () => assertAuthorizedRunRoot(linked, contract, testContext(contract).runtimeConfig),
       hasCode("RUN_ROOT_INVALID"),
     );
   } finally {
@@ -540,7 +608,7 @@ test("A and B materialization produces byte-identical complete baselines", () =>
   assert.deepEqual(canonicalA, canonicalB);
   assert.deepEqual(rawA, rawB);
 
-  const comparison = compareBaselines({ runRoot }, { contract });
+  const comparison = compareBaselines({ runRoot }, context);
   assert.equal(comparison.status, "PASS");
   assert.equal(comparison.identical, true);
   assert.equal(comparison.fileCount, canonicalA.length);
@@ -672,7 +740,7 @@ test("result verifier authenticates complete evidence and compares the controlle
   assert.deepEqual(pair, {
     status: "PASS",
     pairId,
-    contractSha256: contractSha256(),
+    contractSha256: context.verification.contractSha256,
     scaffoldTreeSha256: contract.scaffold.treeSha256,
     sharedEnvironmentEqual: true,
     legAWeightedTotal: 80,
@@ -699,7 +767,7 @@ test("result verifier rejects stale provenance and tampered artifact bytes", () 
     () => verifyResult({ resultPath: fixture.resultPath }, context),
     hasCode("RESULT_MISMATCH"),
   );
-  fixture.result.contractSha256 = contractSha256();
+  fixture.result.contractSha256 = context.verification.contractSha256;
   writeFileSync(fixture.resultPath, `${JSON.stringify(fixture.result, null, 2)}\n`);
   const artifactPath = join(resolve(fixture.resultPath, ".."), ...fixture.artifacts[0].path.split("/"));
   writeFileSync(artifactPath, "tampered\n");

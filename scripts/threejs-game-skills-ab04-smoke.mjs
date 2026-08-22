@@ -483,7 +483,10 @@ async function main() {
   if (legName !== "leg-a" && legName !== "leg-b") {
     fail("fixture root must be leg-a or leg-b", "FIXTURE_LEG_INVALID");
   }
-  const runRoot = assertAuthorizedRunRoot(dirname(fixtureRoot), contract);
+  const requestedRunRoot = dirname(fixtureRoot);
+  const runRoot = assertAuthorizedRunRoot(requestedRunRoot, contract, {
+    runRootBase: dirname(requestedRunRoot),
+  });
   if (!samePath(fixtureRoot, join(runRoot, legName))) {
     fail("fixture root must be a direct child of the authorized run root", "FIXTURE_OUTSIDE_RUN_ROOT");
   }

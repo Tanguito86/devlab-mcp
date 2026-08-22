@@ -9,13 +9,17 @@ SIBLING_DIRECTORIES_ARE_NOT_A_SANDBOX: YES
 
 1. Check out the authorized DevLab commit on a clean worktree. Do not infer or
    duplicate shared values from a conversation; read `benchmark-contract.json`.
-2. Run `corepack pnpm run benchmark:ab04:verify`. Stop without correction if
-   contract, derived files, scaffold, source allowlist or hashes fail.
+2. Run `corepack pnpm run benchmark:ab04:verify`. This hermetic gate reads no
+   host-local path. Then run `benchmark:ab04:verify-external` with explicit
+   absolute `--checkout` and `--run-root-base` arguments. Stop without
+   correction if contract, derived files, scaffold, checkout identity, source
+   allowlist, containment or hashes fail.
 3. Create the benchmark evidence root and freeze the verified contract, prompt,
    rubric, gates and leg policies with canonical hashes.
 4. Materialize each baseline with `benchmark:ab04:materialize`, passing the
-   authorized run root and exactly one leg identifier. Never use an upstream
-   scaffold, installer, script, generator or copied game.
+   authorized run root, exactly one leg identifier, and the same explicit
+   `--checkout` and `--run-root-base`. Never use an upstream scaffold,
+   installer, script, generator or copied game.
 5. Run `benchmark:ab04:compare-baselines`; both complete trees, including
    generated baseline metadata, must be byte-identical before builders start.
 6. Give each leg the generated prompt and its minimal policy in a fresh isolated
@@ -23,7 +27,7 @@ SIBLING_DIRECTORIES_ARE_NOT_A_SANDBOX: YES
    the executor must enforce leg-only filesystem access before starting either
    builder. LEG_A must never access the external checkout. LEG_B may consume an
    allowlisted file only through
-   `corepack pnpm run benchmark:ab04:read-guidance -- --path <manifest-path> --pair-id <pair-id> --run-id <run-id>`.
+   `corepack pnpm run benchmark:ab04:read-guidance -- --path <manifest-path> --pair-id <pair-id> --run-id <run-id> --checkout <absolute-detached-checkout> --run-root-base <absolute-existing-base>`.
    The coordinator must provide an executor-only 32-byte hexadecimal
    `DEVLAB_AB04_BROKER_HMAC_KEY`, keep it outside both builder contexts, and
    protect `coordinator/guidance-broker/<pairId>/<runId>.jsonl` with OS ACLs.

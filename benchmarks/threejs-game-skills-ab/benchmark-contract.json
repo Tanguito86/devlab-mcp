@@ -50,7 +50,7 @@
     "captureContract": "window.__DEVLAB_CAPTURE__"
   },
   "materialization": {
-    "allowedRunRootBase": "H:/UserData/Deposito/Documents/devlab-runs",
+    "runRootId": "devlab-runs",
     "productionRunRootName": "threejs-game-skills-ab-04",
     "validationRunRootPrefix": "ab04a-scaffold-validation-",
     "destinations": { "a": "leg-a", "b": "leg-b" }
@@ -114,7 +114,7 @@
   "treatment": {
     "legA": "no-threejs-game-skills-guidance",
     "legB": "read-only-hashed-selected-guidance",
-    "sourceCheckout": "H:/UserData/Deposito/Documents/threejs-game-skills-intake/source",
+    "sourceId": "threejs-game-skills",
     "sourceRepository": "https://github.com/majidmanzarpour/threejs-game-skills",
     "sourcePin": "7221c1f4a6d2ae189a4d85d058d24f3228499d46",
     "sourcePolicy": "source-policy.json",

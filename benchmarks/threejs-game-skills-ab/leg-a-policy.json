@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "contractVersion": "ab04-v2",
-  "contractSha256": "852676a9255dc01c32828100b8b327bab9337579a43bc4e226be9e8de3f43482",
+  "contractSha256": "44236711408b3909b5aac9afcac4e9f2c922aa9808cd9f953d5a3f3eb0146b29",
   "leg": "LEG_A",
   "treatment": "CONTROL",
   "externalGuidanceLoaded": false,

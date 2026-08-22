@@ -8,6 +8,7 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "benchmark:ab04:verify": "node scripts/threejs-game-skills-ab04.mjs verify-contract",
+    "benchmark:ab04:verify-external": "node scripts/threejs-game-skills-ab04.mjs verify-external",
     "benchmark:ab04:sync-derived": "node scripts/threejs-game-skills-ab04.mjs sync-derived",
     "benchmark:ab04:materialize": "node scripts/threejs-game-skills-ab04.mjs materialize",
     "benchmark:ab04:compare-baselines": "node scripts/threejs-game-skills-ab04.mjs compare-baselines",

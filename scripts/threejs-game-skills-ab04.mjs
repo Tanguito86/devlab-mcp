@@ -483,7 +483,7 @@ export function validateContractShape(contract) {
   expect(contract.hashPolicy.textEol, "LF_CANONICAL", "textEol");
   expect(contract.hashPolicy.binaryHash, "ORIGINAL_BYTES", "binaryHash");
   expect(contract.hashPolicy.algorithm, "SHA-256", "hashAlgorithm");
-  expect(contract.materialization.allowedRunRootBase, "H:/UserData/Deposito/Documents/devlab-runs", "allowedRunRootBase");
+  expect(contract.materialization.runRootId, "devlab-runs", "materialization.runRootId");
   expect(contract.materialization.productionRunRootName, "threejs-game-skills-ab-04", "productionRunRootName");
   expect(contract.materialization.validationRunRootPrefix, "ab04a-scaffold-validation-", "validationRunRootPrefix");
   expect(contract.materialization.destinations.a, "leg-a", "destination.a");
@@ -545,7 +545,7 @@ export function validateContractShape(contract) {
   expect(contract.runtime.validationToolchain.vitePackageTreeSha256, "7c2c164fb19f47a88a2b6244a39d39a6b302774bfccc8766f5be63fa47c95fc7", "validationToolchain.vitePackageTreeSha256");
   expect(contract.treatment.legA, "no-threejs-game-skills-guidance", "treatment.legA");
   expect(contract.treatment.legB, "read-only-hashed-selected-guidance", "treatment.legB");
-  expect(contract.treatment.sourceCheckout, "H:/UserData/Deposito/Documents/threejs-game-skills-intake/source", "treatment.sourceCheckout");
+  expect(contract.treatment.sourceId, "threejs-game-skills", "treatment.sourceId");
   expect(contract.treatment.sourceRepository, "https://github.com/majidmanzarpour/threejs-game-skills", "treatment.sourceRepository");
   expect(contract.treatment.sourcePin, "7221c1f4a6d2ae189a4d85d058d24f3228499d46", "treatment.sourcePin");
   expect(contract.treatment.sourcePolicy, "source-policy.json", "treatment.sourcePolicy");
@@ -704,7 +704,63 @@ function gitOutput(checkout, args) {
   }).trim();
 }
 
-export function verifySelectedGuidance(contract = readJson(contractPath), providedSnapshots = null) {
+function configuredDirectory(value, label, requiredCode, invalidCode) {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Ab04Error(`${label} must be configured explicitly`, requiredCode);
+  }
+  if (!isAbsolute(value)) {
+    throw new Ab04Error(`${label} must be an absolute path for this host: ${value}`, invalidCode);
+  }
+  const absolute = resolve(value);
+  assertExistingDirectoryNoLink(absolute, invalidCode);
+  return realpathSync(absolute);
+}
+
+function sameOrNested(left, right) {
+  const normalizedLeft = normalizeForComparison(left);
+  const normalizedRight = normalizeForComparison(right);
+  return normalizedLeft === normalizedRight || normalizedLeft.startsWith(`${normalizedRight}${sep}`);
+}
+
+function assertDisjointPaths(leftLabel, left, rightLabel, right) {
+  if (sameOrNested(left, right) || sameOrNested(right, left)) {
+    throw new Ab04Error(
+      `${leftLabel} overlaps ${rightLabel}: ${left} <> ${right}`,
+      "RUNTIME_PATH_OVERLAP",
+    );
+  }
+}
+
+export function validateRuntimeConfig(
+  runtimeConfig,
+  { requireCheckout = false, requireRunRootBase = false } = {},
+) {
+  const checkout = requireCheckout || runtimeConfig?.checkout !== undefined
+    ? configuredDirectory(
+      runtimeConfig?.checkout,
+      "external guidance checkout",
+      "GUIDANCE_CHECKOUT_REQUIRED",
+      "GUIDANCE_CHECKOUT_INVALID",
+    )
+    : null;
+  const runRootBase = requireRunRootBase || runtimeConfig?.runRootBase !== undefined
+    ? configuredDirectory(
+      runtimeConfig?.runRootBase,
+      "run root base",
+      "RUN_ROOT_CONFIG_REQUIRED",
+      "RUN_ROOT_BASE_INVALID",
+    )
+    : null;
+  const repository = realpathSync(repoRoot);
+  if (checkout) assertDisjointPaths("external guidance checkout", checkout, "DevLab repository", repository);
+  if (runRootBase) assertDisjointPaths("run root base", runRootBase, "DevLab repository", repository);
+  if (checkout && runRootBase) {
+    assertDisjointPaths("external guidance checkout", checkout, "run root base", runRootBase);
+  }
+  return deepFreeze({ checkout, runRootBase });
+}
+
+function verifyGuidancePolicy(contract, providedSnapshots = null) {
   assertSafeRelativePath(contract.treatment.sourcePolicy);
   assertSafeRelativePath(contract.treatment.selectedGuidanceManifest);
   const sourcePolicyPath = join(benchmarkRoot, contract.treatment.sourcePolicy);
@@ -722,8 +778,8 @@ export function verifySelectedGuidance(contract = readJson(contractPath), provid
 
   const policy = sourcePolicySnapshot.value;
   const manifest = manifestSnapshot.value;
-  const expectedSource = "majidmanzarpour/threejs-game-skills";
-  if (policy.source !== expectedSource || manifest.source !== expectedSource
+  if (typeof policy.source !== "string" || !policy.source
+    || policy.source !== manifest.source
     || policy.repository !== contract.treatment.sourceRepository
     || manifest.repository !== contract.treatment.sourceRepository
     || policy.pin !== contract.treatment.sourcePin || manifest.pin !== contract.treatment.sourcePin
@@ -748,8 +804,20 @@ export function verifySelectedGuidance(contract = readJson(contractPath), provid
     throw new Ab04Error("selected guidance allowlist is not exactly 25 unique hashed files", "ALLOWLIST_MISMATCH");
   }
 
-  const checkout = resolve(contract.treatment.sourceCheckout);
-  assertExistingDirectoryNoLink(checkout, "GUIDANCE_CHECKOUT_INVALID");
+  return { allowedFiles, sourcePolicySnapshot, manifestSnapshot };
+}
+
+export function verifySelectedGuidance(
+  contract = readJson(contractPath),
+  providedSnapshots = null,
+  runtimeConfig = null,
+) {
+  const { allowedFiles, sourcePolicySnapshot, manifestSnapshot } = verifyGuidancePolicy(
+    contract,
+    providedSnapshots,
+  );
+
+  const { checkout } = validateRuntimeConfig(runtimeConfig, { requireCheckout: true });
   let head;
   let status;
   let remote;
@@ -880,6 +948,10 @@ export function readGuidance({ path, pairId, runId }, testContext = null) {
   assertBrokerId(runId, "runId");
   const verification = testContext?.verification ?? verifyContract();
   const contract = testContext?.contract ?? verification.contract;
+  const runtimeConfig = validateRuntimeConfig(
+    testContext?.runtimeConfig ?? verification.runtimeConfig,
+    { requireCheckout: true, requireRunRootBase: true },
+  );
   const manifest = verification.snapshots?.selectedGuidanceManifest?.value;
   if (!manifest) {
     throw new Ab04Error("verified guidance manifest snapshot is unavailable", "VERIFICATION_SNAPSHOT_MISSING");
@@ -888,7 +960,7 @@ export function readGuidance({ path, pairId, runId }, testContext = null) {
   if (!entry) {
     throw new Ab04Error(`guidance path is not allowlisted: ${path}`, "GUIDANCE_PATH_NOT_ALLOWED");
   }
-  const checkout = resolve(contract.treatment.sourceCheckout);
+  const { checkout, runRootBase } = runtimeConfig;
   const file = assertRegularContainedFile(checkout, path);
   const bytes = readFileSync(file);
   const content = canonicalTextFromBytes(bytes, path);
@@ -898,10 +970,10 @@ export function readGuidance({ path, pairId, runId }, testContext = null) {
   }
   const key = brokerKeyBytes(testContext);
   const productionRoot = resolve(
-    contract.materialization.allowedRunRootBase,
+    runRootBase,
     contract.materialization.productionRunRootName,
   );
-  assertAuthorizedRunRoot(productionRoot, contract);
+  assertAuthorizedRunRoot(productionRoot, contract, runtimeConfig);
   if (!existsSync(productionRoot)) {
     throw new Ab04Error("production run root must exist before guidance reads", "BROKER_RUN_ROOT_MISSING");
   }
@@ -1029,7 +1101,7 @@ export function verifyContract() {
       "RESULT_VALIDATION_HASH_MISMATCH",
     );
   }
-  const guidance = verifySelectedGuidance(contract, {
+  const guidance = verifyGuidancePolicy(contract, {
     sourcePolicy: readCanonicalJsonSnapshot(join(benchmarkRoot, contract.treatment.sourcePolicy)),
     selectedGuidanceManifest: readCanonicalJsonSnapshot(
       join(benchmarkRoot, contract.treatment.selectedGuidanceManifest),
@@ -1043,9 +1115,9 @@ export function verifyContract() {
     contractSha256: snapshot.contractSha256,
     scaffoldId: contract.scaffold.id,
     scaffoldTreeSha256: scaffold.treeSha256,
-    selectedGuidanceManifestSha256: guidance.manifestSha256,
-    sourceHead: guidance.sourceHead,
-    allowlistCount: guidance.allowlistCount,
+    selectedGuidanceManifestSha256: contract.treatment.selectedGuidanceManifestSha256,
+    sourceHead: contract.treatment.sourcePin,
+    allowlistCount: guidance.allowedFiles.length,
   };
   Object.defineProperty(result, "contract", { value: contract, enumerable: false });
   Object.defineProperty(result, "snapshots", {
@@ -1065,26 +1137,64 @@ export function verifyContract() {
   return result;
 }
 
+export function verifyExternal(runtimeConfig) {
+  const verification = verifyContract();
+  const normalizedRuntimeConfig = validateRuntimeConfig(runtimeConfig, {
+    requireCheckout: true,
+    requireRunRootBase: true,
+  });
+  const guidance = verifySelectedGuidance(
+    verification.contract,
+    {
+      sourcePolicy: verification.snapshots.sourcePolicy,
+      selectedGuidanceManifest: verification.snapshots.selectedGuidanceManifest,
+    },
+    normalizedRuntimeConfig,
+  );
+  const result = {
+    ...verification,
+    selectedGuidanceManifestSha256: guidance.manifestSha256,
+    sourceHead: guidance.sourceHead,
+    allowlistCount: guidance.allowlistCount,
+  };
+  Object.defineProperty(result, "contract", { value: verification.contract, enumerable: false });
+  Object.defineProperty(result, "snapshots", { value: verification.snapshots, enumerable: false });
+  Object.defineProperty(result, "runtimeConfig", { value: normalizedRuntimeConfig, enumerable: false });
+  return result;
+}
+
 function normalizeForComparison(path) {
   const value = resolve(path);
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
 
 function assertExistingDirectoryNoLink(path, code) {
-  const stat = lstatSync(path);
+  if (!existsSync(path)) {
+    throw new Ab04Error(`directory is missing: ${path}`, code);
+  }
+  let stat;
+  try {
+    stat = lstatSync(path);
+  } catch (error) {
+    throw new Ab04Error(`directory cannot be inspected: ${path}: ${error.message}`, code);
+  }
   if (stat.isSymbolicLink() || !stat.isDirectory()) {
     throw new Ab04Error(`directory is missing, linked or irregular: ${path}`, code);
   }
   realpathSync(path);
 }
 
-export function assertAuthorizedRunRoot(runRoot, contract = readJson(contractPath)) {
+export function assertAuthorizedRunRoot(runRoot, contract = readJson(contractPath), runtimeConfig = null) {
   if (typeof runRoot !== "string" || !isAbsolute(runRoot)) {
     throw new Ab04Error("run root must be an absolute path", "RUN_ROOT_NOT_ABSOLUTE");
   }
-  const allowedBase = resolve(contract.materialization.allowedRunRootBase);
-  assertExistingDirectoryNoLink(allowedBase, "RUN_ROOT_BASE_INVALID");
+  const normalizedRuntimeConfig = validateRuntimeConfig(runtimeConfig, { requireRunRootBase: true });
+  const allowedBase = normalizedRuntimeConfig.runRootBase;
   const candidate = resolve(runRoot);
+  assertDisjointPaths("run root", candidate, "DevLab repository", realpathSync(repoRoot));
+  if (normalizedRuntimeConfig.checkout) {
+    assertDisjointPaths("run root", candidate, "external guidance checkout", normalizedRuntimeConfig.checkout);
+  }
   if (normalizeForComparison(dirname(candidate)) !== normalizeForComparison(allowedBase)) {
     throw new Ab04Error("run root is outside the authorized base or not a direct child", "RUN_ROOT_OUTSIDE_ALLOWLIST");
   }
@@ -1176,7 +1286,8 @@ export function materialize({ runRoot, leg }, testContext = null) {
   // The CLI never supplies this context and always executes the full verifier.
   const verification = testContext?.verification ?? verifyContract();
   const contract = testContext?.contract ?? verification.contract;
-  const authorizedRoot = assertAuthorizedRunRoot(runRoot, contract);
+  const runtimeConfig = testContext?.runtimeConfig ?? verification.runtimeConfig;
+  const authorizedRoot = assertAuthorizedRunRoot(runRoot, contract, runtimeConfig);
   if (!existsSync(authorizedRoot)) mkdirSync(authorizedRoot);
   assertExistingDirectoryNoLink(authorizedRoot, "RUN_ROOT_INVALID");
   const destinationName = contract.materialization.destinations[leg];
@@ -1227,7 +1338,8 @@ export function compareBaselines({ runRoot }, testContext = null) {
   // the CLI always resolves the committed contract itself.
   const verification = testContext?.verification ?? verifyContract();
   const contract = testContext?.contract ?? verification.contract;
-  const authorizedRoot = assertAuthorizedRunRoot(runRoot, contract);
+  const runtimeConfig = testContext?.runtimeConfig ?? verification.runtimeConfig;
+  const authorizedRoot = assertAuthorizedRunRoot(runRoot, contract, runtimeConfig);
   const a = join(authorizedRoot, contract.materialization.destinations.a);
   const b = join(authorizedRoot, contract.materialization.destinations.b);
   if (!existsSync(a) || !existsSync(b)) {
@@ -1760,11 +1872,15 @@ export function verifyResult({ resultPath }, testContext = null) {
   expectResult(resultStat.isFile() && !resultStat.isSymbolicLink(), "result file is linked or irregular", "RESULT_PATH_INVALID");
   const verification = testContext?.verification ?? verifyContract();
   const contract = testContext?.contract ?? verification.contract;
+  const runtimeConfig = validateRuntimeConfig(
+    testContext?.runtimeConfig ?? verification.runtimeConfig,
+    { requireRunRootBase: true },
+  );
   const productionRoot = resolve(
-    contract.materialization.allowedRunRootBase,
+    runtimeConfig.runRootBase,
     contract.materialization.productionRunRootName,
   );
-  assertAuthorizedRunRoot(productionRoot, contract);
+  assertAuthorizedRunRoot(productionRoot, contract, runtimeConfig);
   expectResult(
     absoluteResult.startsWith(`${productionRoot}${sep}`),
     "result file is outside the production evidence root",
@@ -1994,7 +2110,7 @@ function parseCli(argv) {
     const flag = args.shift();
     if (![
       "--run-root", "--leg", "--path", "--pair-id", "--run-id",
-      "--result", "--result-a", "--result-b",
+      "--result", "--result-a", "--result-b", "--checkout", "--run-root-base",
     ].includes(flag)) {
       throw new Ab04Error(`unknown argument: ${flag}`, "UNKNOWN_ARGUMENT");
     }
@@ -2013,52 +2129,73 @@ function parseCli(argv) {
     resultPath: options["--result"],
     resultAPath: options["--result-a"],
     resultBPath: options["--result-b"],
+    checkout: options["--checkout"],
+    runRootBase: options["--run-root-base"],
   };
 }
 
 async function main() {
   const {
     command, runRoot, leg, path, pairId, runId, resultPath, resultAPath, resultBPath,
+    checkout, runRootBase,
   } = parseCli(process.argv.slice(2));
   const anyResultPath = resultPath || resultAPath || resultBPath;
   const anyBrokerIdentity = pairId || runId;
+  const anyRuntimeConfig = checkout || runRootBase;
+  const externalContext = () => {
+    if (!checkout || !runRootBase) {
+      throw new Ab04Error(
+        "external AB-04 operations require --checkout and --run-root-base",
+        "EXTERNAL_CONFIG_REQUIRED",
+      );
+    }
+    const verification = verifyExternal({ checkout, runRootBase });
+    return {
+      verification,
+      contract: verification.contract,
+      runtimeConfig: verification.runtimeConfig,
+    };
+  };
   let result;
   if (command === "verify-contract") {
-    if (runRoot || leg || path || anyBrokerIdentity || anyResultPath) throw new Ab04Error("verify-contract accepts no options", "INVALID_ARGUMENTS");
+    if (runRoot || leg || path || anyBrokerIdentity || anyResultPath || anyRuntimeConfig) throw new Ab04Error("verify-contract accepts no options", "INVALID_ARGUMENTS");
     result = verifyContract();
+  } else if (command === "verify-external") {
+    if (runRoot || leg || path || anyBrokerIdentity || anyResultPath) throw new Ab04Error("verify-external accepts only --checkout and --run-root-base", "INVALID_ARGUMENTS");
+    result = externalContext().verification;
   } else if (command === "sync-derived") {
-    if (runRoot || leg || path || anyBrokerIdentity || anyResultPath) throw new Ab04Error("sync-derived accepts no options", "INVALID_ARGUMENTS");
+    if (runRoot || leg || path || anyBrokerIdentity || anyResultPath || anyRuntimeConfig) throw new Ab04Error("sync-derived accepts no options", "INVALID_ARGUMENTS");
     result = syncDerived();
   } else if (command === "verify-scaffold") {
-    if (runRoot || leg || path || anyBrokerIdentity || anyResultPath) throw new Ab04Error("verify-scaffold accepts no options", "INVALID_ARGUMENTS");
+    if (runRoot || leg || path || anyBrokerIdentity || anyResultPath || anyRuntimeConfig) throw new Ab04Error("verify-scaffold accepts no options", "INVALID_ARGUMENTS");
     result = verifyScaffold();
   } else if (command === "materialize") {
-    if (!runRoot || !leg || path || anyBrokerIdentity || anyResultPath) throw new Ab04Error("materialize requires only --run-root and --leg", "MISSING_ARGUMENT");
-    result = materialize({ runRoot, leg });
+    if (!runRoot || !leg || path || anyBrokerIdentity || anyResultPath) throw new Ab04Error("materialize requires --run-root, --leg, --checkout and --run-root-base", "MISSING_ARGUMENT");
+    result = materialize({ runRoot, leg }, externalContext());
   } else if (command === "compare-baselines") {
     if (!runRoot || leg || path || anyBrokerIdentity || anyResultPath) throw new Ab04Error("compare-baselines requires only --run-root", "INVALID_ARGUMENTS");
-    result = compareBaselines({ runRoot });
+    result = compareBaselines({ runRoot }, externalContext());
   } else if (command === "read-guidance") {
     if (!path || !pairId || !runId || runRoot || leg || anyResultPath) {
       throw new Ab04Error(
-        "read-guidance requires only --path, --pair-id and --run-id",
+        "read-guidance requires --path, --pair-id, --run-id, --checkout and --run-root-base",
         "INVALID_ARGUMENTS",
       );
     }
-    result = readGuidance({ path, pairId, runId });
+    result = readGuidance({ path, pairId, runId }, externalContext());
   } else if (command === "verify-result") {
     if (!resultPath || runRoot || leg || path || anyBrokerIdentity || resultAPath || resultBPath) {
       throw new Ab04Error("verify-result requires only --result", "INVALID_ARGUMENTS");
     }
-    result = verifyResult({ resultPath });
+    result = verifyResult({ resultPath }, externalContext());
   } else if (command === "compare-results") {
     if (!resultAPath || !resultBPath || runRoot || leg || path || anyBrokerIdentity || resultPath) {
       throw new Ab04Error("compare-results requires only --result-a and --result-b", "INVALID_ARGUMENTS");
     }
-    result = compareResultPair({ resultAPath, resultBPath });
+    result = compareResultPair({ resultAPath, resultBPath }, externalContext());
   } else {
     throw new Ab04Error(
-      "usage: threejs-game-skills-ab04.mjs <verify-contract|sync-derived|verify-scaffold|materialize|compare-baselines|read-guidance|verify-result|compare-results>",
+      "usage: threejs-game-skills-ab04.mjs <verify-contract|verify-external|sync-derived|verify-scaffold|materialize|compare-baselines|read-guidance|verify-result|compare-results>",
       "UNKNOWN_COMMAND",
     );
   }

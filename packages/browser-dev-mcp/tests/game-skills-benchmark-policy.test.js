@@ -1,10 +1,20 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join } from "node:path";
 import test from "node:test";
 
 import {
+  Ab04Error,
   benchmarkRoot,
   contractPath,
   contractSha256,
@@ -15,13 +25,23 @@ import {
   renderAcceptanceGates,
   renderLegPolicy,
   renderPrompt,
+  repoRoot,
   validateContractShape,
   verifyContract,
+  verifySelectedGuidance,
   verifyScaffold,
 } from "../../../scripts/threejs-game-skills-ab04.mjs";
+import { createSyntheticGuidanceFixture } from "./fixtures/ab04-synthetic-guidance-fixture.js";
 
 const root = benchmarkRoot;
 const json = (name) => readJson(join(root, name));
+const hasCode = (code) => (error) => error instanceof Ab04Error && error.code === code;
+
+function syntheticFixture(options = {}) {
+  const contract = readJson(contractPath);
+  const verification = verifyContract();
+  return createSyntheticGuidanceFixture(contract, verification, options);
+}
 
 test("benchmark source policy is fail-closed", () => {
   const policy = json("source-policy.json");
@@ -153,16 +173,16 @@ test("benchmark-contract.json is the canonical AB-04 v2 source", () => {
   assert.equal(contract.treatment.externalScripts, false);
   assert.equal(contract.treatment.globalInstall, false);
   assert.equal(contract.treatment.paidApiCalls, false);
+  assert.equal(contract.materialization.runRootId, "devlab-runs");
+  assert.equal(Object.hasOwn(contract.materialization, "allowedRunRootBase"), false);
   assert.deepEqual(contract.resultValidation, {
     schemaFile: "result-schema.json",
     schemaSha256: "4b0f6ce7fc706765ea103b45d06c30d3b1ed68a3254c2a69bb27836a36d1ca39",
     scoringRubricFile: "scoring-rubric.md",
     scoringRubricSha256: "4e5576615370283d28be87ec1e0d705a3ff1c7bc4bf0efc070dbe77cb49c8a87",
   });
-  assert.equal(
-    contract.treatment.sourceCheckout,
-    "H:/UserData/Deposito/Documents/threejs-game-skills-intake/source",
-  );
+  assert.equal(contract.treatment.sourceId, "threejs-game-skills");
+  assert.equal(Object.hasOwn(contract.treatment, "sourceCheckout"), false);
   assert.equal(contract.treatment.sourcePin, "7221c1f4a6d2ae189a4d85d058d24f3228499d46");
   assert.equal(
     contract.treatment.sourcePolicySha256,
@@ -177,7 +197,7 @@ test("benchmark-contract.json is the canonical AB-04 v2 source", () => {
 test("contract validator fixes security-critical AB-04 v2 invariants", () => {
   const mutations = [
     ["binary hash", (contract) => { contract.hashPolicy.binaryHash = "TEXT_NORMALIZED"; }],
-    ["run root", (contract) => { contract.materialization.allowedRunRootBase = "C:/temp"; }],
+    ["run root id", (contract) => { contract.materialization.runRootId = "host-local-path"; }],
     ["leg destination", (contract) => { contract.materialization.destinations.b = "leg-a"; }],
     ["network", (contract) => { contract.runtime.network = "unrestricted"; }],
     ["performance scenarios", (contract) => { contract.repetitions.performanceScenarios = ["idle"]; }],
@@ -404,15 +424,23 @@ test("contract snapshot is canonical, immutable and hash-consistent", () => {
 
 test("guidance broker returns allowlisted text and appends a pair-bound HMAC receipt", () => {
   const base = mkdtempSync(join(tmpdir(), "devlab-ab04-broker-"));
+  let fixture;
   try {
-    const contract = structuredClone(readJson(contractPath));
-    contract.materialization.allowedRunRootBase = base;
+    const baseContract = structuredClone(readJson(contractPath));
+    const hermeticVerification = verifyContract();
+    fixture = createSyntheticGuidanceFixture(baseContract, hermeticVerification);
+    const contract = fixture.contract;
     contract.materialization.productionRunRootName = "production-run";
     mkdirSync(join(base, "production-run"));
-    const verification = verifyContract();
+    const verification = fixture.buildVerification();
     const manifest = verification.snapshots.selectedGuidanceManifest.value;
     const entry = manifest.allowedFiles[0];
-    const context = { contract, verification, brokerKeyHex: "24".repeat(32) };
+    const context = {
+      contract,
+      verification,
+      brokerKeyHex: "24".repeat(32),
+      runtimeConfig: { checkout: fixture.checkout, runRootBase: base },
+    };
     const receipt = readGuidance(
       { path: entry.path, pairId: "pair-policy-test", runId: "run-leg-b" },
       context,
@@ -433,11 +461,12 @@ test("guidance broker returns allowlisted text and appends a pair-bound HMAC rec
       (error) => error.code === "GUIDANCE_PATH_NOT_ALLOWED",
     );
   } finally {
+    fixture?.cleanup();
     rmSync(base, { recursive: true, force: true });
   }
 });
 
-test("machine-verifiable AB-04 preflight passes end to end", () => {
+test("machine-verifiable hermetic AB-04 preflight passes end to end", () => {
   const result = verifyContract();
   assert.equal(result.status, "PASS");
   assert.equal(result.contractVersion, "ab04-v2");
@@ -450,4 +479,140 @@ test("machine-verifiable AB-04 preflight passes end to end", () => {
   );
   assert.equal(result.sourceHead, "7221c1f4a6d2ae189a4d85d058d24f3228499d46");
   assert.equal(result.allowlistCount, 25);
+});
+
+test("synthetic detached clean checkout with exact origin, pin and 25 hashes passes", () => {
+  const fixture = syntheticFixture();
+  try {
+    const verification = fixture.buildVerification();
+    assert.equal(verification.status, "PASS");
+    assert.equal(verification.sourceHead, fixture.contract.treatment.sourcePin);
+    assert.equal(verification.allowlistCount, 25);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("external guidance checkout must exist and must not be a link", () => {
+  const fixture = syntheticFixture();
+  const linked = join(fixture.root, "linked-checkout");
+  try {
+    assert.throws(
+      () => verifySelectedGuidance(fixture.contract, fixture.snapshots, {
+        checkout: join(fixture.root, "missing-checkout"),
+      }),
+      hasCode("GUIDANCE_CHECKOUT_INVALID"),
+    );
+    symlinkSync(fixture.checkout, linked, process.platform === "win32" ? "junction" : "dir");
+    assert.throws(
+      () => verifySelectedGuidance(fixture.contract, fixture.snapshots, { checkout: linked }),
+      hasCode("GUIDANCE_CHECKOUT_INVALID"),
+    );
+    assert.throws(
+      () => verifySelectedGuidance(fixture.contract, fixture.snapshots, { checkout: repoRoot }),
+      hasCode("RUNTIME_PATH_OVERLAP"),
+    );
+  } finally {
+    if (existsSync(linked)) unlinkSync(linked);
+    fixture.cleanup();
+  }
+});
+
+test("external guidance checkout rejects attached HEAD", () => {
+  const fixture = syntheticFixture({ attached: true });
+  try {
+    assert.throws(() => fixture.buildVerification(), hasCode("GUIDANCE_CHECKOUT_DRIFT"));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("external guidance checkout rejects a dirty worktree", () => {
+  const fixture = syntheticFixture();
+  try {
+    const path = fixture.manifest.allowedFiles[0].path;
+    writeFileSync(join(fixture.checkout, ...path.split("/")), "dirty synthetic fixture\n");
+    assert.throws(() => fixture.buildVerification(), hasCode("GUIDANCE_CHECKOUT_DRIFT"));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("external guidance checkout rejects an incorrect origin", () => {
+  const fixture = syntheticFixture();
+  try {
+    fixture.git(["remote", "set-url", "origin", "https://example.invalid/wrong-origin.git"]);
+    assert.throws(() => fixture.buildVerification(), hasCode("GUIDANCE_CHECKOUT_DRIFT"));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("external guidance checkout rejects an incorrect pin", () => {
+  const fixture = syntheticFixture();
+  try {
+    fixture.setPin("0".repeat(40));
+    assert.throws(() => fixture.buildVerification(), hasCode("GUIDANCE_CHECKOUT_DRIFT"));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("external guidance checkout rejects a clean committed hash mismatch", () => {
+  const fixture = syntheticFixture();
+  try {
+    const path = fixture.manifest.allowedFiles[0].path;
+    writeFileSync(join(fixture.checkout, ...path.split("/")), "committed but hash-mismatched synthetic fixture\n");
+    fixture.git(["add", "--all"]);
+    fixture.git([
+      "-c", "user.name=DevLab AB04 Fixture",
+      "-c", "user.email=ab04-fixture@example.invalid",
+      "commit", "--no-gpg-sign", "-m", "synthetic hash mismatch",
+    ]);
+    const head = fixture.git(["rev-parse", "HEAD"]);
+    fixture.git(["checkout", "--detach", head]);
+    fixture.setPin(head);
+    assert.throws(() => fixture.buildVerification(), hasCode("GUIDANCE_FILE_HASH_MISMATCH"));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("hermetic verification needs neither external config nor host-local paths", () => {
+  const cwd = mkdtempSync(join(tmpdir(), "devlab-ab04-hermetic-cli-"));
+  try {
+    const script = join(repoRoot, "scripts", "threejs-game-skills-ab04.mjs");
+    const run = spawnSync(process.execPath, [script, "verify-contract"], {
+      cwd,
+      encoding: "utf8",
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    assert.equal(run.status, 0, run.stderr);
+    assert.equal(JSON.parse(run.stdout).status, "PASS");
+    assert.deepEqual(existsSync(join(cwd, ".external-sources.local.json")), false);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("external verification command fails explicitly without physical configuration", () => {
+  const script = join(repoRoot, "scripts", "threejs-game-skills-ab04.mjs");
+  const run = spawnSync(process.execPath, [script, "verify-external"], {
+    encoding: "utf8",
+    windowsHide: true,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  assert.equal(run.status, 1);
+  const failure = JSON.parse(run.stderr);
+  assert.equal(failure.status, "FAIL");
+  assert.equal(failure.code, "EXTERNAL_CONFIG_REQUIRED");
+});
+
+test("published browser package excludes AB-04 tests, fixture and external corpus", () => {
+  const packageJson = readJson(join(repoRoot, "packages", "browser-dev-mcp", "package.json"));
+  assert.equal(packageJson.files.includes("tests"), false);
+  assert.equal(packageJson.files.some((entry) => entry.startsWith("tests/")), false);
+  assert.equal(packageJson.files.some((entry) => entry.includes("threejs-game-skills")), false);
+  assert.equal(packageJson.files.some((entry) => isAbsolute(entry)), false);
 });
