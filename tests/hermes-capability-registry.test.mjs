@@ -7,13 +7,14 @@ const registry = JSON.parse(readFileSync(new URL("../capabilities/hermes-capabil
 const gmAdapter = JSON.parse(readFileSync(new URL("../capabilities/gm-ide-adapter-v1.json", import.meta.url), "utf8"));
 const gmMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-dev-mcp-v1.json", import.meta.url), "utf8"));
 const gmWriteMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-write-mcp-v1.json", import.meta.url), "utf8"));
+const gmBuildMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-compile-mcp-v1.json", import.meta.url), "utf8"));
 const assetBridge = JSON.parse(readFileSync(new URL("../capabilities/asset-gm-bridge-v1.json", import.meta.url), "utf8"));
 const kit = JSON.parse(readFileSync(new URL("../capabilities/topdown-shooter-kit-v1.json", import.meta.url), "utf8"));
 const external = JSON.parse(readFileSync(new URL("../capabilities/external-candidate-status.json", import.meta.url), "utf8"));
 
 test("capability registry has the exact governed capability set", () => {
-  assert.equal(registry.capabilities.length, 17);
-  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 17);
+  assert.equal(registry.capabilities.length, 18);
+  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 18);
   for (const capability of registry.capabilities) {
     assert.ok(registry.allowedStatuses.includes(capability.status));
     for (const field of ["source", "sourcePin", "license", "evidencePath", "authority", "integrationMode", "runtimeStatus", "securityStatus", "nextPermittedAction"]) assert.equal(typeof capability[field], "string");
@@ -70,6 +71,35 @@ test("GameMaker write MCP is registered as a separate, process-free write tier",
   assert.ok(entry, "GAMEMAKER_MCP_WRITE_V1 must be registered in the manifest");
   assert.equal(entry.integrationMode, "STDIO_MCP_SERVER");
   for (const prohibited of ["compile", "run", "Igor or Runner execution", "toolchain through tool arguments"]) {
+    assert.ok(entry.prohibitedActions.includes(prohibited), `${prohibited} must remain prohibited`);
+  }
+});
+
+test("GameMaker build MCP is a separate, opt-in, process-owning tier", () => {
+  assert.equal(gmBuildMcp.package, "@tanguito/gamemaker-compile-mcp");
+  // Three tiers, three packages: enabling one must never enable another.
+  assert.equal(new Set([gmMcp.package, gmWriteMcp.package, gmBuildMcp.package]).size, 3);
+  assert.deepEqual(gmBuildMcp.publicTools, ["gamemaker_toolchain_status", "gamemaker_verify_build"]);
+  assert.deepEqual(gmBuildMcp.internalCapabilities, ["GM_VERIFY_V1"]);
+  assert.equal(gmBuildMcp.platform, "WINDOWS_ONLY");
+  assert.equal(gmBuildMcp.toolchainSource, "ENVIRONMENT_ONLY");
+  assert.equal(gmBuildMcp.projectMutation, false);
+  assert.equal(gmBuildMcp.writeTools, 0);
+  assert.equal(gmBuildMcp.compilerExecution, true);
+  // Igor is invoked with its Run verb, so a build also launches the game.
+  assert.equal(gmBuildMcp.runtimeExecution, true);
+  assert.equal(gmBuildMcp.resources, 0);
+  assert.equal(gmBuildMcp.prompts, 0);
+  assert.equal(gmBuildMcp.networkAccess, false);
+  assert.ok(gmBuildMcp.configuration.includes("DEVLAB_GM_ALLOW_IGOR"));
+  assert.doesNotThrow(() => readFileSync(new URL("../" + gmBuildMcp.inputSchema, import.meta.url), "utf8"));
+  // Only the build tier may execute a compiler or a runtime.
+  assert.equal(gmWriteMcp.compilerExecution, false);
+  assert.equal(gmWriteMcp.runtimeExecution, false);
+  const entry = registry.capabilities.find(({ id }) => id === "GAMEMAKER_MCP_BUILD_V1");
+  assert.ok(entry, "GAMEMAKER_MCP_BUILD_V1 must be registered in the manifest");
+  assert.equal(entry.integrationMode, "STDIO_MCP_SERVER");
+  for (const prohibited of ["project mutation", "toolchain through tool arguments", "terminating a foreign process"]) {
     assert.ok(entry.prohibitedActions.includes(prohibited), `${prohibited} must remain prohibited`);
   }
 });

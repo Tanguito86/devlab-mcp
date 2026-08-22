@@ -76,3 +76,8 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 # README by SHA-256, so its bytes must materialize identically on every checkout.
 /packages/gamemaker-write-mcp/** text eol=lf
 /capabilities/gamemaker-write-mcp-v1.json text eol=lf
+
+# GM-MCP-COMPILE-01 local stdio build tier. The manifest binds this package's
+# README by SHA-256, so its bytes must materialize identically on every checkout.
+/packages/gamemaker-compile-mcp/** text eol=lf
+/capabilities/gamemaker-compile-mcp-v1.json text eol=lf

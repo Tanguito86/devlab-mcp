@@ -69,7 +69,7 @@ jobs:
       # gamemaker-dev-mcp compiles against gm-ide-adapter's emitted types, so the
       # adapter must be in the filtered set or tsc cannot resolve the module.
       - name: Build doctor targets
-        run: pnpm --filter @tanguito/devlab-shared --filter @tanguito/browser-dev-mcp --filter @tanguito/devlab-gm-ide-adapter --filter @tanguito/gamemaker-dev-mcp --filter @tanguito/gamemaker-write-mcp build
+        run: pnpm --filter @tanguito/devlab-shared --filter @tanguito/browser-dev-mcp --filter @tanguito/devlab-gm-ide-adapter --filter @tanguito/gamemaker-dev-mcp --filter @tanguito/gamemaker-write-mcp --filter @tanguito/gamemaker-compile-mcp build
 
       - name: Doctor (browser)
         run: pnpm --filter @tanguito/browser-dev-mcp run doctor
@@ -79,3 +79,8 @@ jobs:
 
       - name: Doctor (gamemaker write)
         run: pnpm --filter @tanguito/gamemaker-write-mcp run doctor
+
+      # Never starts Igor; CI has no GameMaker and the doctor reports that as a
+      # warning rather than a failure.
+      - name: Doctor (gamemaker build)
+        run: pnpm --filter @tanguito/gamemaker-compile-mcp run doctor
