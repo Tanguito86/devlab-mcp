@@ -95,6 +95,8 @@ test("MCP E2E: stdio handshake and every tool leaves the project untouched", { t
       "gamemaker_plan",
       "gamemaker_plan_new_script",
       "gamemaker_plan_new_object",
+      "gamemaker_plan_new_room",
+      "gamemaker_plan_place_instance",
     ]);
 
     const status = await client.callTool({

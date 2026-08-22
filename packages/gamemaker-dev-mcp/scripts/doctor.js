@@ -19,7 +19,9 @@ const EXPECTED_TOOLS = [
   "gamemaker_inspect",
   "gamemaker_plan",
   "gamemaker_plan_new_object",
+  "gamemaker_plan_new_room",
   "gamemaker_plan_new_script",
+  "gamemaker_plan_place_instance",
   "gamemaker_status",
 ];
 

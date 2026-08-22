@@ -6,6 +6,8 @@ export const TOOL_NAMES = Object.freeze([
   "gamemaker_plan",
   "gamemaker_plan_new_script",
   "gamemaker_plan_new_object",
+  "gamemaker_plan_new_room",
+  "gamemaker_plan_place_instance",
 ] as const);
 
 export const READ_ONLY_ANNOTATIONS = Object.freeze({
@@ -100,6 +102,30 @@ export const newObjectInputSchema = z.object({
   persistent: z.boolean().optional(),
   visible: z.boolean().optional(),
   solid: z.boolean().optional(),
+}).strict();
+
+const roomInstanceSchema = z.object({
+  objectName: z.string().min(1).max(64).describe("Existing object resource to place"),
+  x: z.number().finite(),
+  y: z.number().finite(),
+  instanceName: z.string().min(1).max(64).optional().describe("Derived deterministically when omitted"),
+}).strict();
+
+export const newRoomInputSchema = z.object({
+  projectPath: projectPathSchema,
+  expectedProjectFingerprint: digestSchema.describe("Exact fingerprint returned by gamemaker_inspect"),
+  name: z.string().min(1).max(64).describe("GML identifier, e.g. rm_level1"),
+  instances: z.array(roomInstanceSchema).max(256).optional(),
+  width: z.number().int().positive().max(16384).optional(),
+  height: z.number().int().positive().max(16384).optional(),
+  persistent: z.boolean().optional(),
+}).strict();
+
+export const placeInstanceInputSchema = z.object({
+  projectPath: projectPathSchema,
+  expectedProjectFingerprint: digestSchema.describe("Exact fingerprint returned by gamemaker_inspect"),
+  roomName: z.string().min(1).max(64).describe("Existing room to place into"),
+  instances: z.array(roomInstanceSchema).min(1).max(256),
 }).strict();
 
 const errorBodySchema = z.object({
@@ -207,7 +233,7 @@ export const authoredPlanSuccessSchema = z.object({
   capability: z.literal("GM_PLAN_V1"),
   serverGate: z.literal("PLAN_ONLY"),
   immutable: z.literal(true),
-  resourceKind: z.enum(["script", "object"]),
+  resourceKind: z.enum(["script", "object", "room", "instance"]),
   resourceName: z.string().min(1),
   resourcePath: relativePathSchema,
   projectPath: relativePathSchema,
@@ -244,6 +270,8 @@ export type InspectInput = z.infer<typeof inspectInputSchema>;
 export type PlanInput = z.infer<typeof planInputSchema>;
 export type NewScriptInput = z.infer<typeof newScriptInputSchema>;
 export type NewObjectInput = z.infer<typeof newObjectInputSchema>;
+export type NewRoomInput = z.infer<typeof newRoomInputSchema>;
+export type PlaceInstanceInput = z.infer<typeof placeInstanceInputSchema>;
 export type StatusOutput = z.infer<typeof statusOutputSchema>;
 export type InspectOutput = z.infer<typeof inspectOutputSchema>;
 export type PlanOutput = z.infer<typeof planOutputSchema>;

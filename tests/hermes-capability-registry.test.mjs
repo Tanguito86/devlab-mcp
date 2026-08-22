@@ -32,11 +32,12 @@ test("GameMaker MCP registry exposes only the local read-only stdio slice", () =
   assert.deepEqual(gmMcp.publicTools, [
     "gamemaker_status", "gamemaker_inspect", "gamemaker_plan",
     "gamemaker_plan_new_script", "gamemaker_plan_new_object",
+    "gamemaker_plan_new_room", "gamemaker_plan_place_instance",
   ]);
   // Authoring is plan-only: creating resources still writes nothing here, and
   // the emitted plan is what makes the read and write tiers composable.
-  assert.deepEqual(gmMcp.authoring, ["script", "object"]);
-  assert.deepEqual(gmMcp.authoringNotCovered, ["room", "room instance placement"]);
+  assert.deepEqual(gmMcp.authoring, ["script", "object", "room", "instance"]);
+  assert.deepEqual(gmMcp.authoringNotCovered, ["tile layers", "asset layers", "room inheritance", "room creation code"]);
   assert.equal(gmMcp.emitsApplicablePlan, true);
   assert.deepEqual(gmMcp.internalCapabilities, ["GM_STATUS_V1", "GM_INSPECT_V1", "GM_PLAN_V1"]);
   assert.equal(gmMcp.mode, "READ_ONLY_AND_PLAN_ONLY");

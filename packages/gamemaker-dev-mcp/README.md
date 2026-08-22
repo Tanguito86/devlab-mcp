@@ -15,8 +15,13 @@ Local stdio MCP server that exposes the governed read-only and plan-only slice o
 - `gamemaker_plan_new_object` plans a **new** object with its event code.
   Supported events: `create`, `destroy`, `alarm`, `step`, `draw`, `other`,
   `cleanup`; anything else is refused rather than guessed.
+- `gamemaker_plan_new_room` plans a **new** room, optionally pre-populated with
+  object instances, and registers it in the project's room order.
+- `gamemaker_plan_place_instance` plans adding instances to a room that already
+  exists. The room is patched as text, never re-rendered, so layers and
+  settings this server does not model survive untouched.
 
-The server registers exactly these five tools.
+The server registers exactly these seven tools.
 
 ## Plans compose with the write tier
 

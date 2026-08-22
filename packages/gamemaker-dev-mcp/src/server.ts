@@ -5,7 +5,9 @@ import {
   inspectInputSchema,
   inspectWireOutputSchema,
   newObjectInputSchema,
+  newRoomInputSchema,
   newScriptInputSchema,
+  placeInstanceInputSchema,
   planInputSchema,
   planWireOutputSchema,
   READ_ONLY_ANNOTATIONS,
@@ -117,6 +119,44 @@ export function createGameMakerMcpServer(
     async (input, extra) => {
       try {
         return response(await service.planNewObject(input, extra.requestId, extra.signal));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "gamemaker_plan_new_room",
+    {
+      title: "Plan a new GameMaker room",
+      description:
+        "Return an immutable plan that creates a room with an instance layer and a background layer, optionally pre-populated with object instances, and registers it in the project's resources and room order. Writes nothing; hand the returned plan to gamemaker_apply of the write-tier server.",
+      inputSchema: newRoomInputSchema,
+      outputSchema: authoredPlanWireOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.planNewRoom(input, extra.requestId, extra.signal));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "gamemaker_plan_place_instance",
+    {
+      title: "Plan placing object instances into an existing room",
+      description:
+        "Return an immutable plan that adds instances to a room that already exists. The room is patched as text, never re-rendered, so layers and settings this server does not model survive untouched. Writes nothing; hand the returned plan to gamemaker_apply of the write-tier server.",
+      inputSchema: placeInstanceInputSchema,
+      outputSchema: authoredPlanWireOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.planPlaceInstance(input, extra.requestId, extra.signal));
       } catch (error) {
         return response(mapToolError(error, extra.requestId));
       }

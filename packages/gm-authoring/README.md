@@ -59,13 +59,31 @@ same text.
 measured, not assumed. It is patched only when the project already has one;
 conjuring the file would mean inventing a layout no IDE wrote.
 
+## Rooms
+
+`authorRoom` creates a room with one instance layer above one background layer,
+optionally pre-populated, and registers it in both the project's `resources`
+and its `RoomOrderNodes` — a room missing from the room order leaves the game
+with nothing to launch.
+
+`authorPlaceInstance` adds instances to a room that **already exists**. The room
+is patched as text, never re-rendered: re-rendering would silently discard any
+layer, effect or setting this package does not model. A room with more than one
+instance layer is refused rather than guessed at, since there would be no way
+to know which layer the caller meant.
+
+Instance identity is derived (`inst_<object>`, then `_2`, `_3`) rather than
+random, because the whole plan-hash model depends on two identical plans being
+byte-identical. GameMaker's own `inst_<hex>` naming would break that.
+
+Verified at runtime, not just compiled: a placed instance reports its exact
+coordinates via `instance_find`, and a generated room reports the right
+`instance_number` once the game enters it.
+
 ## Not covered
 
-Rooms, and placing an instance into a room. Room records carry layers, views
-and instance lists — a much larger surface than an object or a script, and one
-worth its own verified pass rather than a rushed appendix to this one. Until
-then, an authored object has to be instantiated from GML
-(`instance_create_depth`).
+Tile layers, sprite and asset layers, room inheritance, views beyond the single
+default, and creation code. A room authored here is a plain instance surface.
 
 ## A note on duplication
 
