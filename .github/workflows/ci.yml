@@ -40,6 +40,10 @@ jobs:
       - name: Test
         run: pnpm -r test
 
+      # Root-level suite: not a workspace package, so `pnpm -r test` skips it.
+      - name: Capability registry contract
+        run: pnpm run contract:capabilities:verify
+
       - name: Pack dry-run
         run: pnpm -r pack:dry-run
 
@@ -65,10 +69,13 @@ jobs:
       # gamemaker-dev-mcp compiles against gm-ide-adapter's emitted types, so the
       # adapter must be in the filtered set or tsc cannot resolve the module.
       - name: Build doctor targets
-        run: pnpm --filter @tanguito/devlab-shared --filter @tanguito/browser-dev-mcp --filter @tanguito/devlab-gm-ide-adapter --filter @tanguito/gamemaker-dev-mcp build
+        run: pnpm --filter @tanguito/devlab-shared --filter @tanguito/browser-dev-mcp --filter @tanguito/devlab-gm-ide-adapter --filter @tanguito/gamemaker-dev-mcp --filter @tanguito/gamemaker-write-mcp build
 
       - name: Doctor (browser)
         run: pnpm --filter @tanguito/browser-dev-mcp run doctor
 
-      - name: Doctor (gamemaker)
+      - name: Doctor (gamemaker read)
         run: pnpm --filter @tanguito/gamemaker-dev-mcp run doctor
+
+      - name: Doctor (gamemaker write)
+        run: pnpm --filter @tanguito/gamemaker-write-mcp run doctor
