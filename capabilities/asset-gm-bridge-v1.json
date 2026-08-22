@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "asset-gm-bridge",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publicCapabilities": ["ASSET_GM_BRIDGE_V1"],
+  "spriteSpec": "GENERIC_SPRITE_SPEC_V1",
+  "instrumentationModes": ["NONE", "PILOT_BEACON_V1"],
+  "defaultInstrumentation": "NONE",
   "publicHermesTools": 0,
   "inputSchema": "packages/asset-gm-bridge/schemas/asset-gm-bridge-v1.schema.json",
   "actionGate": ["READ_ONLY", "PLAN_ONLY", "SAFE_WRITE", "COMPILE", "RUN"],

@@ -340,6 +340,12 @@ export function assetVersionToNumber(assetVersion: string): number {
   return parsed;
 }
 
-export function runtimeSignalFor(manifest: AssetGmBridgeManifest): string {
+/**
+ * The runtime marker only exists when the import actually wrote the pilot
+ * instrumentation. An uninstrumented import emits no marker, so claiming one
+ * would make RUNTIME_VALID unsatisfiable-by-design rather than simply absent.
+ */
+export function runtimeSignalFor(manifest: AssetGmBridgeManifest): string | null {
+  if (manifest.instrumentation !== "PILOT_BEACON_V1") return null;
   return `GM_ASSET_BRIDGE_BEACON_VERSION=${assetVersionToNumber(manifest.assetVersion)}`;
 }

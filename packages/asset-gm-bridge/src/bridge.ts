@@ -9,7 +9,8 @@ import {
   type AssetCatalog, AssetForgeError, validateAssetCatalog, scanCatalogProvenance, parsePng,
 } from "@tanguito/devlab-img2threejs-asset-forge";
 import {
-  ASSET_GM_BRIDGE_CAPABILITY, ASSET_GM_BRIDGE_CAPABILITY_CONTRACT, ASSET_GM_BRIDGE_VERSION,
+  ASSET_GM_BRIDGE_CAPABILITY, ASSET_GM_BRIDGE_CAPABILITY_CONTRACT, ASSET_GM_BRIDGE_INSTRUMENTATION,
+  ASSET_GM_BRIDGE_VERSION, PILOT_INSTRUMENTED_PATHS,
   type AssetGmBridgeApplyRequest, type AssetGmBridgeApplyResult, type AssetGmBridgeAssetInspection,
   type AssetGmBridgeInspectAssetRequest, type AssetGmBridgeInspectTargetRequest,
   type AssetGmBridgeManifest, type AssetGmBridgePlanRequest, type AssetGmBridgePlanResult,
@@ -19,7 +20,8 @@ import {
 import { AssetGmBridgeError, fail, mapAdapterError, type AssetGmBridgeErrorCode } from "./errors.js";
 import { canonicalBytes, sha256 } from "./canonical.js";
 import { assertBudgetPasses, evaluateSpriteBudget } from "./budget.js";
-import { type BeaconFactory, BRIDGE_TEST_BEACON_FACTORY, BRIDGE_TEST_BEACON_RESOURCE_NAME, validateBridgeTestBeaconSpec } from "./beacon.js";
+import { type BeaconFactory, BRIDGE_TEST_BEACON_FACTORY } from "./beacon.js";
+import { canonicalResourceName, validateSpriteSpec } from "./sprite-spec.js";
 import { assertNoPathCollisions, assertResourceNameAvailable, normalizePathIdentity } from "./paths.js";
 import { computePlanBinding, manifestHash as computeManifestHash } from "./binding.js";
 import {
@@ -261,7 +263,8 @@ export class GovernedAssetGmBridge {
     const loaded = await this.readAssetFiles(entry);
     const provenanceScan = scanCatalogProvenance(catalog).find(({ assetId, version }) => assetId === entry.assetId && version === entry.version);
     if (!provenanceScan || provenanceScan.errors.length) fail("INVALID_ASSET_MANIFEST", `catalog provenance errors: ${(provenanceScan?.errors ?? ["missing"]).join(", ")}`);
-    const spec = validateBridgeTestBeaconSpec(JSON.parse(loaded.specBytes.toString("utf8")));
+    const spec = validateSpriteSpec(JSON.parse(loaded.specBytes.toString("utf8")));
+    if (spec.assetId !== entry.assetId) fail("INVALID_ASSET_MANIFEST", "spec assetId does not match the catalog entry");
     if (spec.frameCount !== loaded.frames.length) fail("INVALID_ASSET_MANIFEST", "spec frame count does not match exported frames");
     if (loaded.frames.some((frame) => frame.width !== spec.width || frame.height !== spec.height || frame.channels !== 4)) fail("INVALID_ASSET_MANIFEST", "spec dimensions or channel count do not match exported frames");
     if (spec.version !== entry.version) fail("INVALID_ASSET_MANIFEST", "spec version does not match the catalog entry");
@@ -273,11 +276,21 @@ export class GovernedAssetGmBridge {
     // the bridge naming policy. There is no bypass flag; the gate is the only
     // way a name reaches apply.
     try { safeRelativePath(request.resourceName, "resourceName"); } catch { fail("PATH_NOT_ALLOWED", "resourceName is outside the path safety policy"); }
-    if (normalizePathIdentity(request.resourceName) === normalizePathIdentity(BRIDGE_TEST_BEACON_RESOURCE_NAME) && request.resourceName !== BRIDGE_TEST_BEACON_RESOURCE_NAME) fail("CASE_COLLISION", "resourceName is a case/Unicode-variant of the canonical sprite name");
-    if (request.resourceName !== BRIDGE_TEST_BEACON_RESOURCE_NAME && request.resourceName !== spec.assetId && !request.resourceName.startsWith("spr_")) fail("INVALID_REQUEST", "resourceName is outside the bridge naming policy");
+    // The canonical name is derived from the spec's own assetId, so this rule
+    // is identical for the pilot beacon and for any real catalog sprite.
+    const canonicalName = canonicalResourceName(spec.assetId);
+    if (normalizePathIdentity(request.resourceName) === normalizePathIdentity(canonicalName) && request.resourceName !== canonicalName) fail("CASE_COLLISION", "resourceName is a case/Unicode-variant of the canonical sprite name");
+    if (request.resourceName !== canonicalName && request.resourceName !== spec.assetId && !request.resourceName.startsWith("spr_")) fail("INVALID_REQUEST", "resourceName is outside the bridge naming policy");
 
+    const instrumentation = request.instrumentation ?? "NONE";
+    if (!ASSET_GM_BRIDGE_INSTRUMENTATION.includes(instrumentation)) fail("INVALID_REQUEST", "unknown instrumentation mode");
+    if (instrumentation === "PILOT_BEACON_V1") {
+      // Instrumentation rewrites object code. Refuse unless every target file
+      // already exists, so it can never conjure an object into a real project.
+      const absent = PILOT_INSTRUMENTED_PATHS.filter((path) => !target.existingFiles.includes(path));
+      if (absent.length) fail("PATH_NOT_ALLOWED", `PILOT_BEACON_V1 requires the pilot object; missing: ${absent.join(", ")}`);
+    }
     const versionNumber = assetVersionToNumber(request.assetVersion);
-    const gml = renderImportedGml(versionNumber, true, `runtime-v${versionNumber}.png`, request.resourceName);
     const spriteContext: SpriteRenderContext = {
       projectName: target.projectName,
       projectFile: target.snapshot.projectFile,
@@ -294,12 +307,17 @@ export class GovernedAssetGmBridge {
     const spriteYyPath = `sprites/${request.resourceName}/${request.resourceName}.yy`;
     const spriteFileExists = (path: string): boolean => target.existingFiles.includes(path);
 
+    const gml = instrumentation === "PILOT_BEACON_V1"
+      ? renderImportedGml(versionNumber, true, `runtime-v${versionNumber}.png`, request.resourceName)
+      : null;
     const plannedEdits: ReadonlyArray<Readonly<{ path: string; action: "modify" | "create"; content?: string; contentBase64?: string }>> = [
       { path: `${target.projectName}.resource_order`, action: target.resourceOrderText ? "modify" : "create", content: patched.resourceOrder },
       { path: target.snapshot.projectFile, action: "modify", content: patched.yyp },
-      { path: "objects/obj_asset_bridge_pilot/Create_0.gml", action: "modify", content: gml.create },
-      { path: "objects/obj_asset_bridge_pilot/Draw_0.gml", action: "modify", content: gml.draw },
-      { path: "objects/obj_asset_bridge_pilot/Step_0.gml", action: "modify", content: gml.step },
+      ...(gml ? [
+        { path: PILOT_INSTRUMENTED_PATHS[0], action: "modify" as const, content: gml.create },
+        { path: PILOT_INSTRUMENTED_PATHS[1], action: "modify" as const, content: gml.draw },
+        { path: PILOT_INSTRUMENTED_PATHS[2], action: "modify" as const, content: gml.step },
+      ] : []),
       { path: spriteYyPath, action: spriteFileExists(spriteYyPath) ? "modify" : "create", content: spriteYy },
       ...loaded.frames.flatMap((frame, index) => {
         const layerPath = spriteImagePath(request.resourceName, index);
@@ -373,6 +391,7 @@ export class GovernedAssetGmBridge {
       plannedPaths: Object.freeze([...plannedPaths].sort()),
       resourceName: request.resourceName,
       resourceType: "sprite",
+      instrumentation,
       dimensions: Object.freeze({ width: spec.width, height: spec.height }),
       frameCount: spec.frameCount,
       origin: Object.freeze({ x: spec.origin.x, y: spec.origin.y }),
@@ -505,7 +524,7 @@ export class GovernedAssetGmBridge {
     const { manifest, record } = await this.loadBindingChain(request.evidenceRoot, request.transactionId, request.bindingHash, "verify");
     if (request.planHash !== adapterPlanHash(request.plan)) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the provided plan");
     if (request.planHash !== record.adapterPlanHash) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the binding record");
-    const signal = runtimeSignalFor(manifest);
+    const signal = runtimeSignalFor(manifest) ?? undefined;
     let result: GmVerificationResult;
     try {
       result = await this.adapter.verify({

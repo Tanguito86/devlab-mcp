@@ -1,9 +1,9 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { GovernedAssetGmBridge } from "../dist/index.js";
-import { baseRequest, expectBridgeError, makeWorkspace } from "./helpers.js";
+import { baseRequest, expectBridgeError, makeWorkspace, PILOT_INSTRUMENTED } from "./helpers.js";
 
 const apply = (bridge, request, plan) => bridge.applyImport({ ...request, plan: plan.plan, planHash: plan.planHash, bindingHash: plan.bindingHash, confirm: true, dryRun: false });
 // Fault injection belongs to the adapter's test-only request lane. It is
@@ -29,7 +29,7 @@ async function setup() {
   const workspace = makeWorkspace({});
   const bridge = new GovernedAssetGmBridge(workspace.projectsDir, { catalogPath: workspace.catalogPath, repoRoot: workspace.root });
   const target = await bridge.inspectTarget(baseRequest(workspace));
-  const request = { ...baseRequest(workspace), expectedProjectFingerprint: target.fingerprint };
+  const request = { ...baseRequest(workspace), ...PILOT_INSTRUMENTED, expectedProjectFingerprint: target.fingerprint };
   const plan = await bridge.planImport(request);
   return { bridge, request, plan, baseline: target.fingerprint };
 }

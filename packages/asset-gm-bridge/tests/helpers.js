@@ -90,6 +90,13 @@ export function makeWorkspace({ status = "APPROVED", version = "1.0.0", spec = S
   });
 }
 
+/**
+ * Requests that exercise the pilot beacon flow (the one the real Igor pilot
+ * script drives) must opt into instrumentation explicitly. A plain import --
+ * the default -- touches only the sprite, the .yyp and the .resource_order.
+ */
+export const PILOT_INSTRUMENTED = Object.freeze({ instrumentation: "PILOT_BEACON_V1" });
+
 export const baseRequest = (workspace, overrides = {}) => Object.freeze({
   capability: "ASSET_GM_BRIDGE_V1",
   projectRoot: workspace.projectRoot,

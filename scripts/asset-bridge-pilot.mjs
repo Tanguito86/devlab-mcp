@@ -117,7 +117,11 @@ async function main() {
   cases.push(caseResult("initial", { fingerprint: baselineFingerprint, status: statusInitial.state, verify: initialVerify.levels, ownedPids: initialVerify.ownedPids, screenshot: "before.png" }));
 
   // ── v1: plan -> apply -> verify (real compile + runtime, marker version=1) ─
-  const requestBase = { capability: "ASSET_GM_BRIDGE_V1", projectRoot: "pilot-a", evidenceRoot, assetId: "bridge-test-beacon", resourceName: "spr_bridge_test_beacon", expectedHead: null, timeoutMs: 180_000, verificationPolicy };
+  // PILOT_BEACON_V1 is required here: the runtime gate below asserts the GML
+  // version marker and the screen_save evidence, which only an instrumented
+  // import writes. A plain import (the default since bridge 1.1.0) touches no
+  // object code and therefore emits no runtime marker.
+  const requestBase = { capability: "ASSET_GM_BRIDGE_V1", projectRoot: "pilot-a", evidenceRoot, assetId: "bridge-test-beacon", resourceName: "spr_bridge_test_beacon", expectedHead: null, timeoutMs: 180_000, verificationPolicy, instrumentation: "PILOT_BEACON_V1" };
   const planV1 = await bridge.planImport({ ...requestBase, transactionId: "bridge-v1", assetVersion: "1.0.0", expectedProjectFingerprint: snapshot0.fingerprint });
   const applyV1 = await bridge.applyImport({ ...requestBase, transactionId: "bridge-v1", assetVersion: "1.0.0", plan: planV1.plan, planHash: planV1.planHash, bindingHash: planV1.bindingHash, confirm: true, dryRun: false, expectedProjectFingerprint: planV1.plan.projectFingerprint });
   if (applyV1.state !== "APPLIED") throw new Error(`v1 apply expected APPLIED, got ${applyV1.state}`);
