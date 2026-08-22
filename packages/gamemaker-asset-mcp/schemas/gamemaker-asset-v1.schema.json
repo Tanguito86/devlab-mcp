@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tanguito.local/devlab/gamemaker-asset-v1.schema.json",
+  "title": "DevLab GameMaker asset-import MCP server v1",
+  "type": "object",
+  "$defs": {
+    "tool": {
+      "enum": ["asset_status", "asset_inspect", "asset_plan_import", "asset_apply_import", "asset_rollback_import"]
+    },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "transactionId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 1024 },
+    "assetIdentity": {
+      "type": "object",
+      "required": ["assetId", "assetVersion"],
+      "properties": {
+        "assetId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "assetVersion": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
+    "inspectRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assetId", "assetVersion"],
+      "properties": {
+        "assetId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "assetVersion": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
+    "statusRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "assetId", "assetVersion"],
+      "properties": {
+        "projectPath": { "$ref": "#/$defs/relativePath" },
+        "assetId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "assetVersion": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
+    "planImportRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "expectedProjectFingerprint", "assetId", "assetVersion", "resourceName", "transactionId"],
+      "properties": {
+        "projectPath": { "$ref": "#/$defs/relativePath" },
+        "expectedProjectFingerprint": { "$ref": "#/$defs/digest" },
+        "assetId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "assetVersion": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "resourceName": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "transactionId": { "$ref": "#/$defs/transactionId" }
+      }
+    },
+    "applyImportRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "expectedProjectFingerprint", "assetId", "assetVersion", "resourceName", "transactionId", "planHash", "bindingHash", "confirm"],
+      "properties": {
+        "projectPath": { "$ref": "#/$defs/relativePath" },
+        "expectedProjectFingerprint": { "$ref": "#/$defs/digest" },
+        "assetId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "assetVersion": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "resourceName": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "transactionId": { "$ref": "#/$defs/transactionId" },
+        "planHash": { "$ref": "#/$defs/digest" },
+        "bindingHash": { "$ref": "#/$defs/digest" },
+        "confirm": { "const": true },
+        "dryRun": { "type": "boolean" }
+      }
+    },
+    "rollbackImportRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "expectedProjectFingerprint", "assetId", "assetVersion", "resourceName", "transactionId", "planHash", "bindingHash", "confirm"],
+      "properties": {
+        "projectPath": { "$ref": "#/$defs/relativePath" },
+        "expectedProjectFingerprint": { "$ref": "#/$defs/digest" },
+        "assetId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "assetVersion": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "resourceName": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "transactionId": { "$ref": "#/$defs/transactionId" },
+        "planHash": { "$ref": "#/$defs/digest" },
+        "bindingHash": { "$ref": "#/$defs/digest" },
+        "confirm": { "const": true }
+      }
+    }
+  }
+}

@@ -86,3 +86,6 @@ jobs:
       # warning rather than a failure.
       - name: Doctor (gamemaker build)
         run: pnpm --filter @tanguito/gamemaker-compile-mcp run doctor
+
+      - name: Doctor (gamemaker asset)
+        run: pnpm --filter @tanguito/gamemaker-asset-mcp run doctor
