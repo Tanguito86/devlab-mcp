@@ -1,0 +1,35 @@
+{
+  "name": "@tanguito/devlab-aseprite-ingest",
+  "version": "0.1.0",
+  "description": "Deterministic ingest of Aseprite sources into the DevLab Asset Forge catalog as importable GameMaker sprites.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Tanguito86",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "bin": {
+    "devlab-aseprite-ingest": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test tests/*.test.js",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "pack:dry-run": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "@tanguito/devlab-asset-gm-bridge": "workspace:*",
+    "@tanguito/devlab-gm-ide-adapter": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -8,13 +8,14 @@ const gmAdapter = JSON.parse(readFileSync(new URL("../capabilities/gm-ide-adapte
 const gmMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-dev-mcp-v1.json", import.meta.url), "utf8"));
 const gmWriteMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-write-mcp-v1.json", import.meta.url), "utf8"));
 const gmBuildMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-compile-mcp-v1.json", import.meta.url), "utf8"));
+const asepriteIngest = JSON.parse(readFileSync(new URL("../capabilities/aseprite-ingest-v1.json", import.meta.url), "utf8"));
 const assetBridge = JSON.parse(readFileSync(new URL("../capabilities/asset-gm-bridge-v1.json", import.meta.url), "utf8"));
 const kit = JSON.parse(readFileSync(new URL("../capabilities/topdown-shooter-kit-v1.json", import.meta.url), "utf8"));
 const external = JSON.parse(readFileSync(new URL("../capabilities/external-candidate-status.json", import.meta.url), "utf8"));
 
 test("capability registry has the exact governed capability set", () => {
-  assert.equal(registry.capabilities.length, 18);
-  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 18);
+  assert.equal(registry.capabilities.length, 19);
+  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 19);
   for (const capability of registry.capabilities) {
     assert.ok(registry.allowedStatuses.includes(capability.status));
     for (const field of ["source", "sourcePin", "license", "evidencePath", "authority", "integrationMode", "runtimeStatus", "securityStatus", "nextPermittedAction"]) assert.equal(typeof capability[field], "string");
@@ -100,6 +101,26 @@ test("GameMaker build MCP is a separate, opt-in, process-owning tier", () => {
   assert.ok(entry, "GAMEMAKER_MCP_BUILD_V1 must be registered in the manifest");
   assert.equal(entry.integrationMode, "STDIO_MCP_SERVER");
   for (const prohibited of ["project mutation", "toolchain through tool arguments", "terminating a foreign process"]) {
+    assert.ok(entry.prohibitedActions.includes(prohibited), `${prohibited} must remain prohibited`);
+  }
+});
+
+test("Aseprite ingest is a library and CLI, not an MCP surface, and cannot self-approve", () => {
+  assert.equal(asepriteIngest.package, "@tanguito/devlab-aseprite-ingest");
+  assert.equal(asepriteIngest.mcpServer, false, "ingest must not become an MCP surface without a separate decision");
+  assert.deepEqual(asepriteIngest.publicTools, []);
+  assert.equal(asepriteIngest.surface, "LIBRARY_AND_CLI");
+  assert.equal(asepriteIngest.toolchainSource, "ENVIRONMENT_ONLY");
+  assert.equal(asepriteIngest.callerSuppliedFlags, false);
+  // The bridge imports only APPROVED assets; ingest may never emit that itself.
+  assert.equal(asepriteIngest.emittedLifecycleStatus, "DRAFT");
+  assert.equal(asepriteIngest.determinismGate, "EARNED_BY_DOUBLE_EXPORT");
+  assert.deepEqual(asepriteIngest.colourFormats, ["RGBA8888"]);
+  assert.equal(asepriteIngest.networkAccess, false);
+  const entry = registry.capabilities.find(({ id }) => id === "ASEPRITE_INGEST_V1");
+  assert.ok(entry, "ASEPRITE_INGEST_V1 must be registered in the manifest");
+  assert.equal(entry.integrationMode, "LIBRARY_AND_CLI");
+  for (const prohibited of ["Aseprite --script execution", "writing outside the caller repo root", "approving its own catalog entry"]) {
     assert.ok(entry.prohibitedActions.includes(prohibited), `${prohibited} must remain prohibited`);
   }
 });
