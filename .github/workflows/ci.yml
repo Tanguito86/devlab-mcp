@@ -62,8 +62,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared + browser
-        run: pnpm --filter @tanguito/devlab-shared --filter @tanguito/browser-dev-mcp build
+      - name: Build shared + browser + gamemaker
+        run: pnpm --filter @tanguito/devlab-shared --filter @tanguito/browser-dev-mcp --filter @tanguito/gamemaker-dev-mcp build
 
       - name: Doctor (browser)
-        run: pnpm --filter @tanguito/browser-dev-mcp run doctor || true
+        run: pnpm --filter @tanguito/browser-dev-mcp run doctor
+
+      - name: Doctor (gamemaker)
+        run: pnpm --filter @tanguito/gamemaker-dev-mcp run doctor
