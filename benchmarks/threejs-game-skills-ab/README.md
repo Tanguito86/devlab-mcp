@@ -18,12 +18,23 @@ stdlib-only materializer copies it to an authorized run root through a staging
 directory, writes reproducibility manifests and requires the two initial trees
 to be byte-identical.
 
-Run `corepack pnpm run benchmark:ab04:verify` before creating either leg. Do not
-copy values from chat text into a builder prompt; use the generated prompt and
-the contract at the verified commit.
+`corepack pnpm run benchmark:ab04:verify` is the mandatory hermetic preflight.
+It verifies the logical contract, derived artifacts, canonical guidance policy
+and internal scaffold without reading host-local configuration or an external
+checkout. Before a real benchmark execution, run the explicit external gate:
+
+```text
+corepack pnpm run benchmark:ab04:verify-external -- --checkout <absolute-detached-checkout> --run-root-base <absolute-existing-base>
+```
+
+The tracked contract identifies those resources only as `sourceId` and
+`runRootId`; their physical paths are runtime inputs and have no defaults. Do
+not copy values from chat text into a builder prompt; use the generated prompt
+and the contract at the verified commit.
 
 LEG_B guidance is broker-only. Each read requires `--path`, `--pair-id` and
-`--run-id`, and produces an HMAC-authenticated receipt in a coordinator ledger.
+`--run-id`, `--checkout` and `--run-root-base`, and produces an
+HMAC-authenticated receipt in a coordinator ledger.
 The future executor must keep the broker key and trusted ledger outside both
 builder contexts and enforce leg ACLs plus OS-level egress denial. Directory
 layout, browser routing and package-manager offline flags are not substitutes

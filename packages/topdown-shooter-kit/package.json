@@ -9,10 +9,14 @@
   "types": "dist/index.d.ts",
   "files": ["dist", "schemas", "examples", "fixtures", "README.md"],
   "scripts": {
-    "build": "..\\shared\\node_modules\\.bin\\tsc.cmd -p tsconfig.json",
-    "typecheck": "..\\shared\\node_modules\\.bin\\tsc.cmd -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test tests/*.test.js",
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^6.0.3"
   },
   "engines": { "node": ">=20" }
 }

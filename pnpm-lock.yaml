@@ -118,7 +118,14 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  packages/topdown-shooter-kit: {}
+  packages/topdown-shooter-kit:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.12.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/visual-regression-mcp:
     dependencies:
