@@ -78,14 +78,14 @@ are rejected.
 - **Bounded.** Every Aseprite invocation runs under a clamped timeout.
 - Scratch export directories are removed even when an ingest fails.
 
-## Known limitation, inherited
+## Origin
 
-The spec's `origin` is recorded in the bridge manifest but does **not** reach
-the generated sprite `.yy`: `asset-gm-bridge` hard-codes GameMaker origin index
-1 (top-centre). Choosing `--origin bottom-centre` today changes the recorded
-metadata, not the in-engine pivot. Fixing that means extending the `.yy`
-renderer, whose field shape was derived from the compiler's own serialisers, so
-it is tracked separately rather than guessed at here.
+`--origin` reaches the engine. Verified by importing a sprite through the
+bridge and asking the running game: a spec origin of (32, 64) produces
+`sprite_get_xoffset() == 32` and `sprite_get_yoffset() == 64`.
+
+This was broken until `asset-gm-bridge` 1.2.0, which hard-coded the origin and
+silently gave every imported sprite a pivot of (0, 0).
 
 ## Verification
 

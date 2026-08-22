@@ -15,7 +15,7 @@ export {
   type BridgeTestBeaconSpec,
 } from "./beacon.js";
 export {
-  renderGmJson, insertIntoGmArray, parseGmJson, renderSpriteYy, patchProjectTexts,
+  renderGmJson, insertIntoGmArray, parseGmJson, renderSpriteYy, originIndexFor, patchProjectTexts,
   renderImportedGml, spriteCompositeImagePath, spriteImagePath, assetVersionToNumber, runtimeSignalFor, yypResourceEntry, resourceOrderEntry,
   type SpriteRenderContext, type ImportedGml,
 } from "./gm-sprite.js";

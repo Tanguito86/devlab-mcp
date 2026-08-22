@@ -97,8 +97,29 @@ export interface SpriteRenderContext {
   readonly width: number;
   readonly height: number;
   readonly frameCount: number;
-  readonly originIndex: number;
+  /** Pivot in pixels. This, not the origin index, is what the engine uses. */
+  readonly origin: Readonly<{ x: number; y: number }>;
   readonly boundingBox: Readonly<{ left: number; top: number; right: number; bottom: number }>;
+}
+
+/**
+ * GameMaker's origin preset index.
+ *
+ * Measured, not assumed: a sprite compiled with `origin: 1` and a sequence
+ * pivot of (0,0) reports `sprite_get_xoffset() == 0`, while `origin: 0` with a
+ * sequence pivot of (8,24) reports 8. The engine reads the sequence pivot and
+ * ignores this index, which is IDE metadata. It is still emitted accurately so
+ * the IDE shows the right preset instead of always claiming "top centre".
+ */
+export function originIndexFor(
+  origin: Readonly<{ x: number; y: number }>,
+  width: number,
+  height: number,
+): number {
+  const column = origin.x === 0 ? 0 : origin.x === Math.floor(width / 2) ? 1 : origin.x === width ? 2 : -1;
+  const row = origin.y === 0 ? 0 : origin.y === Math.floor(height / 2) ? 1 : origin.y === height ? 2 : -1;
+  if (column < 0 || row < 0) return 9; // custom
+  return row * 3 + column;
 }
 
 /**
@@ -211,8 +232,9 @@ function spriteSequence(context: SpriteRenderContext): unknown {
     tracks: Object.freeze([]),
     visibleRange: Object.freeze({ x: 0.0, y: 0.0 }),
     volume: 1.0,
-    xorigin: 0,
-    yorigin: 0,
+    // The authoritative pivot. sprite_get_xoffset/yoffset read these.
+    xorigin: context.origin.x,
+    yorigin: context.origin.y,
   });
 }
 
@@ -255,7 +277,7 @@ export function renderSpriteYy(context: SpriteRenderContext): string {
     layers,
     name: context.resourceName,
     nineSlice: nineSliceData(),
-    origin: context.originIndex,
+    origin: originIndexFor(context.origin, context.width, context.height),
     parent: Object.freeze({ name: context.projectName, path: context.projectFile }),
     preMultiplyAlpha: false,
     resourceType: "GMSprite",

@@ -299,7 +299,7 @@ export class GovernedAssetGmBridge {
       width: spec.width,
       height: spec.height,
       frameCount: spec.frameCount,
-      originIndex: 1,
+      origin: spec.origin,
       boundingBox: loaded.boundingBox,
     };
     const spriteYy = renderSpriteYy(spriteContext);
