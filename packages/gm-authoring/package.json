@@ -1,0 +1,24 @@
+{
+  "name": "@tanguito/devlab-gm-authoring",
+  "version": "0.1.0",
+  "description": "Deterministic GameMaker resource authoring: compiler-verified object and script records, and minimal project-file splices.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Tanguito86",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test tests/*.test.js",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "pack:dry-run": "npm pack --dry-run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": { "node": ">=20" }
+}

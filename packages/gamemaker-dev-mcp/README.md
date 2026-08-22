@@ -10,9 +10,33 @@ Local stdio MCP server that exposes the governed read-only and plan-only slice o
 - `gamemaker_inspect` fixes `GM_INSPECT_V1` and returns the canonical project
   file/resource inventory and SHA-256 fingerprints.
 - `gamemaker_plan` fixes `GM_PLAN_V1`, requires the exact inspect fingerprint,
-  and returns a sanitized immutable plan summary and `planHash`.
+  and returns an immutable plan and `planHash` for an edit to existing files.
+- `gamemaker_plan_new_script` plans a **new** GML script resource.
+- `gamemaker_plan_new_object` plans a **new** object with its event code.
+  Supported events: `create`, `destroy`, `alarm`, `step`, `draw`, `other`,
+  `cleanup`; anything else is refused rather than guessed.
 
-The server registers exactly these three tools. It has no resources or prompts and
+The server registers exactly these five tools.
+
+## Plans compose with the write tier
+
+Every plan tool returns a `plan` field holding the complete immutable plan.
+Hand it straight to `gamemaker_apply` of `@tanguito/gamemaker-write-mcp`:
+
+```text
+gamemaker_inspect        -> fingerprint
+gamemaker_plan_new_object -> { plan, planHash }
+gamemaker_apply           <- { plan, planHash, confirm: true, dryRun: false }
+```
+
+This server still writes nothing. Emitting the plan grants no capability: the
+content is what the caller just supplied, and the write tier revalidates the
+snapshot hash, every file's before-digest, both allowlists and its own
+env-scoped write allowlist before touching a file.
+
+Earlier versions returned only a summary, which meant the two tiers could not
+actually be composed — a caller could see what a plan would do but had nothing
+it could apply. It has no resources or prompts and
 does not expose apply, verify, rollback, import, command execution, GameMaker/Igor
 launch, Runner control, Asset Forge, or Asset-GM Bridge operations. A returned
 plan cannot be submitted back to this server for execution.

@@ -59,7 +59,7 @@ async function processExists(pid) {
   }
 }
 
-test("MCP E2E: stdio handshake and all three tools are read-only on a disposable fixture", { timeout: 30_000 }, async () => {
+test("MCP E2E: stdio handshake and every tool leaves the project untouched", { timeout: 30_000 }, async () => {
   const root = await mkdtemp(join(tmpdir(), "gamemaker-mcp-e2e-"));
   const projectPath = "Demo";
   const projectRoot = join(root, projectPath);
@@ -93,6 +93,8 @@ test("MCP E2E: stdio handshake and all three tools are read-only on a disposable
       "gamemaker_status",
       "gamemaker_inspect",
       "gamemaker_plan",
+      "gamemaker_plan_new_script",
+      "gamemaker_plan_new_object",
     ]);
 
     const status = await client.callTool({

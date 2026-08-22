@@ -1,8 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import {
+  authoredPlanWireOutputSchema,
   inspectInputSchema,
   inspectWireOutputSchema,
+  newObjectInputSchema,
+  newScriptInputSchema,
   planInputSchema,
   planWireOutputSchema,
   READ_ONLY_ANNOTATIONS,
@@ -76,6 +79,44 @@ export function createGameMakerMcpServer(
     async (input, extra) => {
       try {
         return response(await service.plan(input, extra.requestId, extra.signal));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "gamemaker_plan_new_script",
+    {
+      title: "Plan a new GameMaker script",
+      description:
+        "Return an immutable plan that creates a new GML script resource and registers it in the project. Writes nothing; hand the returned plan to gamemaker_apply of the write-tier server.",
+      inputSchema: newScriptInputSchema,
+      outputSchema: authoredPlanWireOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.planNewScript(input, extra.requestId, extra.signal));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "gamemaker_plan_new_object",
+    {
+      title: "Plan a new GameMaker object",
+      description:
+        "Return an immutable plan that creates a new object with its event code and registers it in the project. Supported events: create, destroy, alarm, step, draw, other, cleanup. Writes nothing; hand the returned plan to gamemaker_apply of the write-tier server.",
+      inputSchema: newObjectInputSchema,
+      outputSchema: authoredPlanWireOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.planNewObject(input, extra.requestId, extra.signal));
       } catch (error) {
         return response(mapToolError(error, extra.requestId));
       }
