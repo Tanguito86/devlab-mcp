@@ -42,10 +42,24 @@ export const verifyBuildInputSchema = z.object({
   ),
 }).strict();
 
+export const diagnosticSchema = z.object({
+  severity: z.enum(["error", "warning"]),
+  symbol: z.string().min(1),
+  object: z.string().min(1).optional(),
+  event: z.string().min(1).optional(),
+  script: z.string().min(1).optional(),
+  line: z.number().int().nonnegative(),
+  message: z.string().min(1),
+}).strict();
+
 const errorBodySchema = z.object({
   code: z.string().min(1),
   message: z.string().min(1),
   recoverable: z.boolean(),
+  // Present when the compiler produced diagnostics before the failure, so a
+  // timed-out or aborted build still tells the caller what was wrong.
+  diagnostics: z.array(diagnosticSchema).optional(),
+  diagnosticsTruncated: z.boolean().optional(),
 }).strict();
 
 const errorSchema = z.object({
@@ -100,6 +114,10 @@ export const verifyBuildSuccessSchema = z.object({
   rollbackRequired: z.boolean(),
   evidencePath: z.string().min(1),
   transactionId: z.string().min(1),
+  diagnostics: z.array(diagnosticSchema),
+  errorCount: z.number().int().nonnegative(),
+  warningCount: z.number().int().nonnegative(),
+  diagnosticsTruncated: z.boolean(),
 }).strict();
 
 export const toolchainStatusOutputSchema = z.discriminatedUnion("ok", [toolchainStatusSuccessSchema, errorSchema]);

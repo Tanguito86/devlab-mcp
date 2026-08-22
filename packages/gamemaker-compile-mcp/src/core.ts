@@ -1,5 +1,5 @@
 import { basename, isAbsolute } from "node:path";
-import { stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 
 import {
   GmAdapterError,
@@ -8,7 +8,7 @@ import {
   type GmVerifyRequest,
   type IgorConfiguration,
 } from "@tanguito/devlab-gm-ide-adapter";
-import { resolveRealRoot, safeRelativePath } from "@tanguito/devlab-gm-ide-adapter/internal";
+import { resolveInsideRoot, resolveRealRoot, safeRelativePath } from "@tanguito/devlab-gm-ide-adapter/internal";
 
 import type {
   ToolchainStatusOutput,
@@ -16,6 +16,14 @@ import type {
   VerifyBuildInput,
   VerifyBuildOutput,
 } from "./contracts.js";
+import { parseIgorDiagnostics, type DiagnosticReport } from "./diagnostics.js";
+
+const EMPTY_DIAGNOSTICS: DiagnosticReport = Object.freeze({
+  diagnostics: Object.freeze([]),
+  errorCount: 0,
+  warningCount: 0,
+  truncated: false,
+});
 
 export const PROJECTS_DIR_ENV = "DEVLAB_GM_PROJECTS_DIR";
 export const IGOR_ENV = "DEVLAB_GM_IGOR";
@@ -61,6 +69,17 @@ export class GmBuildError extends Error {
   ) {
     super(message);
     this.name = "GmBuildError";
+  }
+}
+
+/** Carries compiler diagnostics alongside an adapter failure such as TIMEOUT. */
+export class GmBuildDiagnosticError extends Error {
+  constructor(
+    readonly adapterError: GmAdapterError,
+    readonly report: DiagnosticReport,
+  ) {
+    super(adapterError.message);
+    this.name = "GmBuildDiagnosticError";
   }
 }
 
@@ -173,6 +192,22 @@ function transactionIdFor(projectPath: string, fingerprint: string): string {
     .replace(/-$/, "");
 }
 
+/**
+ * Reads the compile log the adapter writes for a transaction and turns it into
+ * diagnostics. The log is written on both the success and the failure path, so
+ * a timed-out or aborted build still yields whatever the compiler had said.
+ */
+async function readDiagnostics(projectsDir: string, evidenceRoot: string, transactionId: string): Promise<DiagnosticReport> {
+  try {
+    const relative = `${evidenceRoot}/transactions/${transactionId}/verification/compile.log`;
+    const absolute = await resolveInsideRoot(projectsDir, safeRelativePath(relative));
+    const text = await readFile(absolute, "utf8");
+    return parseIgorDiagnostics(text);
+  } catch {
+    return EMPTY_DIAGNOSTICS;
+  }
+}
+
 export class GovernedGameMakerBuildService {
   constructor(
     private readonly env: Readonly<Record<string, string | undefined>> = process.env,
@@ -262,7 +297,19 @@ export class GovernedGameMakerBuildService {
       ...(input.expectedRuntimeSignal ? { expectedRuntimeSignal: input.expectedRuntimeSignal } : {}),
     };
 
-    const result = await adapter.verify(request);
+    let result;
+    try {
+      result = await adapter.verify(request);
+    } catch (error) {
+      // A build that times out or is cancelled still leaves a compile log. The
+      // caller should learn what the compiler said, not just that time ran out.
+      const report = await readDiagnostics(projectsDir, evidenceRoot, transactionId);
+      if (error instanceof GmAdapterError && report.diagnostics.length) {
+        throw new GmBuildDiagnosticError(error, report);
+      }
+      throw error;
+    }
+    const report = await readDiagnostics(projectsDir, evidenceRoot, transactionId);
     const outcome = (name: keyof typeof result.levels) => {
       const value = result.levels[name];
       return value ? { passed: value.passed, detail: value.detail } : undefined;
@@ -287,11 +334,29 @@ export class GovernedGameMakerBuildService {
       rollbackRequired: result.rollbackRequired,
       evidencePath: result.evidencePath,
       transactionId,
+      diagnostics: [...report.diagnostics],
+      errorCount: report.errorCount,
+      warningCount: report.warningCount,
+      diagnosticsTruncated: report.truncated,
     };
   }
 }
 
 export function mapToolError(error: unknown, requestId: PublicRequestId): ToolOutput {
+  if (error instanceof GmBuildDiagnosticError) {
+    return {
+      ok: false,
+      schemaVersion: 1,
+      requestId,
+      error: {
+        code: error.adapterError.code,
+        message: ADAPTER_PUBLIC_MESSAGES[error.adapterError.code],
+        recoverable: error.adapterError.recoverable,
+        diagnostics: [...error.report.diagnostics],
+        diagnosticsTruncated: error.report.truncated,
+      },
+    };
+  }
   if (error instanceof GmBuildError) {
     return { ok: false, schemaVersion: 1, requestId, error: { code: error.code, message: error.message, recoverable: error.recoverable } };
   }

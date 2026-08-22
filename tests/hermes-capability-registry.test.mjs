@@ -93,6 +93,12 @@ test("GameMaker build MCP is a separate, opt-in, process-owning tier", () => {
   assert.equal(gmBuildMcp.prompts, 0);
   assert.equal(gmBuildMcp.networkAccess, false);
   assert.ok(gmBuildMcp.configuration.includes("DEVLAB_GM_ALLOW_IGOR"));
+  // Measured, not assumed: Package does not compile and PackageZip is
+  // licence-gated, so Run is the only verb that invokes the asset compiler.
+  assert.equal(gmBuildMcp.igorVerb, "Run");
+  assert.equal(gmBuildMcp.compileOnlyAvailable, false);
+  assert.equal(typeof gmBuildMcp.compileOnlyBlockedBy, "string");
+  assert.equal(gmBuildMcp.diagnostics, "PARSED_AND_PATH_SCRUBBED");
   assert.doesNotThrow(() => readFileSync(new URL("../" + gmBuildMcp.inputSchema, import.meta.url), "utf8"));
   // Only the build tier may execute a compiler or a runtime.
   assert.equal(gmWriteMcp.compilerExecution, false);
