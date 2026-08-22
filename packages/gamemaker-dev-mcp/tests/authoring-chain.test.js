@@ -72,6 +72,8 @@ test("CHAIN: an authored object is planned, applied, verified and rolled back ac
       "gamemaker_plan",
       "gamemaker_plan_new_script",
       "gamemaker_plan_new_object",
+      "gamemaker_plan_new_room",
+      "gamemaker_plan_place_instance",
     ]);
 
     const before = structured(await readSide.client.callTool({ name: "gamemaker_inspect", arguments: { projectPath } }), "inspect");
@@ -165,6 +167,88 @@ test("CHAIN: authoring refusals are reported without writing anything", { timeou
     const after = structured(await readSide.client.callTool({ name: "gamemaker_inspect", arguments: { projectPath } }), "inspect after");
     assert.equal(after.fingerprint, before.fingerprint);
   } finally {
+    await close(readSide);
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("CHAIN: a room and a placed instance are authored, applied and compiled", { timeout: 600_000, ...realIgor }, async () => {
+  const root = await sandbox();
+  const readSide = await connect(READ_SERVER, root, {});
+  const writeSide = await connect(WRITE_SERVER, root, { DEVLAB_GM_WRITE_ALLOW: "*" });
+  const buildSide = await connect(COMPILE_SERVER, root, { DEVLAB_GM_ALLOW_IGOR: "1", DEVLAB_GM_TIMEOUT_MS: "300000" });
+  const applyPlan = async (planned, label) => {
+    const result = structured(await writeSide.client.callTool({
+      name: "gamemaker_apply",
+      arguments: { projectPath, plan: planned.plan, planHash: planned.planHash, confirm: true, dryRun: false },
+    }), `apply ${label}`);
+    assert.equal(result.state, "APPLIED", label);
+    return result;
+  };
+  const fingerprint = async () =>
+    structured(await readSide.client.callTool({ name: "gamemaker_inspect", arguments: { projectPath } }), "inspect").fingerprint;
+
+  try {
+    // An object to place.
+    const object = structured(await readSide.client.callTool({
+      name: "gamemaker_plan_new_object",
+      arguments: {
+        projectPath, expectedProjectFingerprint: await fingerprint(),
+        name: "obj_chain_marker",
+        events: [{ event: "create", gml: 'show_debug_message("MARKER in " + room_get_name(room));\n' }],
+      },
+    }), "plan_new_object");
+    await applyPlan(object, "object");
+
+    // A brand-new room holding two of them.
+    const room = structured(await readSide.client.callTool({
+      name: "gamemaker_plan_new_room",
+      arguments: {
+        projectPath, expectedProjectFingerprint: await fingerprint(),
+        name: "rm_chain_level", width: 320, height: 240,
+        instances: [
+          { objectName: "obj_chain_marker", x: 10, y: 20 },
+          { objectName: "obj_chain_marker", x: 30, y: 40 },
+        ],
+      },
+    }), "plan_new_room");
+    assert.equal(room.resourceKind, "room");
+    assert.equal(room.resourcePath, "rooms/rm_chain_level/rm_chain_level.yy");
+    await applyPlan(room, "room");
+
+    const roomYy = await readFile(join(root, projectPath, "rooms/rm_chain_level/rm_chain_level.yy"), "utf8");
+    assert.ok(roomYy.includes('"$GMRoom":"v1"'));
+    const yyp = await readFile(join(root, projectPath, "HermesBridgePilot.yyp"), "utf8");
+    assert.ok(/"RoomOrderNodes":\[[\s\S]*rm_chain_level/.test(yyp), "the new room must join the room order");
+
+    // And one more placed into the pre-existing room.
+    const placed = structured(await readSide.client.callTool({
+      name: "gamemaker_plan_place_instance",
+      arguments: {
+        projectPath, expectedProjectFingerprint: await fingerprint(),
+        roomName: "rm_gm_bridge_pilot",
+        instances: [{ objectName: "obj_chain_marker", x: 55, y: 66 }],
+      },
+    }), "plan_place_instance");
+    assert.equal(placed.resourceKind, "instance");
+    assert.deepEqual(placed.changes.map(({ path, action }) => [path, action]), [
+      ["rooms/rm_gm_bridge_pilot/rm_gm_bridge_pilot.yy", "modify"],
+    ]);
+    const afterPlace = await applyPlan(placed, "instance");
+
+    const pilotRoom = await readFile(join(root, projectPath, "rooms/rm_gm_bridge_pilot/rm_gm_bridge_pilot.yy"), "utf8");
+    assert.ok(pilotRoom.includes("inst_gm_bridge_pilot"), "the pre-existing instance must survive the splice");
+    assert.ok(pilotRoom.includes("obj_chain_marker"));
+
+    const built = structured(await buildSide.client.callTool({
+      name: "gamemaker_verify_build",
+      arguments: { projectPath, expectedProjectFingerprint: afterPlace.projectFingerprint },
+    }), "verify_build");
+    assert.equal(built.levels.COMPILE_VALID.passed, true, `diagnostics: ${JSON.stringify(built.diagnostics)}`);
+    assert.deepEqual(built.diagnostics, []);
+  } finally {
+    await close(buildSide);
+    await close(writeSide);
     await close(readSide);
     await rm(root, { recursive: true, force: true });
   }

@@ -18,6 +18,8 @@ import {
 } from "@tanguito/devlab-gm-ide-adapter/internal";
 import {
   authorObject,
+  authorPlaceInstance,
+  authorRoom,
   authorScript,
   GmAuthoringError,
   parseGmJson,
@@ -30,7 +32,9 @@ import type {
   InspectInput,
   InspectOutput,
   NewObjectInput,
+  NewRoomInput,
   NewScriptInput,
+  PlaceInstanceInput,
   PlanInput,
   PlanOutput,
   StatusInput,
@@ -286,7 +290,7 @@ export class ReadonlyGameMakerService {
    * file and reference inventory; the .yyp and .resource_order bodies have to
    * be read directly, inside the authorized root.
    */
-  private async projectTexts(projectsDir: string, projectPath: string, fingerprint: string, signal: AbortSignal): Promise<ProjectTexts> {
+  private async projectTexts(projectsDir: string, projectPath: string, fingerprint: string, signal: AbortSignal, roomName?: string): Promise<ProjectTexts> {
     const adapter = new GovernedGameMakerIdeAdapter(projectsDir);
     const snapshot = await adapter.inspect({
       ...baseRequest(projectPath, "GM_INSPECT_V1", { projectPath }, signal),
@@ -301,10 +305,17 @@ export class ReadonlyGameMakerService {
     const resourceOrder = snapshot.files.some(({ path }) => path === orderPath)
       ? await readFile(await resolveInsideRoot(root, orderPath), "utf8")
       : undefined;
+    // Placing an instance patches an existing room as text, so its body has to
+    // be read; every other operation only creates files.
+    const roomPath = roomName === undefined ? undefined : `rooms/${roomName}/${roomName}.yy`;
+    const roomText = roomPath !== undefined && snapshot.files.some(({ path }) => path === roomPath)
+      ? await readFile(await resolveInsideRoot(root, roomPath), "utf8")
+      : undefined;
     return {
       identity: { projectName, projectFile: snapshot.projectFile },
       yyp,
       ...(resourceOrder === undefined ? {} : { resourceOrder }),
+      ...(roomText === undefined ? {} : { roomText }),
       existingFiles: snapshot.files.map(({ path }) => path),
       existingReferences: [...snapshot.references],
     };
@@ -366,6 +377,28 @@ export class ReadonlyGameMakerService {
         ...(input.solid === undefined ? {} : { solid: input.solid }),
       },
     });
+    return this.planAuthored(input, authored, requestId, signal, input);
+  }
+
+  async planNewRoom(input: NewRoomInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
+    const authored = authorRoom(texts, {
+      name: input.name,
+      ...(input.instances === undefined ? {} : { instances: input.instances }),
+      options: {
+        ...(input.width === undefined ? {} : { width: input.width }),
+        ...(input.height === undefined ? {} : { height: input.height }),
+        ...(input.persistent === undefined ? {} : { persistent: input.persistent }),
+      },
+    });
+    return this.planAuthored(input, authored, requestId, signal, input);
+  }
+
+  async planPlaceInstance(input: PlaceInstanceInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal, input.roomName);
+    const authored = authorPlaceInstance(texts, { roomName: input.roomName, instances: input.instances });
     return this.planAuthored(input, authored, requestId, signal, input);
   }
 }

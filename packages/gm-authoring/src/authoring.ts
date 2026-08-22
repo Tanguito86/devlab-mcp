@@ -7,6 +7,17 @@ import {
 } from "./gm-json.js";
 import { resolveEvents, type GmEventSpec } from "./events.js";
 import {
+  existingInstanceNames,
+  renderRoomYy,
+  resolveInstances,
+  roomOrderEntry,
+  roomResourcePath,
+  spliceInstancesIntoRoom,
+  type ResolvedInstance,
+  type RoomInstance,
+  type RoomOptions,
+} from "./rooms.js";
+import {
   assertResourceName,
   objectEventPath,
   objectResourcePath,
@@ -26,7 +37,7 @@ export interface AuthoredFile {
 }
 
 export interface AuthoredResource {
-  readonly resourceKind: "script" | "object";
+  readonly resourceKind: "script" | "object" | "room" | "instance";
   readonly resourceName: string;
   readonly resourcePath: string;
   readonly files: readonly AuthoredFile[];
@@ -39,6 +50,8 @@ export interface ProjectTexts {
   readonly yyp: string;
   /** Omit when the project has no .resource_order file. */
   readonly resourceOrder?: string;
+  /** Body of the room being edited; required only by placeInstance. */
+  readonly roomText?: string;
   /** Every file path already present in the project. */
   readonly existingFiles: readonly string[];
   /** Every resource path already referenced by the .yyp. */
@@ -106,6 +119,88 @@ export function authorScript(project: ProjectTexts, request: NewScriptRequest): 
   return Object.freeze({
     resourceKind: "script",
     resourceName: name,
+    resourcePath,
+    files: Object.freeze(files),
+    allowlist: Object.freeze(files.map(({ path }) => path)),
+  });
+}
+
+export interface NewRoomRequest {
+  readonly name: string;
+  readonly instances?: readonly RoomInstance[];
+  readonly options?: RoomOptions;
+}
+
+/** Every object an instance references must already exist in the project. */
+function assertObjectsExist(project: ProjectTexts, instances: readonly ResolvedInstance[]): void {
+  for (const instance of instances) {
+    const objectPath = `objects/${instance.objectName}/${instance.objectName}.yy`;
+    if (!project.existingReferences.includes(objectPath) && !project.existingFiles.includes(objectPath)) {
+      throw new GmAuthoringError("INVALID_ROOM", `object ${instance.objectName} is not in this project`);
+    }
+  }
+}
+
+export function authorRoom(project: ProjectTexts, request: NewRoomRequest): AuthoredResource {
+  const name = assertResourceName(request.name, "room");
+  const resourcePath = roomResourcePath(name);
+  assertAvailable(project, resourcePath, name);
+  const instances = resolveInstances(request.instances ?? []);
+  assertObjectsExist(project, instances);
+
+  // A new room must also join the project's room order, or the game has no
+  // start room and the compiler has nothing to launch.
+  const edits = projectFileEdits(project, name, resourcePath);
+  const yypEdit = edits[0]!;
+  const withRoomOrder: AuthoredFile = {
+    ...yypEdit,
+    content: insertIntoGmArray(yypEdit.content, '"RoomOrderNodes":[', resourcePath, roomOrderEntry(name)),
+  };
+
+  const files: AuthoredFile[] = [
+    { path: resourcePath, action: "create", content: renderRoomYy(name, project.identity, instances, request.options ?? {}) },
+    withRoomOrder,
+    ...edits.slice(1),
+  ];
+  return Object.freeze({
+    resourceKind: "room",
+    resourceName: name,
+    resourcePath,
+    files: Object.freeze(files),
+    allowlist: Object.freeze(files.map(({ path }) => path)),
+  });
+}
+
+export interface PlaceInstanceRequest {
+  readonly roomName: string;
+  readonly instances: readonly RoomInstance[];
+}
+
+/**
+ * Adds instances to a room that already exists. The room is patched as text,
+ * never re-rendered, so any layer or setting this package does not model
+ * survives untouched.
+ */
+export function authorPlaceInstance(project: ProjectTexts, request: PlaceInstanceRequest): AuthoredResource {
+  const roomName = assertResourceName(request.roomName, "room");
+  const resourcePath = roomResourcePath(roomName);
+  if (!project.existingReferences.includes(resourcePath) && !project.existingFiles.includes(resourcePath)) {
+    throw new GmAuthoringError("INVALID_ROOM", `room ${roomName} is not in this project`);
+  }
+  if (project.roomText === undefined) throw new GmAuthoringError("INVALID_ROOM", "the room body is required to place an instance");
+  if (!request.instances.length) throw new GmAuthoringError("INVALID_ROOM", "at least one instance is required");
+
+  const instances = resolveInstances(request.instances, existingInstanceNames(project.roomText));
+  assertObjectsExist(project, instances);
+
+  const files: AuthoredFile[] = [{
+    path: resourcePath,
+    action: "modify",
+    content: spliceInstancesIntoRoom(project.roomText, roomName, instances),
+  }];
+  return Object.freeze({
+    resourceKind: "instance",
+    resourceName: instances.map(({ instanceName }) => instanceName).join(","),
     resourcePath,
     files: Object.freeze(files),
     allowlist: Object.freeze(files.map(({ path }) => path)),

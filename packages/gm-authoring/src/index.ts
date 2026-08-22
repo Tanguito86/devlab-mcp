@@ -11,6 +11,13 @@ export {
   scriptCodePath, scriptResourcePath, type ObjectOptions, type ProjectIdentity,
 } from "./resources.js";
 export {
-  authorObject, authorScript,
-  type AuthoredFile, type AuthoredResource, type NewObjectRequest, type NewScriptRequest, type ProjectTexts,
+  authorObject, authorPlaceInstance, authorRoom, authorScript,
+  type AuthoredFile, type AuthoredResource, type NewObjectRequest, type NewRoomRequest,
+  type NewScriptRequest, type PlaceInstanceRequest, type ProjectTexts,
 } from "./authoring.js";
+export {
+  BACKGROUND_LAYER_NAME, INSTANCE_LAYER_NAME, MAX_INSTANCES_PER_ROOM, MAX_ROOM_DIMENSION,
+  deriveInstanceName, existingInstanceNames, instanceRecord, renderRoomYy, resolveInstances,
+  roomOrderEntry, roomResourcePath, spliceInstancesIntoRoom,
+  type ResolvedInstance, type RoomInstance, type RoomOptions,
+} from "./rooms.js";
