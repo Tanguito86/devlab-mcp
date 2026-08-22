@@ -15,8 +15,7 @@ compiler and a game.
 
 ## Igor runs the game. This server says so.
 
-The adapter invokes Igor with its `Run` verb, so there is no compile-only path:
-a build verification **compiles the project and briefly launches it**. Owned
+A build verification **compiles the project and briefly launches it**. Owned
 Runners are terminated once the run settles.
 
 This is why there is no separate, scarier "run" tool: runtime verification is
@@ -25,6 +24,26 @@ also why `gamemaker_verify_build` is annotated `readOnlyHint: false` even though
 it modifies no project file — "read-only" would be a false promise for
 something that spawns a compiler and a game.
 
+### Why there is no compile-only tool
+
+Igor does expose verbs other than `Run` — `Package`, `PackageZip`, `Clean` and
+friends. Both alternatives were measured on GameMaker LTS 2026 with runtime
+`2024.14.3.260`, and neither yields a compile-only check:
+
+| Verb | Result |
+|---|---|
+| `Package` | exits **0 in ~1 s even with a deliberate GML syntax error** — it packages, it does not invoke the asset compiler |
+| `PackageZip` | does invoke the asset compiler, then fails with `Permission Error : Unable to obtain permission to execute` (reason code `0000002A`) — export is licence-gated |
+| `Run` | invokes the asset compiler and reports real errors |
+
+So on this licence `Run` is the only verb that actually compiles. If a licence
+that permits packaging is ever available, `PackageZip` becomes a candidate for
+a genuine compile-only lane.
+
+One consolation, also measured: **a build that fails to compile short-circuits
+in a few seconds and never launches the game.** The window only appears when
+the code is already valid.
+
 ## Public tools
 
 - `gamemaker_toolchain_status` — reports whether this host can build: platform,
@@ -32,8 +51,34 @@ something that spawns a compiler and a game.
   returns **booleans plus a runtime label**, never a filesystem path.
 - `gamemaker_verify_build` — runs Igor against one project and reports
   `TEXT_VALID`, `PROJECT_LOAD_VALID` and `COMPILE_VALID`, with the Igor exit
-  code and an evidence path. Supply `expectedRuntimeSignal` to additionally
-  assert `RUNTIME_VALID` (the running game must print that text).
+  code, **parsed compiler diagnostics** and an evidence path. Supply
+  `expectedRuntimeSignal` to additionally assert `RUNTIME_VALID` (the running
+  game must print that text).
+
+### Diagnostics
+
+A failing build returns what the compiler said, not just that it failed:
+
+```json
+{
+  "severity": "error",
+  "symbol": "gml_Object_obj_player_Create_0",
+  "object": "obj_player",
+  "event": "Create_0",
+  "line": 12,
+  "message": "unexpected symbol \";\" in expression"
+}
+```
+
+Object events and scripts are decomposed where the symbol allows it; an
+unrecognised symbol is still reported verbatim rather than dropped. Duplicates
+are collapsed, the list is capped at 50 with `diagnosticsTruncated` and
+`errorCount` reporting the real totals, and messages are scrubbed of anything
+path-shaped before they leave the server.
+
+Diagnostics also ride on the **error** envelope, so a build that times out or is
+cancelled still tells the caller what the compiler had found before time ran
+out — the case where a bare `TIMEOUT` would be least useful.
 
 Exactly these two tools. No resources, no prompts, no apply, verify-text,
 rollback, import, Asset Forge or Asset-GM Bridge operation.

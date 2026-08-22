@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { cp, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
+import { cp, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -190,6 +190,47 @@ test("MCP E2E: a stale fingerprint is refused before Igor starts", { timeout: 60
     assert.deepEqual(await treeState(join(root, projectPath)), before);
   } finally {
     await disconnect(session);
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("MCP E2E: a real failing build reports parsed diagnostics, not just an exit code", { timeout: 600_000, ...realIgor }, async () => {
+  const root = await sandbox();
+  const projectRoot = join(root, projectPath);
+  const target = join(projectRoot, "objects/obj_gm_bridge_pilot/Create_0.gml");
+  const pidsBefore = await gameMakerProcessPids();
+  // A real GML syntax error, not a marker the verifier special-cases.
+  await writeFile(target, "#macro GM_BRIDGE_PILOT_VALUE 1\nvar x = ;\n", "utf8");
+  const fingerprint = await fingerprintOf(root);
+  const session = await connect(root, { DEVLAB_GM_ALLOW_IGOR: "1", DEVLAB_GM_TIMEOUT_MS: "300000" });
+  try {
+    const result = await session.client.callTool({
+      name: "gamemaker_verify_build",
+      arguments: { projectPath, expectedProjectFingerprint: fingerprint },
+    });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    const body = result.structuredContent;
+
+    assert.equal(body.levels.COMPILE_VALID.passed, false);
+    assert.notEqual(body.compileExitCode, 0);
+    assert.ok(body.errorCount >= 1, `expected at least one diagnostic, got ${body.errorCount}`);
+    assert.ok(body.diagnostics.length >= 1);
+
+    const first = body.diagnostics[0];
+    assert.equal(first.severity, "error");
+    assert.equal(first.object, "obj_gm_bridge_pilot");
+    assert.equal(first.event, "Create_0");
+    assert.ok(Number.isInteger(first.line));
+    assert.ok(first.message.length > 0);
+
+    // Diagnostics must not smuggle host paths back to the caller.
+    const serialized = JSON.stringify(body.diagnostics);
+    assert.equal(/[A-Za-z]:[\\/]/.test(serialized), false);
+    assert.equal(serialized.includes(root), false);
+  } finally {
+    await disconnect(session);
+    const orphans = (await gameMakerProcessPids()).filter((pid) => !pidsBefore.includes(pid));
+    assert.deepEqual(orphans, [], "a failing build must leave no Igor or Runner process behind");
     await rm(root, { recursive: true, force: true });
   }
 });

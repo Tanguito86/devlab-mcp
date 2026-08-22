@@ -21,6 +21,10 @@
   "runtimeExecution": true,
   "toolchainSource": "ENVIRONMENT_ONLY",
   "verificationLevels": ["TEXT_VALID", "PROJECT_LOAD_VALID", "COMPILE_VALID", "RUNTIME_VALID"],
+  "igorVerb": "Run",
+  "compileOnlyAvailable": false,
+  "compileOnlyBlockedBy": "Package does not invoke the asset compiler; PackageZip does but is licence-gated (Permission Error 0000002A)",
+  "diagnostics": "PARSED_AND_PATH_SCRUBBED",
   "assetBridgeAvailable": false,
   "networkAccess": false,
   "prohibitedOperations": [
