@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "aseprite-ingest",
+  "version": "0.1.0",
+  "package": "@tanguito/devlab-aseprite-ingest",
+  "surface": "LIBRARY_AND_CLI",
+  "mcpServer": false,
+  "publicTools": [],
+  "publicOperations": ["ingestAsepriteSprite"],
+  "cli": "devlab-aseprite-ingest",
+  "configuration": "DEVLAB_ASEPRITE absolute path to the Aseprite executable; every write is confined to the caller's --repo-root",
+  "dependencies": ["@tanguito/devlab-asset-gm-bridge", "@tanguito/devlab-gm-ide-adapter"],
+  "externalProcess": "ASEPRITE_HEADLESS",
+  "toolchainSource": "ENVIRONMENT_ONLY",
+  "callerSuppliedFlags": false,
+  "emittedLifecycleStatus": "DRAFT",
+  "determinismGate": "EARNED_BY_DOUBLE_EXPORT",
+  "specValidatedBy": "asset-gm-bridge validateSpriteSpec",
+  "colourFormats": ["RGBA8888"],
+  "runtimeStatus": "LOCAL_ASEPRITE_VERIFIED",
+  "productionVerified": false,
+  "networkAccess": false,
+  "prohibitedOperations": [
+    "executable selection through arguments",
+    "raw Aseprite flags through arguments",
+    "Aseprite --script execution",
+    "writing outside the caller repo root",
+    "approving its own catalog entry",
+    "GameMaker project mutation",
+    "network"
+  ]
+}

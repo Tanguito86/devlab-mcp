@@ -21,6 +21,7 @@
     "asset-forge:validate": "node scripts/asset-forge.mjs validate-catalog",
     "asset-forge:build:cinder": "node scripts/asset-forge.mjs build cinder-relay-drone --version 1.0.0-pilot.1",
     "asset-forge:batch": "node scripts/asset-forge.mjs build-batch catalog",
+    "aseprite:ingest": "node packages/aseprite-ingest/dist/cli.js",
     "gm-bridge:pilot": "corepack pnpm --filter @tanguito/devlab-gm-ide-adapter build && node scripts/gm-hermes-bridge-pilot.mjs",
     "benchmark:galaxy-render": "corepack pnpm --filter @tanguito/browser-dev-mcp benchmark:galaxy-render",
     "contract:ash-relay:v2:verify": "node --test tests/ash-relay-contract-v2.test.mjs",
