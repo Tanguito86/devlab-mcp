@@ -9,13 +9,14 @@ const gmMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-dev-mcp
 const gmWriteMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-write-mcp-v1.json", import.meta.url), "utf8"));
 const gmBuildMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-compile-mcp-v1.json", import.meta.url), "utf8"));
 const asepriteIngest = JSON.parse(readFileSync(new URL("../capabilities/aseprite-ingest-v1.json", import.meta.url), "utf8"));
+const gmAssetMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-asset-mcp-v1.json", import.meta.url), "utf8"));
 const assetBridge = JSON.parse(readFileSync(new URL("../capabilities/asset-gm-bridge-v1.json", import.meta.url), "utf8"));
 const kit = JSON.parse(readFileSync(new URL("../capabilities/topdown-shooter-kit-v1.json", import.meta.url), "utf8"));
 const external = JSON.parse(readFileSync(new URL("../capabilities/external-candidate-status.json", import.meta.url), "utf8"));
 
 test("capability registry has the exact governed capability set", () => {
-  assert.equal(registry.capabilities.length, 19);
-  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 19);
+  assert.equal(registry.capabilities.length, 20);
+  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 20);
   for (const capability of registry.capabilities) {
     assert.ok(registry.allowedStatuses.includes(capability.status));
     for (const field of ["source", "sourcePin", "license", "evidencePath", "authority", "integrationMode", "runtimeStatus", "securityStatus", "nextPermittedAction"]) assert.equal(typeof capability[field], "string");
@@ -136,6 +137,32 @@ test("Aseprite ingest is a library and CLI, not an MCP surface, and cannot self-
   assert.ok(entry, "ASEPRITE_INGEST_V1 must be registered in the manifest");
   assert.equal(entry.integrationMode, "LIBRARY_AND_CLI");
   for (const prohibited of ["Aseprite --script execution", "writing outside the caller repo root", "approving its own catalog entry"]) {
+    assert.ok(entry.prohibitedActions.includes(prohibited), `${prohibited} must remain prohibited`);
+  }
+});
+
+test("GameMaker asset MCP imports only APPROVED assets and never compiles", () => {
+  assert.equal(gmAssetMcp.package, "@tanguito/gamemaker-asset-mcp");
+  // Four tiers, four packages: enabling one must never enable another.
+  assert.equal(new Set([gmMcp.package, gmWriteMcp.package, gmBuildMcp.package, gmAssetMcp.package]).size, 4);
+  assert.deepEqual(gmAssetMcp.publicTools, [
+    "asset_status", "asset_inspect", "asset_plan_import", "asset_apply_import", "asset_rollback_import",
+  ]);
+  assert.deepEqual(gmAssetMcp.internalCapabilities, ["ASSET_GM_BRIDGE_V1"]);
+  assert.equal(gmAssetMcp.lifecycleGate, "APPROVED_ONLY");
+  // Pilot instrumentation rewrites object code and must stay unreachable.
+  assert.equal(gmAssetMcp.instrumentation, "NONE_PINNED");
+  assert.equal(gmAssetMcp.compilerExecution, false, "compiling belongs to the build tier alone");
+  assert.equal(gmAssetMcp.runtimeExecution, false);
+  assert.equal(gmAssetMcp.resources, 0);
+  assert.equal(gmAssetMcp.prompts, 0);
+  assert.equal(gmAssetMcp.networkAccess, false);
+  assert.ok(gmAssetMcp.configuration.includes("DEVLAB_GM_ASSET_WRITE"));
+  assert.doesNotThrow(() => readFileSync(new URL("../" + gmAssetMcp.inputSchema, import.meta.url), "utf8"));
+  const entry = registry.capabilities.find(({ id }) => id === "GAMEMAKER_MCP_ASSET_V1");
+  assert.ok(entry, "GAMEMAKER_MCP_ASSET_V1 must be registered in the manifest");
+  assert.equal(entry.integrationMode, "STDIO_MCP_SERVER");
+  for (const prohibited of ["importing a non-APPROVED asset", "writing without the explicit host opt-in", "pilot instrumentation through tool arguments"]) {
     assert.ok(entry.prohibitedActions.includes(prohibited), `${prohibited} must remain prohibited`);
   }
 });
