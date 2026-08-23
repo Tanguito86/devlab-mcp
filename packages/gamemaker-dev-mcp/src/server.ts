@@ -191,7 +191,9 @@ export function createGameMakerMcpServer(
     {
       title: "Plan a new GameMaker tileset",
       description:
-        "Return an immutable plan that slices an existing sprite into a tileset and registers it in the project. The sprite's pixel size is read from the project, so only the tile size is supplied; the resulting tile count is (spriteWidth / tileWidth) * (spriteHeight / tileHeight), indexed from zero in reading order. Writes nothing; hand the returned plan to gamemaker_apply of the write-tier server.",
+        "Return an immutable plan that slices an existing sprite into a tileset and registers it in the project. The sprite's pixel size is read from the project, so only the tile size is supplied; the resulting tile count is (spriteWidth / tileWidth) * (spriteHeight / tileHeight), indexed from zero in reading order. "
+        + "KNOWN GAP: the plan emits the GMTileSet record only. GameMaker also needs an output_tileset.png beside it -- each tile re-laid-out into a (tileWidth + 2 * out_tilehborder) cell with its edges bled outward -- and without that file the tileset reads correctly through tilemap_get but draws nothing at all. Generate it yourself until this tool does. "
+        + "Writes nothing; hand the returned plan to gamemaker_apply of the write-tier server.",
       inputSchema: newTilesetInputSchema,
       outputSchema: authoredPlanWireOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,

@@ -23,7 +23,7 @@ Local stdio MCP server that exposes the governed read-only and plan-only slice o
 - `gamemaker_plan_new_tileset` plans a **new** tileset from a sprite already in
   the project. The sprite's pixel size is read from the project rather than
   taken on the caller's word, so the tile count cannot silently disagree with
-  the image.
+  the image. **It emits the `GMTileSet` record only** -- see below.
 - `gamemaker_plan_tile_layer` plans a run-length encoded tile layer for a room
   that already exists. Cells are row-major tile indices; `-2147483648` leaves a
   cell blank, and index `0` is GameMaker's reserved blank tile. The tile size
@@ -38,6 +38,22 @@ Local stdio MCP server that exposes the governed read-only and plan-only slice o
   contained.
 
 The server registers exactly these ten tools.
+
+### A planned tileset does not render yet
+
+`gamemaker_plan_new_tileset` writes the `GMTileSet` record and nothing else.
+GameMaker also expects an `output_tileset.png` beside it: every tile
+re-laid-out into a `(tileWidth + 2 x out_tilehborder)` cell with its edge pixels
+bled outward.
+
+Without that file the tileset is **logically correct and visually absent** --
+`tilemap_get` returns the authored indices, every bounds check passes, a
+compiled game runs -- and the layer draws nothing. That is exactly how the gap
+survived being shipped: the tool was verified by asking the running engine for
+data, and never for pixels. `examples/thaw` found it by looking at a frame.
+
+Until the tool emits the page, generate it yourself; `examples/thaw/art/tileset-page.lua`
+does it with Aseprite and is checked against the IDE's own output.
 
 ## Plans compose with the write tier
 
