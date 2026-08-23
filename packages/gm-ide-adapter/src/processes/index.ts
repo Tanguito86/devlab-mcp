@@ -68,7 +68,12 @@ export function isProcessDescendant(candidatePid: number, ancestorPid: number, r
   return false;
 }
 
-function delay(milliseconds: number): Promise<void> { return new Promise((resolve) => { const timer = setTimeout(resolve, milliseconds); timer.unref(); }); }
+// Deliberately not unref'd. The deadline timers below are guards and must not
+// hold the process open, but this one is a sleep somebody is awaiting: unref'd,
+// a poll loop whose inventory resolves immediately has no other pending handle,
+// the loop drains, and the await never settles. That failed only where nothing
+// else happened to keep the loop alive, which is why it survived on Windows.
+function delay(milliseconds: number): Promise<void> { return new Promise((resolve) => { setTimeout(resolve, milliseconds); }); }
 function remaining(deadline: number, message: string): number {
   const value = deadline - Date.now(); if (value <= 0) throw new GmAdapterError("PROCESS_OWNERSHIP", message, true); return value;
 }
