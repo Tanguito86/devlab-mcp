@@ -89,3 +89,8 @@ jobs:
 
       - name: Doctor (gamemaker asset)
         run: pnpm --filter @tanguito/gamemaker-asset-mcp run doctor
+
+      # Never starts Aseprite; CI has none and the doctor reports that as a
+      # warning rather than a failure.
+      - name: Doctor (aseprite ingest)
+        run: pnpm --filter @tanguito/aseprite-ingest-mcp run doctor

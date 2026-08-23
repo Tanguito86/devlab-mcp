@@ -10,13 +10,14 @@ const gmWriteMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-wr
 const gmBuildMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-compile-mcp-v1.json", import.meta.url), "utf8"));
 const asepriteIngest = JSON.parse(readFileSync(new URL("../capabilities/aseprite-ingest-v1.json", import.meta.url), "utf8"));
 const gmAssetMcp = JSON.parse(readFileSync(new URL("../capabilities/gamemaker-asset-mcp-v1.json", import.meta.url), "utf8"));
+const ingestMcp = JSON.parse(readFileSync(new URL("../capabilities/aseprite-ingest-mcp-v1.json", import.meta.url), "utf8"));
 const assetBridge = JSON.parse(readFileSync(new URL("../capabilities/asset-gm-bridge-v1.json", import.meta.url), "utf8"));
 const kit = JSON.parse(readFileSync(new URL("../capabilities/topdown-shooter-kit-v1.json", import.meta.url), "utf8"));
 const external = JSON.parse(readFileSync(new URL("../capabilities/external-candidate-status.json", import.meta.url), "utf8"));
 
 test("capability registry has the exact governed capability set", () => {
-  assert.equal(registry.capabilities.length, 20);
-  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 20);
+  assert.equal(registry.capabilities.length, 21);
+  assert.equal(new Set(registry.capabilities.map(({ id }) => id)).size, 21);
   for (const capability of registry.capabilities) {
     assert.ok(registry.allowedStatuses.includes(capability.status));
     for (const field of ["source", "sourcePin", "license", "evidencePath", "authority", "integrationMode", "runtimeStatus", "securityStatus", "nextPermittedAction"]) assert.equal(typeof capability[field], "string");
@@ -164,6 +165,33 @@ test("GameMaker asset MCP imports only APPROVED assets and never compiles", () =
   assert.equal(entry.integrationMode, "STDIO_MCP_SERVER");
   for (const prohibited of ["importing a non-APPROVED asset", "writing without the explicit host opt-in", "pilot instrumentation through tool arguments"]) {
     assert.ok(entry.prohibitedActions.includes(prohibited), `${prohibited} must remain prohibited`);
+  }
+});
+
+test("Aseprite ingest MCP confines its sources and cannot self-approve", () => {
+  assert.equal(ingestMcp.package, "@tanguito/aseprite-ingest-mcp");
+  // The library stays library-only; the MCP surface is a separate package.
+  assert.notEqual(ingestMcp.package, asepriteIngest.package);
+  assert.equal(asepriteIngest.mcpServer, false);
+  assert.deepEqual(ingestMcp.publicTools, ["aseprite_status", "aseprite_inspect", "aseprite_ingest"]);
+  // A tool caller must never name an absolute path or a binary.
+  assert.equal(ingestMcp.sourcePaths, "RELATIVE_TO_SOURCE_ROOT_ONLY");
+  assert.equal(ingestMcp.toolchainSource, "ENVIRONMENT_ONLY");
+  assert.equal(ingestMcp.callerSuppliedFlags, false);
+  assert.equal(ingestMcp.emittedLifecycleStatus, "DRAFT");
+  assert.equal(ingestMcp.determinismGate, "EARNED_BY_DOUBLE_EXPORT");
+  assert.equal(ingestMcp.projectMutation, false, "ingest writes the catalog, never a project");
+  assert.equal(ingestMcp.catalogMutation, true);
+  assert.equal(ingestMcp.compilerExecution, false);
+  assert.equal(ingestMcp.networkAccess, false);
+  assert.equal(ingestMcp.resources, 0);
+  assert.equal(ingestMcp.prompts, 0);
+  assert.doesNotThrow(() => readFileSync(new URL("../" + ingestMcp.inputSchema, import.meta.url), "utf8"));
+  const entry = registry.capabilities.find(({ id }) => id === "ASEPRITE_INGEST_MCP_V1");
+  assert.ok(entry, "ASEPRITE_INGEST_MCP_V1 must be registered in the manifest");
+  assert.equal(entry.integrationMode, "STDIO_MCP_SERVER");
+  for (const prohibited of ["absolute or traversing source paths", "Aseprite --script execution", "approving its own catalog entry"]) {
+    assert.ok(entry.prohibitedActions.includes(prohibited), prohibited);
   }
 });
 

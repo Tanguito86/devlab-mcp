@@ -94,3 +94,8 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 /packages/gamemaker-asset-mcp/** text eol=lf
 /capabilities/gamemaker-asset-mcp-v1.json text eol=lf
 /fixtures/aseprite/*.aseprite binary
+
+# GM-ASEPRITE-MCP-01 stdio ingest tier. The manifest binds this package's
+# README by SHA-256, so its bytes must materialize identically on every checkout.
+/packages/aseprite-ingest-mcp/** text eol=lf
+/capabilities/aseprite-ingest-mcp-v1.json text eol=lf
