@@ -30,6 +30,11 @@ GameMaker, Igor or Asset Forge tools.
   imported sprite silently had its origin at the top-left corner.
 - Explicit asset budgets evaluated before any write.
 - Path safety reuses `safeRelativePath`/`resolveInsideRoot` and adds
-  case/Unicode (NFKC) collision detection.
+  case/Unicode (NFKC) collision detection. Project and evidence roots are also
+  compared through their real filesystem identities, including Windows DOS
+  8.3 aliases, before any evidence directory is created.
 
-Sprint evidence: `docs/reviews/devlab-asset-bridge-01/`.
+The governed capability catalog version is **1.2.0**. Its current contract is
+`capabilities/asset-gm-bridge-v1.json`; the original compile/runtime pilot and
+independent critic record remain historical evidence under
+`docs/reviews/devlab-asset-bridge-01/`.

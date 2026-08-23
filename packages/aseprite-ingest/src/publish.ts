@@ -1,5 +1,6 @@
-import { createHash } from "node:crypto";
-import { appendFile, readFile, rename, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { open, readFile, rename, rm } from "node:fs/promises";
+import { dirname } from "node:path";
 
 import { resolveInsideRoot, safeRelativePath } from "@tanguito/devlab-gm-ide-adapter/internal";
 
@@ -56,6 +57,13 @@ export const APPROVAL_LOG_PATH = "assets/catalog/approvals.jsonl";
  */
 const CATALOG_SCHEMA_VERSION = 1;
 const CATALOG_MIGRATION = "asset-catalog-v1";
+const REQUIRED_INGEST_GATES = Object.freeze([
+  "SPEC_GATE",
+  "BUDGET_GATE",
+  "PNG_GATE",
+  "DETERMINISM_GATE",
+  "LIFECYCLE_GATE",
+] as const);
 
 export interface PublishResult {
   readonly schemaVersion: 1;
@@ -100,11 +108,109 @@ async function readInside(repoRoot: string, relative: string, label: string): Pr
   return bytes!;
 }
 
-/** Writes through a temporary file so a crash cannot leave a truncated index. */
+async function syncParent(absolute: string): Promise<void> {
+  const directory = await open(dirname(absolute), "r").catch(() => null);
+  if (directory === null) return;
+  try {
+    await directory.sync().catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "EPERM" && error.code !== "EINVAL") throw error;
+    });
+  } finally {
+    await directory.close();
+  }
+}
+
+async function readOptional(path: string): Promise<Buffer | null> {
+  return readFile(path).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  });
+}
+
+/** Serializes cooperating publishers without ever guessing that a lock is stale. */
+async function acquireCatalogLock(catalogAbsolute: string): Promise<() => Promise<void>> {
+  const lockPath = `${catalogAbsolute}.devlab-publish.lock`;
+  const nonce = randomUUID();
+  let handle;
+  try {
+    handle = await open(lockPath, "wx", 0o600);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+      fail("the asset catalog is already being published; retry after the active publisher finishes");
+    }
+    throw error;
+  }
+  try {
+    await handle.writeFile(JSON.stringify({ schemaVersion: 1, nonce, pid: process.pid }), "utf8");
+    await handle.sync();
+  } catch (error) {
+    await handle.close().catch(() => undefined);
+    await rm(lockPath, { force: true }).catch(() => undefined);
+    throw error;
+  }
+  await handle.close();
+  await syncParent(lockPath);
+  return async () => {
+    const current = await readFile(lockPath, "utf8")
+      .then((text) => JSON.parse(text) as { nonce?: string })
+      .catch(() => null);
+    if (current?.nonce === nonce) {
+      await rm(lockPath, { force: true });
+      await syncParent(lockPath);
+    }
+  };
+}
+
+/** Writes through a durable temporary file so a crash cannot truncate the index. */
 async function writeAtomic(absolute: string, text: string): Promise<void> {
-  const temporary = `${absolute}.${process.pid}.tmp`;
-  await writeFile(temporary, text, "utf8");
-  await rename(temporary, absolute);
+  const temporary = `${absolute}.${process.pid}.${randomUUID()}.tmp`;
+  const handle = await open(temporary, "wx", 0o600);
+  try {
+    await handle.writeFile(text, "utf8");
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  try {
+    await rename(temporary, absolute);
+  } catch (error) {
+    await rm(temporary, { force: true }).catch(() => undefined);
+    throw error;
+  }
+  await syncParent(absolute);
+}
+
+/**
+ * Persists both audit phases before an APPROVED catalog can become visible.
+ * COMMITTED means the approval decision and exact target catalog digest are
+ * committed to the audit; the following atomic rename exposes that target.
+ * A crash between the two leaves an auditable intent but never an unaudited
+ * approval.
+ */
+async function persistApprovalAudit(
+  absolute: string,
+  record: Readonly<{
+    approvalId: string;
+    assetId: string;
+    at: string;
+    by: string;
+    catalogSha256: string;
+    manifestSha256: string;
+    status: "APPROVED";
+    version: string;
+  }>,
+): Promise<void> {
+  const text = (["PREPARED", "COMMITTED"] as const)
+    .map((phase) => JSON.stringify({ ...record, phase }))
+    .join("\n") + "\n";
+  const handle = await open(absolute, "a", 0o600);
+  try {
+    await handle.writeFile(text, "utf8");
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  await syncParent(absolute);
 }
 
 export async function publishAsepriteAsset(request: PublishRequest): Promise<PublishResult> {
@@ -130,8 +236,17 @@ export async function publishAsepriteAsset(request: PublishRequest): Promise<Pub
   if (sha256(specText) !== manifest.specSha256) {
     fail("the spec on disk no longer matches the digest recorded at ingest");
   }
-  for (const [gate, verdict] of Object.entries(manifest.gates ?? {})) {
-    if (verdict !== "PASS") fail(`${gate} did not pass at ingest; this asset is not publishable`);
+  if (typeof manifest.gates !== "object" || manifest.gates === null || Array.isArray(manifest.gates)) {
+    fail("the artifact manifest records no valid ingest gates; re-ingest this asset before publishing it");
+  }
+  const gateNames = Object.keys(manifest.gates).sort();
+  const requiredGateNames = [...REQUIRED_INGEST_GATES].sort();
+  if (gateNames.length !== requiredGateNames.length
+    || gateNames.some((gate, index) => gate !== requiredGateNames[index])) {
+    fail(`the artifact manifest must record exactly these ingest gates: ${requiredGateNames.join(", ")}`);
+  }
+  for (const gate of REQUIRED_INGEST_GATES) {
+    if (manifest.gates[gate] !== "PASS") fail(`${gate} did not pass at ingest; this asset is not publishable`);
   }
 
   const outputs = manifest.outputs ?? [];
@@ -172,62 +287,97 @@ export async function publishAsepriteAsset(request: PublishRequest): Promise<Pub
     version,
   };
 
+  const dryRun = request.dryRun ?? true;
   const catalogRelative = safeRelativePath(request.catalogPath);
   const catalogAbsolute = await resolveInsideRoot(request.repoRoot, catalogRelative, { rejectFinalSymlink: true });
-  const catalogText = (await readFile(catalogAbsolute, "utf8").catch(() => null))
-    ?? `${canonicalJson({ entries: [], schemaVersion: 1 })}\n`;
-  let catalog: { entries?: Array<Record<string, unknown>>; schemaVersion?: number; migration?: string };
+  const release = dryRun ? null : await acquireCatalogLock(catalogAbsolute);
   try {
-    catalog = JSON.parse(catalogText) as typeof catalog;
-  } catch {
-    return fail("the asset catalog is not readable JSON");
-  }
-  if (catalog.schemaVersion !== undefined && catalog.schemaVersion !== CATALOG_SCHEMA_VERSION) {
-    fail(`the asset catalog declares schemaVersion ${String(catalog.schemaVersion)}; this publisher only writes ${CATALOG_SCHEMA_VERSION}`);
-  }
-  if (catalog.migration !== undefined && catalog.migration !== CATALOG_MIGRATION) {
-    fail(`the asset catalog declares migration ${String(catalog.migration)}; this publisher only writes ${CATALOG_MIGRATION}`);
-  }
-  if (!Array.isArray(catalog.entries ?? [])) fail("the asset catalog has no readable entries array");
-  const entries = [...(catalog.entries ?? [])];
-  const index = entries.findIndex((candidate) => candidate.assetId === assetId && candidate.version === version);
-  const replaced = index >= 0;
-  if (replaced) entries[index] = entry;
-  else entries.push(entry);
-  // A stable order keeps the index reviewable as a diff.
-  entries.sort((a, b) => `${a.assetId}@${a.version}`.localeCompare(`${b.assetId}@${b.version}`));
-
-  // The header is written rather than carried through, so a catalog that was
-  // missing it comes back valid instead of staying unreadable.
-  const updated = `${canonicalJson({
-    ...catalog, entries, migration: CATALOG_MIGRATION, schemaVersion: CATALOG_SCHEMA_VERSION,
-  })}\n`;
-  const dryRun = request.dryRun ?? true;
-  const approved = request.status === "APPROVED";
-  if (!dryRun) {
-    await writeAtomic(catalogAbsolute, updated);
-    if (approved) {
-      const logAbsolute = await resolveInsideRoot(request.repoRoot, safeRelativePath(APPROVAL_LOG_PATH), { rejectFinalSymlink: true });
-      await appendFile(logAbsolute, `${JSON.stringify({
-        assetId, at: now, by: request.approvedBy, catalogSha256: sha256(updated),
-        manifestSha256: sha256(manifestText), status: "APPROVED", version,
-      })}
-`, "utf8");
+    const catalogBytes = await readOptional(catalogAbsolute);
+    const baselineCatalogSha256 = catalogBytes === null ? null : sha256(catalogBytes);
+    const catalogText = catalogBytes?.toString("utf8")
+      ?? `${canonicalJson({ entries: [], schemaVersion: 1 })}\n`;
+    let catalog: { entries?: Array<Record<string, unknown>>; schemaVersion?: number; migration?: string };
+    try {
+      catalog = JSON.parse(catalogText) as typeof catalog;
+    } catch {
+      return fail("the asset catalog is not readable JSON");
     }
-  }
+    if (catalog.schemaVersion !== undefined && catalog.schemaVersion !== CATALOG_SCHEMA_VERSION) {
+      fail(`the asset catalog declares schemaVersion ${String(catalog.schemaVersion)}; this publisher only writes ${CATALOG_SCHEMA_VERSION}`);
+    }
+    if (catalog.migration !== undefined && catalog.migration !== CATALOG_MIGRATION) {
+      fail(`the asset catalog declares migration ${String(catalog.migration)}; this publisher only writes ${CATALOG_MIGRATION}`);
+    }
+    if (!Array.isArray(catalog.entries ?? [])) fail("the asset catalog has no readable entries array");
+    const entries = [...(catalog.entries ?? [])];
+    const index = entries.findIndex((candidate) => candidate.assetId === assetId && candidate.version === version);
+    const replaced = index >= 0;
+    if (replaced) entries[index] = entry;
+    else entries.push(entry);
+    // A stable order keeps the index reviewable as a diff.
+    entries.sort((a, b) => `${a.assetId}@${a.version}`.localeCompare(`${b.assetId}@${b.version}`));
 
-  return Object.freeze({
-    schemaVersion: 1,
-    assetId,
-    version,
-    status: request.status,
-    published: !dryRun,
-    dryRun,
-    replaced,
-    catalogPath: catalogRelative,
-    entry: Object.freeze(entry),
-    verifiedOutputs: outputs.length,
-    catalogSha256: sha256(updated),
-    approvalLogPath: approved ? APPROVAL_LOG_PATH : null,
-  });
+    // The header is written rather than carried through, so a catalog that was
+    // missing it comes back valid instead of staying unreadable.
+    const updated = `${canonicalJson({
+      ...catalog, entries, migration: CATALOG_MIGRATION, schemaVersion: CATALOG_SCHEMA_VERSION,
+    })}\n`;
+    const approved = request.status === "APPROVED";
+    if (!dryRun) {
+      await (request as PublishRequest & { beforeCatalogCommit?: () => Promise<void> }).beforeCatalogCommit?.();
+      const assertCatalogUnchanged = async (): Promise<void> => {
+        const current = await readOptional(catalogAbsolute);
+        const currentSha256 = current === null ? null : sha256(current);
+        if (currentSha256 !== baselineCatalogSha256) {
+          fail("the asset catalog changed during publish; retry from the current catalog");
+        }
+      };
+      await assertCatalogUnchanged();
+      if (approved) {
+        const logAbsolute = await resolveInsideRoot(request.repoRoot, safeRelativePath(APPROVAL_LOG_PATH), { rejectFinalSymlink: true });
+        const catalogSha256 = sha256(updated);
+        const manifestSha256 = sha256(manifestText);
+        const approvalId = sha256(JSON.stringify({
+          assetId,
+          at: now,
+          by: request.approvedBy,
+          catalogSha256,
+          manifestSha256,
+          status: "APPROVED",
+          version,
+        }));
+        await persistApprovalAudit(logAbsolute, {
+          approvalId,
+          assetId,
+          at: now,
+          by: request.approvedBy,
+          catalogSha256,
+          manifestSha256,
+          status: "APPROVED",
+          version,
+        });
+      }
+      // Re-check after the durable audit: a non-cooperating writer must never
+      // be silently overwritten just because it ignored our lock file.
+      await assertCatalogUnchanged();
+      await writeAtomic(catalogAbsolute, updated);
+    }
+
+    return Object.freeze({
+      schemaVersion: 1,
+      assetId,
+      version,
+      status: request.status,
+      published: !dryRun,
+      dryRun,
+      replaced,
+      catalogPath: catalogRelative,
+      entry: Object.freeze(entry),
+      verifiedOutputs: outputs.length,
+      catalogSha256: sha256(updated),
+      approvalLogPath: approved ? APPROVAL_LOG_PATH : null,
+    });
+  } finally {
+    await release?.();
+  }
 }

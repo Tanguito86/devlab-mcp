@@ -8,7 +8,13 @@ import {
   type GmVerifyRequest,
   type IgorConfiguration,
 } from "@tanguito/devlab-gm-ide-adapter";
-import { resolveInsideRoot, resolveRealRoot, safeRelativePath } from "@tanguito/devlab-gm-ide-adapter/internal";
+import {
+  isSameOrDescendantFilesystemPath,
+  resolveInsideRoot,
+  resolveRealRoot,
+  safeRelativePath,
+  transactionRelativeRoot,
+} from "@tanguito/devlab-gm-ide-adapter/internal";
 
 import type {
   ToolchainStatusOutput,
@@ -197,9 +203,9 @@ function transactionIdFor(projectPath: string, fingerprint: string): string {
  * diagnostics. The log is written on both the success and the failure path, so
  * a timed-out or aborted build still yields whatever the compiler had said.
  */
-async function readDiagnostics(projectsDir: string, evidenceRoot: string, transactionId: string): Promise<DiagnosticReport> {
+async function readDiagnostics(projectsDir: string, evidenceRoot: string, projectPath: string, transactionId: string): Promise<DiagnosticReport> {
   try {
-    const relative = `${evidenceRoot}/transactions/${transactionId}/verification/compile.log`;
+    const relative = `${await transactionRelativeRoot(projectsDir, evidenceRoot, projectPath, transactionId)}/verification/compile.log`;
     const absolute = await resolveInsideRoot(projectsDir, safeRelativePath(relative));
     const text = await readFile(absolute, "utf8");
     return parseIgorDiagnostics(text);
@@ -271,7 +277,7 @@ export class GovernedGameMakerBuildService {
     const timeoutMs = resolveTimeoutMs(this.env);
     const evidenceRoot = resolveEvidenceRoot(this.env);
     const projectPath = safeRelativePath(input.projectPath, "projectPath");
-    if (evidenceRoot === projectPath || evidenceRoot.startsWith(`${projectPath}/`)) {
+    if (await isSameOrDescendantFilesystemPath(projectsDir, projectPath, evidenceRoot)) {
       throw new GmBuildError("GM_CONFIG_INVALID", `${EVIDENCE_ROOT_ENV} must resolve outside the project being built.`, true);
     }
 
@@ -303,13 +309,13 @@ export class GovernedGameMakerBuildService {
     } catch (error) {
       // A build that times out or is cancelled still leaves a compile log. The
       // caller should learn what the compiler said, not just that time ran out.
-      const report = await readDiagnostics(projectsDir, evidenceRoot, transactionId);
+      const report = await readDiagnostics(projectsDir, evidenceRoot, projectPath, transactionId);
       if (error instanceof GmAdapterError && report.diagnostics.length) {
         throw new GmBuildDiagnosticError(error, report);
       }
       throw error;
     }
-    const report = await readDiagnostics(projectsDir, evidenceRoot, transactionId);
+    const report = await readDiagnostics(projectsDir, evidenceRoot, projectPath, transactionId);
     const outcome = (name: keyof typeof result.levels) => {
       const value = result.levels[name];
       return value ? { passed: value.passed, detail: value.detail } : undefined;

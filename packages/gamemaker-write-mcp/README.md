@@ -19,12 +19,14 @@ enabling read-only inspection must not implicitly enable writes.
   evidence outside the project.
 - `gamemaker_rollback` fixes `GM_ROLLBACK_V1`. Restores an applied transaction
   from its verified backup blobs and reports whether the result was byte-exact.
+  It reloads the transaction's verified manifest and re-applies
+  `DEVLAB_GM_WRITE_ALLOW` to every recorded path before restoring anything.
 
 - `gamemaker_create_project` fixes `GM_CREATE_PROJECT_V1`. Writes the two files
   an empty GameMaker project consists of, byte-identical to what ProjectTool's
-  `PROJECT NEW` produces, into an absent or empty directory. **Defaults to a dry
-  run.** Follow it with `gamemaker_inspect` on the read tier to get the
-  fingerprint every plan tool requires.
+  `PROJECT NEW` produces, at an absent path whose real parent directory already
+  exists. **Defaults to a dry run.** Follow it with `gamemaker_inspect` on the
+  read tier to get the fingerprint every plan tool requires.
 
 The server registers exactly these four tools. It has no resources and no
 prompts, and exposes no compile, run, Igor, Runner, Asset Forge, Asset-GM Bridge,
@@ -40,10 +42,59 @@ the tool contract.
 Every other tool here binds to a fingerprint and can be rolled back. A project
 that does not exist yet has neither: nothing to fingerprint, and nothing to
 restore. What remains is the safety that still applies -- the path policy, the
-env-scoped write allowlist, an explicit `confirm`, and a refusal to touch a
-directory that already holds anything. Removing a project is **not** offered:
+env-scoped write allowlist, an explicit `confirm`, and a refusal to replace any
+existing path (including an empty directory). Parent directories are never
+created implicitly. Removing a project is **not** offered:
 deleting is the destructive tier's business, and this server has none. Undoing a
 creation means deleting the directory yourself.
+
+Creation prepares a server evidence ledger outside the target, claims the absent
+target with an exclusive `mkdir`, and then durably records the exact request, an
+ownership nonce, physical parent/target/ledger identities, and the ordered file
+hashes in that external ledger. The marker inside the new project is secondary:
+it is never sufficient authority by itself, even if every calculable field in it
+was forged.
+
+Before each create-only promotion the server fsyncs a separate `WRITING` phase
+record. File bytes are first fsynced to a unique evidence-side stage and then
+hard-linked create-only into the project, so an interruption cannot expose a
+partially written GameMaker file. A retry of the same request can validate and
+resume missing or exact files; an unknown entry, a changed byte, a different
+request, or an expected file without its phase record is refused and preserved.
+Failures never trigger path-based cleanup of authored files. The target can be
+visible in a recoverable `PREPARING` state until a later identical request
+finishes it. Once every file and entry is validated, a durable finalizing record
+makes removal of the target metadata resumable. The ledger uses separate,
+immutable `PREPARING` and `COMPLETED` records; the latter remains as a terminal
+receipt. A retry after the final marker was removed or its response was lost is
+acknowledged only when the completed project is still byte-exact. A completed
+receipt never reopens an emptied or altered directory for writing.
+
+There is one deliberately fail-closed crash window: portable Node cannot make
+`mkdir(target)` and creation of the external authority record atomic. A crash
+between those operations leaves an empty directory with no authority record, so
+a retry preserves and refuses it exactly as it would any other pre-existing
+directory. An empty directory introduced by another actor is likewise never
+replaced. A crash while producing a unique evidence-side stage may leave that
+stage as inert recovery evidence, but a later retry uses a fresh stage and no
+partial file is promoted into the project.
+
+Create-only promotion requires native hard-link support. The server checks that
+the evidence ledger and target parent are on the same filesystem before claiming
+the target. If the filesystem or its policy still refuses a hard link, creation
+fails closed in `PREPARING`; it never falls back to a copying write that could
+expose partial content.
+
+The evidence root is part of the server's trust boundary. Project targets are
+refused when they overlap it, and the MCP surface never exposes a way to write
+the ledger. An operator must not grant project actors an independent write path
+to that evidence directory and then treat its receipts as provenance.
+
+Node does not expose portable directory-handle-relative `openat`/no-follow APIs.
+The server revalidates physical directory identity and durable metadata
+immediately around each feasible mutation, but it does not claim to eliminate
+the final hostile symlink/junction race against an actor concurrently rewriting
+the filesystem tree.
 
 Until this existed the stack could not start a game. Every tool took an existing
 `projectPath`, so the first file of any new project had to be written by hand,
@@ -54,7 +105,7 @@ outside the governed surface -- which is exactly the thing the surface is for.
 ```text
 DEVLAB_GM_PROJECTS_DIR=<ABSOLUTE_PROJECTS_ROOT>
 DEVLAB_GM_WRITE_ALLOW=<PATH_LIST or *>
-DEVLAB_GM_EVIDENCE_ROOT=<RELATIVE_PATH>   # optional
+DEVLAB_GM_EVIDENCE_ROOT=<RELATIVE_PATH>   # optional; transactions and creation receipts
 ```
 
 `DEVLAB_GM_PROJECTS_DIR` must be an existing absolute real directory, not a
@@ -80,6 +131,13 @@ forgetting to configure it.
 Path safety is enforced in every mode, including `*`. "Unrestricted" means
 anywhere inside the project, never unchecked.
 
+The write server also fixes the plan policy to canonical-base64 UTF-8 text in
+`gml`, `json`, `resource_order`, `yy`, and `yyp` files. Its allowlist must match
+the planned file identities exactly, with no extra or duplicate aliases. A
+caller-fabricated plan cannot add a new extension, binary payload, or
+action/before-state mismatch. Binary asset import remains on the separate asset
+bridge surface.
+
 `DEVLAB_GM_EVIDENCE_ROOT` defaults to `.devlab-gamemaker-mcp-write` and is always
 resolved relative to the projects root, never inside a project.
 
@@ -95,7 +153,8 @@ re-validating every plan against real on-disk state before writing:
 - each file's `beforeSha256` must match the bytes actually on disk;
 - each file's content must hash to its declared `afterSha256`;
 - every path must pass the path-safety policy, the plan allowlist, the request
-  allowlist, the extension policy, and `DEVLAB_GM_WRITE_ALLOW`;
+  allowlist, the server's fixed text-extension policy, and
+  `DEVLAB_GM_WRITE_ALLOW`;
 - writing is refused while GameMaker, Igor or Runner is running.
 
 ## Build and start

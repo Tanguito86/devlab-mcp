@@ -15,8 +15,10 @@ compiler and a game.
 
 ## Igor runs the game. This server says so.
 
-A build verification **compiles the project and briefly launches it**. Owned
-Runners are terminated once the run settles.
+A build verification **compiles the project and briefly launches it**. The
+direct Igor child is controlled through the process handle retained at spawn.
+Runners discovered through the Windows process inventory are observed while
+they exit naturally; they are never signalled by PID alone.
 
 This is why there is no separate, scarier "run" tool: runtime verification is
 one extra assertion over the same invocation, not a second capability. It is
@@ -118,10 +120,17 @@ named `Igor.exe` and `ProjectTool.exe`.
 - **Foreign Runners are preserved, not killed.** If a Runner is already running
   the build is refused with `RUN_BLOCKED_EXTERNAL_RUNNER` and the existing
   process is left alone.
-- **Owned processes only.** Termination requires PID *and* OS creation token
-  *and* executable to still match the process this server started.
+- **Owned Igor only.** Termination of the direct compiler child requires its
+  retained process handle plus matching PID, OS creation token, executable and
+  command identity.
+- **Runner cleanup fails closed.** A CIM-discovered Runner has no safely
+  retained process handle. The adapter waits a bounded interval for its natural
+  exit; if it remains alive, it returns `PROCESS_OWNERSHIP` with sanitized
+  residual evidence and does not signal the PID.
 - **Bounded.** The timeout is server-configured and clamped to 30s–900s; on
-  expiry the owned process is terminated and `TIMEOUT` is returned.
+  expiry the direct Igor child is terminated. `TIMEOUT` is returned only when
+  the final inventory also proves no residual Runner; otherwise the safer
+  `PROCESS_OWNERSHIP` result takes precedence.
 - **Sanitized errors.** Adapter codes map to fixed public messages; unknown
   failures collapse to `GM_INTERNAL_ERROR`. Nothing echoes back a path.
 
@@ -131,6 +140,11 @@ Windows only. Process ownership relies on the Windows CIM process inventory to
 acquire an OS creation token; on other hosts the adapter cannot establish
 ownership, so this server refuses up front with `GM_PLATFORM_UNSUPPORTED`
 rather than running a process it could not prove it owns.
+
+Guaranteed unattended termination of the complete Igor/Runner process tree
+would require launching it inside a Windows Job Object (or an equivalent native
+supervisor). Node does not provide that primitive here, so unattended use stays
+explicitly out of scope instead of claiming PID-based containment.
 
 ## Build, check and start
 

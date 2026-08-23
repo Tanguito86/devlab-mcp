@@ -94,7 +94,7 @@ export function createGameMakerWriteMcpServer(
     {
       title: "Create an empty GameMaker project",
       description:
-        "Write the two files an empty GameMaker project consists of, byte-identical to what ProjectTool's PROJECT NEW produces, into an absent or empty directory. This is the one write with no plan and no rollback: there is no prior state to bind to, and removing a project is not offered. Defaults to a dry run. Follow it with gamemaker_inspect to get the fingerprint the plan tools require.",
+        "Write the two files an empty GameMaker project consists of, byte-identical to what ProjectTool's PROJECT NEW produces, at an absent path whose real parent directory already exists. Existing paths are never replaced; only a valid durable PREPARING claim for the exact same request can be resumed. This is the one write with no plan and no rollback: there is no prior state to bind to, and removing a project is not offered. Defaults to a dry run. Follow it with gamemaker_inspect to get the fingerprint the plan tools require.",
       inputSchema: createProjectInputSchema,
       outputSchema: createProjectWireOutputSchema,
       annotations: MUTATING_ANNOTATIONS,

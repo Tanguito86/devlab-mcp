@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { open } from "node:fs/promises";
 import { isAbsolute } from "node:path";
+import { TextDecoder } from "node:util";
 
 import {
   GmAdapterError,
@@ -33,6 +34,8 @@ import {
 import {
   MAX_READ_BYTES_PER_FILE,
   MAX_READ_BYTES_TOTAL,
+  MAX_PLAN_CONTENT_BYTES_PER_FILE,
+  MAX_PLAN_CONTENT_BYTES_TOTAL,
   READABLE_EXTENSIONS,
 } from "./contracts.js";
 import type {
@@ -72,6 +75,12 @@ const VERIFICATION_POLICY = Object.freeze({
 
 type PublicRequestId = string | number;
 
+type LoadedProjectTexts = Readonly<{
+  texts: ProjectTexts;
+  root: string;
+  files: ReadonlyMap<string, SnapshotTextFile>;
+}>;
+
 export class GmMcpError extends Error {
   constructor(
     readonly code:
@@ -86,6 +95,110 @@ export class GmMcpError extends Error {
     super(message);
     this.name = "GmMcpError";
   }
+}
+
+function assertActive(signal: AbortSignal): void {
+  if (signal.aborted) {
+    throw new GmAdapterError("CANCELLED", "The request was cancelled.", true);
+  }
+}
+
+export function assertPlanContentLimits(
+  changes: readonly Readonly<{ content: string }>[],
+  signal?: AbortSignal,
+): void {
+  let totalBytes = 0;
+  for (const change of changes) {
+    if (signal !== undefined) assertActive(signal);
+    const bytes = Buffer.byteLength(change.content, "utf8");
+    if (bytes > MAX_PLAN_CONTENT_BYTES_PER_FILE) {
+      throw new GmMcpError(
+        "GM_LIMIT_EXCEEDED",
+        `A planned file exceeds the ${MAX_PLAN_CONTENT_BYTES_PER_FILE} byte content limit.`,
+        true,
+      );
+    }
+    totalBytes += bytes;
+    if (totalBytes > MAX_PLAN_CONTENT_BYTES_TOTAL) {
+      throw new GmMcpError(
+        "GM_LIMIT_EXCEEDED",
+        `The plan exceeds the ${MAX_PLAN_CONTENT_BYTES_TOTAL} byte aggregate content limit.`,
+        true,
+      );
+    }
+  }
+}
+
+export type SnapshotTextFile = Readonly<{ sha256: string; size: number }>;
+
+/**
+ * Reads at most the fixed per-file ceiling and binds the returned metadata to
+ * those exact bytes. A file that changed after inspection is never returned as
+ * if it still belonged to that snapshot.
+ */
+export async function readSnapshotTextFile(
+  projectRoot: string,
+  path: string,
+  expected: SnapshotTextFile,
+  signal: AbortSignal,
+  maxBytes = MAX_READ_BYTES_PER_FILE,
+): Promise<{ sha256: string; size: number; text: string }> {
+  assertActive(signal);
+  const absolute = await resolveInsideRoot(projectRoot, path, { existing: true });
+  const handle = await open(absolute, "r");
+  let bytes: Buffer;
+  let observedSize: number;
+  try {
+    const before = await handle.stat();
+    if (before.size > maxBytes) {
+      if (before.size !== expected.size) {
+        throw new GmAdapterError("CONCURRENT_MODIFICATION", "A requested file changed after inspection.", true);
+      }
+      throw new GmMcpError(
+        "GM_LIMIT_EXCEEDED",
+        `${path} is larger than the ${maxBytes} byte per-file read limit.`,
+        true,
+      );
+    }
+    const buffer = Buffer.allocUnsafe(maxBytes + 1);
+    let bytesRead = 0;
+    while (bytesRead < buffer.byteLength) {
+      assertActive(signal);
+      const chunk = await handle.read(buffer, bytesRead, buffer.byteLength - bytesRead, bytesRead);
+      if (chunk.bytesRead === 0) break;
+      bytesRead += chunk.bytesRead;
+    }
+    const after = await handle.stat();
+    assertActive(signal);
+    observedSize = after.size;
+    if (before.size !== after.size || bytesRead !== after.size) {
+      throw new GmAdapterError("CONCURRENT_MODIFICATION", "A requested file changed while it was read.", true);
+    }
+    bytes = buffer.subarray(0, bytesRead);
+  } finally {
+    await handle.close();
+  }
+
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  if (observedSize !== expected.size || sha256 !== expected.sha256) {
+    throw new GmAdapterError("CONCURRENT_MODIFICATION", "A requested file changed after inspection.", true);
+  }
+  if (bytes.byteLength > maxBytes) {
+    throw new GmMcpError(
+      "GM_LIMIT_EXCEEDED",
+      `${path} is larger than the ${maxBytes} byte per-file read limit.`,
+      true,
+    );
+  }
+  let text: string;
+  try {
+    // Preserve a UTF-8 BOM as text. Stripping it would make a read/edit/plan
+    // round-trip silently change bytes even when the caller changed nothing.
+    text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
+  } catch {
+    throw new GmMcpError("GM_INVALID_REQUEST", `${path} is not valid UTF-8 text.`, true);
+  }
+  return { sha256, size: bytes.byteLength, text };
 }
 
 const ADAPTER_PUBLIC_MESSAGES: Readonly<Record<GmAdapterErrorCode, string>> = Object.freeze({
@@ -259,20 +372,23 @@ export class ReadonlyGameMakerService {
     requestId: PublicRequestId,
     signal: AbortSignal,
   ): Promise<PlanOutput> {
+    assertPlanContentLimits(input.changes, signal);
     const adapter = await this.adapter();
+    const files: Array<{ path: string; action: "modify"; content: string }> = [];
+    for (const { path, content } of input.changes) {
+      assertActive(signal);
+      files.push({ path, action: "modify", content });
+    }
     const request: GmPlanRequest = {
       ...baseRequest(input.projectPath, "GM_PLAN_V1", input, signal),
       expectedProjectFingerprint: input.expectedProjectFingerprint,
       allowlist: Object.freeze([...input.allowlist]),
-      files: Object.freeze(input.changes.map(({ path, content }) => Object.freeze({
-        path,
-        action: "modify" as const,
-        content,
-      }))),
+      files: Object.freeze(files.map((file) => Object.freeze(file))),
       allowedExtensions: PLAN_EXTENSIONS,
     };
     const plan = await adapter.plan(request);
     const changes = plan.files.map((file) => {
+      assertActive(signal);
       if (file.action !== "modify" || file.beforeSha256 === null) {
         throw new GmMcpError("GM_INTERNAL_ERROR", "The adapter returned a non-read-only plan shape.", false);
       }
@@ -307,35 +423,53 @@ export class ReadonlyGameMakerService {
    * file and reference inventory; the .yyp and .resource_order bodies have to
    * be read directly, inside the authorized root.
    */
-  private async projectTexts(projectsDir: string, projectPath: string, fingerprint: string, signal: AbortSignal, roomName?: string): Promise<ProjectTexts> {
+  private async projectTexts(projectsDir: string, projectPath: string, fingerprint: string, signal: AbortSignal, roomName?: string): Promise<LoadedProjectTexts> {
     const adapter = new GovernedGameMakerIdeAdapter(projectsDir);
     const snapshot = await adapter.inspect({
       ...baseRequest(projectPath, "GM_INSPECT_V1", { projectPath }, signal),
       expectedProjectFingerprint: fingerprint,
     });
     const root = await resolveInsideRoot(projectsDir, safeRelativePath(projectPath), { existing: true });
-    const yyp = await readFile(await resolveInsideRoot(root, snapshot.projectFile), "utf8");
+    const files = new Map(snapshot.files.map((file) => [file.path, file]));
+    const readBound = async (path: string): Promise<string> => {
+      const expected = files.get(path);
+      if (expected === undefined) {
+        throw new GmMcpError("GM_INTERNAL_ERROR", "A required project file is absent from its inspected snapshot.", false);
+      }
+      return (await readSnapshotTextFile(
+        root,
+        path,
+        expected,
+        signal,
+        MAX_PLAN_CONTENT_BYTES_PER_FILE,
+      )).text;
+    };
+    const yyp = await readBound(snapshot.projectFile);
     const parsed = parseGmJson(yyp) as { "%Name"?: unknown; name?: unknown };
     const projectName = String(parsed["%Name"] ?? parsed.name ?? "");
     if (!projectName) throw new GmMcpError("GM_INTERNAL_ERROR", "The project file declares no name.", false);
     const orderPath = `${projectName}.resource_order`;
-    const resourceOrder = snapshot.files.some(({ path }) => path === orderPath)
-      ? await readFile(await resolveInsideRoot(root, orderPath), "utf8")
+    const resourceOrder = files.has(orderPath)
+      ? await readBound(orderPath)
       : undefined;
     // Placing an instance patches an existing room as text, so its body has to
     // be read; every other operation only creates files.
     const roomPath = roomName === undefined ? undefined : `rooms/${roomName}/${roomName}.yy`;
-    const roomText = roomPath !== undefined && snapshot.files.some(({ path }) => path === roomPath)
-      ? await readFile(await resolveInsideRoot(root, roomPath), "utf8")
+    const roomText = roomPath !== undefined && files.has(roomPath)
+      ? await readBound(roomPath)
       : undefined;
-    return {
-      identity: { projectName, projectFile: snapshot.projectFile },
-      yyp,
-      ...(resourceOrder === undefined ? {} : { resourceOrder }),
-      ...(roomText === undefined ? {} : { roomText }),
-      existingFiles: snapshot.files.map(({ path }) => path),
-      existingReferences: [...snapshot.references],
-    };
+    return Object.freeze({
+      root,
+      files,
+      texts: {
+        identity: { projectName, projectFile: snapshot.projectFile },
+        yyp,
+        ...(resourceOrder === undefined ? {} : { resourceOrder }),
+        ...(roomText === undefined ? {} : { roomText }),
+        existingFiles: snapshot.files.map(({ path }) => path),
+        existingReferences: [...snapshot.references],
+      },
+    });
   }
 
   /** Turns an authored resource into an immutable GM_PLAN_V1 plan. */
@@ -377,14 +511,14 @@ export class ReadonlyGameMakerService {
 
   async planNewScript(input: NewScriptInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
     const projectsDir = await resolveProjectsDir(this.env);
-    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
-    return this.planAuthored(input, authorScript(texts, { name: input.name, gml: input.gml }), requestId, signal, input);
+    const loaded = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
+    return this.planAuthored(input, authorScript(loaded.texts, { name: input.name, gml: input.gml }), requestId, signal, input);
   }
 
   async planNewObject(input: NewObjectInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
     const projectsDir = await resolveProjectsDir(this.env);
-    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
-    const authored = authorObject(texts, {
+    const loaded = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
+    const authored = authorObject(loaded.texts, {
       name: input.name,
       events: input.events,
       options: {
@@ -399,8 +533,8 @@ export class ReadonlyGameMakerService {
 
   async planNewRoom(input: NewRoomInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
     const projectsDir = await resolveProjectsDir(this.env);
-    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
-    const authored = authorRoom(texts, {
+    const loaded = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
+    const authored = authorRoom(loaded.texts, {
       name: input.name,
       ...(input.instances === undefined ? {} : { instances: input.instances }),
       options: {
@@ -414,8 +548,8 @@ export class ReadonlyGameMakerService {
 
   async planPlaceInstance(input: PlaceInstanceInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
     const projectsDir = await resolveProjectsDir(this.env);
-    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal, input.roomName);
-    const authored = authorPlaceInstance(texts, { roomName: input.roomName, instances: input.instances });
+    const loaded = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal, input.roomName);
+    const authored = authorPlaceInstance(loaded.texts, { roomName: input.roomName, instances: input.instances });
     return this.planAuthored(input, authored, requestId, signal, input);
   }
 
@@ -441,6 +575,7 @@ export class ReadonlyGameMakerService {
     const seen = new Set<string>();
     let totalBytes = 0;
     for (const requested of input.paths) {
+      assertActive(signal);
       // The path policy first, so a hostile path is refused for the right
       // reason rather than for merely being absent from the snapshot.
       const path = safeRelativePath(requested);
@@ -453,16 +588,23 @@ export class ReadonlyGameMakerService {
       }
       const file = known.get(path);
       if (file === undefined) throw new GmMcpError("GM_INVALID_REQUEST", `${path} is not a file in this project.`, true);
-      if (file.size > MAX_READ_BYTES_PER_FILE) {
-        throw new GmMcpError("GM_LIMIT_EXCEEDED", `${path} is larger than the ${MAX_READ_BYTES_PER_FILE} byte per-file read limit.`, true);
-      }
-      totalBytes += file.size;
+      const read = await readSnapshotTextFile(root, path, file, signal);
+      totalBytes += read.size;
       if (totalBytes > MAX_READ_BYTES_TOTAL) {
         throw new GmMcpError("GM_LIMIT_EXCEEDED", `The request exceeds the ${MAX_READ_BYTES_TOTAL} byte total read limit.`, true);
       }
-      const text = await readFile(await resolveInsideRoot(root, path), "utf8");
-      files.push({ path, sha256: file.sha256, size: file.size, text });
+      files.push({ path, ...read });
     }
+
+    // Close the window in which an earlier file could change while a later one
+    // was being read. The write tier would still reject the stale fingerprint,
+    // but the read operation itself should fail closed instead of returning a
+    // mixed-time set of otherwise self-consistent buffers.
+    assertActive(signal);
+    await adapter.inspect({
+      ...baseRequest(input.projectPath, "GM_INSPECT_V1", input, signal),
+      expectedProjectFingerprint: snapshot.fingerprint,
+    });
 
     return {
       ok: true,
@@ -479,15 +621,15 @@ export class ReadonlyGameMakerService {
 
   async planNewTileset(input: NewTilesetInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
     const projectsDir = await resolveProjectsDir(this.env);
-    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
+    const loaded = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
     // The sprite's pixel size decides how many tiles the set has, so it is read
     // from the project rather than taken on the caller's word; a wrong size
     // silently produces a tileset whose indices run off the end of the image.
     const spritePath = `sprites/${input.spriteName}/${input.spriteName}.yy`;
-    const sprite = await this.readResource(projectsDir, input.projectPath, texts, spritePath, `sprite ${input.spriteName}`);
+    const sprite = await this.readResource(loaded, spritePath, `sprite ${input.spriteName}`, signal);
     const spriteWidth = numericField(sprite, "width", `sprite ${input.spriteName}`);
     const spriteHeight = numericField(sprite, "height", `sprite ${input.spriteName}`);
-    const authored = authorTileset(texts, {
+    const authored = authorTileset(loaded.texts, {
       name: input.name,
       spriteName: input.spriteName,
       spriteWidth,
@@ -500,10 +642,10 @@ export class ReadonlyGameMakerService {
 
   async planTileLayer(input: TileLayerInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
     const projectsDir = await resolveProjectsDir(this.env);
-    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal, input.roomName);
+    const loaded = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal, input.roomName);
     const tilesetPath = tilesetResourcePath(input.tilesetName);
-    const tileset = await this.readResource(projectsDir, input.projectPath, texts, tilesetPath, `tileset ${input.tilesetName}`);
-    const authored = authorTileLayer(texts, {
+    const tileset = await this.readResource(loaded, tilesetPath, `tileset ${input.tilesetName}`, signal);
+    const authored = authorTileLayer(loaded.texts, {
       roomName: input.roomName,
       layerName: input.layerName,
       tilesetName: input.tilesetName,
@@ -520,17 +662,22 @@ export class ReadonlyGameMakerService {
 
   /** Reads one `.yy` the caller named, refusing anything not in the snapshot. */
   private async readResource(
-    projectsDir: string,
-    projectPath: string,
-    texts: ProjectTexts,
+    loaded: LoadedProjectTexts,
     resourcePath: string,
     label: string,
+    signal: AbortSignal,
   ): Promise<Record<string, unknown>> {
-    if (!texts.existingFiles.includes(resourcePath)) {
+    const expected = loaded.files.get(resourcePath);
+    if (expected === undefined) {
       throw new GmAuthoringError("INVALID_RESOURCE_NAME", `${label} is not in this project`);
     }
-    const root = await resolveInsideRoot(projectsDir, safeRelativePath(projectPath), { existing: true });
-    const text = await readFile(await resolveInsideRoot(root, resourcePath), "utf8");
+    const text = (await readSnapshotTextFile(
+      loaded.root,
+      resourcePath,
+      expected,
+      signal,
+      MAX_PLAN_CONTENT_BYTES_PER_FILE,
+    )).text;
     const parsed = parseGmJson(text);
     if (typeof parsed !== "object" || parsed === null) {
       throw new GmAuthoringError("INVALID_PROJECT_TEXT", `${label} is not a readable resource file`);

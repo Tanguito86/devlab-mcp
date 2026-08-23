@@ -23,6 +23,50 @@ export function safeAllowedExtensions(input: readonly string[] | undefined): rea
   return Object.freeze(normalized);
 }
 export async function resolveRealRoot(root: string): Promise<string> { const absolute = resolve(root); const info = await lstat(absolute).catch(() => null); if (!info?.isDirectory() || info.isSymbolicLink()) fail("AUTHZ_PROJECT_ROOT", "projectsDir must be an existing real directory"); return realpath(absolute); }
+
+/**
+ * Return a conservative identity for a path below an authorized filesystem
+ * root. Every existing component is canonicalized with realpath(), which is
+ * important on Windows where a DOS 8.3 name can address the same directory as
+ * its long name. Once the first missing component is reached, the remaining
+ * suffix is appended to that real existing ancestor.
+ *
+ * NFKC + case folding deliberately remain fail-closed on non-Windows hosts so
+ * plans created elsewhere cannot introduce identities that would collide when
+ * later applied on Windows.
+ */
+export async function resolveFilesystemPathIdentity(root: string, candidate: string): Promise<string> {
+  const normalized = safeRelativePath(candidate);
+  const realRoot = await resolveRealRoot(root);
+  const parts = normalized.split("/");
+  let canonical = realRoot;
+
+  for (let index = 0; index < parts.length; index += 1) {
+    const probe = resolve(canonical, parts[index]!);
+    const info = await lstat(probe).catch((error: NodeJS.ErrnoException) => error.code === "ENOENT" ? null : Promise.reject(error));
+    if (!info) {
+      canonical = resolve(canonical, ...parts.slice(index));
+      break;
+    }
+    canonical = await realpath(probe);
+    const back = relative(realRoot, canonical);
+    if (back === ".." || back.startsWith(`..${sep}`) || isAbsolute(back)) fail("PATH_ESCAPE", "path escapes authorized root");
+  }
+
+  const back = relative(realRoot, canonical);
+  if (back === ".." || back.startsWith(`..${sep}`) || isAbsolute(back)) fail("PATH_ESCAPE", "path escapes authorized root");
+  return resolve(canonical).replace(/\\/g, "/").replace(/\/+$/, "").normalize("NFKC").toLowerCase();
+}
+
+/** Compare two authorized relative paths by their actual filesystem identity. */
+export async function isSameOrDescendantFilesystemPath(root: string, parent: string, candidate: string): Promise<boolean> {
+  const [parentIdentity, candidateIdentity] = await Promise.all([
+    resolveFilesystemPathIdentity(root, parent),
+    resolveFilesystemPathIdentity(root, candidate),
+  ]);
+  return candidateIdentity === parentIdentity || candidateIdentity.startsWith(`${parentIdentity}/`);
+}
+
 export async function resolveInsideRoot(root: string, candidate: string, options: Readonly<{ existing?: boolean; rejectFinalSymlink?: boolean }> = {}): Promise<string> {
   const normalized = safeRelativePath(candidate); const realRoot = await resolveRealRoot(root); const target = resolve(realRoot, ...normalized.split("/")); const back = relative(realRoot, target);
   if (!back || back === ".." || back.startsWith(`..${sep}`) || isAbsolute(back)) fail("PATH_ESCAPE", "path escapes authorized root");

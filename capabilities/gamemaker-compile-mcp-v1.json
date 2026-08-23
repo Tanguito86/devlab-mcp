@@ -20,6 +20,7 @@
   "compilerExecution": true,
   "runtimeExecution": true,
   "toolchainSource": "ENVIRONMENT_ONLY",
+  "processContainment": "DIRECT_IGOR_CHILD_HANDLE; CIM_RUNNER_OBSERVATION_ONLY; LIVE_RESIDUAL_FAILS_PROCESS_OWNERSHIP",
   "verificationLevels": ["TEXT_VALID", "PROJECT_LOAD_VALID", "COMPILE_VALID", "RUNTIME_VALID"],
   "igorVerb": "Run",
   "compileOnlyAvailable": false,

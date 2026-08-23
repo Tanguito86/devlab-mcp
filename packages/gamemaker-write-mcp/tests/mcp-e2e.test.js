@@ -269,6 +269,33 @@ test("MCP E2E: an unconfigured write allowlist fails closed before any write", {
   }
 });
 
+test("MCP E2E: rollback re-applies the server write allowlist from verified transaction evidence", { timeout: 60_000 }, async () => {
+  const { root, projectRoot } = await makeSandbox();
+  const original = await readFile(join(projectRoot, targetFile), "utf8");
+  const { plan, planHash: digest } = await buildPlan(root, "e2e-rollback-policy", `${original}\n// applied\n`);
+  const applySession = await connect(root, { DEVLAB_GM_WRITE_ALLOW: targetFile });
+  let appliedFingerprint;
+  try {
+    const applied = await applySession.client.callTool({ name: "gamemaker_apply", arguments: { projectPath, plan, planHash: digest, confirm: true, dryRun: false } });
+    assert.notEqual(applied.isError, true, JSON.stringify(applied));
+    appliedFingerprint = applied.structuredContent.projectFingerprint;
+  } finally { await disconnect(applySession); }
+
+  const blockedSession = await connect(root, { DEVLAB_GM_WRITE_ALLOW: undefined });
+  try {
+    const blocked = await blockedSession.client.callTool({
+      name: "gamemaker_rollback",
+      arguments: { projectPath, transactionId: plan.transactionId, planHash: digest, expectedProjectFingerprint: appliedFingerprint, confirm: true },
+    });
+    assert.equal(blocked.isError, true);
+    assert.equal(blocked.structuredContent.error.code, "GM_CONFIG_REQUIRED");
+    assert.match(await readFile(join(projectRoot, targetFile), "utf8"), /\/\/ applied/);
+  } finally {
+    await disconnect(blockedSession);
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("MCP E2E: tampered plans and stale bindings fail closed without touching the project", { timeout: 60_000 }, async () => {
   const { root, projectRoot } = await makeSandbox();
   const baseline = await treeState(projectRoot);

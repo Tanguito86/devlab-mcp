@@ -46,12 +46,15 @@ What replaces the human review is verification, not trust:
   manifest recorded at ingest, so an asset whose pixels changed after ingest
   cannot be published at all — the check a person skimming a JSON file would
   not have performed;
-- any ingest gate that did not pass blocks the publish;
+- the manifest must contain exactly the five ingest gates (`SPEC`, `BUDGET`,
+  `PNG`, `DETERMINISM`, and `LIFECYCLE`) and every one must be `PASS`;
 - the catalog header is rewritten to what the bridge's validator demands, so a
   publish can never leave an index that fails to load and takes every other
   asset down with it;
-- and every promotion is appended to `assets/catalog/approvals.jsonl`, which a
-  republish cannot rewrite.
+- and every promotion records durable `PREPARED` and `COMMITTED` phases in
+  `assets/catalog/approvals.jsonl` before the atomic catalog replacement can
+  expose `APPROVED`; concurrent catalog publishers are serialized, while an
+  out-of-band catalog edit aborts the publish instead of being overwritten.
 
 Ingest itself is unchanged: it still emits `DRAFT` and still does not register
 its own entry.
@@ -96,9 +99,13 @@ byte-identical.
 **Ingested implies importable.** The spec is validated with the asset bridge's
 own `validateSpriteSpec` before anything is written.
 
-**Ingest never approves its own output.** Entries are emitted `DRAFT`; the
-bridge imports only `APPROVED`, so promotion stays a human decision. The tool
-contract cannot express any other status.
+**Ingest itself never emits an approved entry.** Entries are emitted `DRAFT`.
+A later, explicit `aseprite_publish` call can promote that disk-backed result
+to `APPROVED` only after rebuilding the entry, rechecking every frame digest
+and the exact ingest-gate set, and durably recording the two-phase approval
+audit before the catalog changes. The publish contract accepts either `DRAFT`
+or `APPROVED`; approval is autonomous
+but remains a separate, verified operation from ingest.
 
 **RGBA8888 and one canvas size only.** Indexed, greyscale and trimmed sources
 are refused with a clear message rather than silently converted.

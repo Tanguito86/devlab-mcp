@@ -97,7 +97,7 @@ function projectFileEdits(project: ProjectTexts, name: string, resourcePath: str
         project.resourceOrder,
         '"ResourceOrderSettings":[',
         resourcePath,
-        resourceOrderEntry(name, resourcePath, nextResourceOrder(project.yyp)),
+        resourceOrderEntry(name, resourcePath, nextResourceOrder(project.resourceOrder)),
       ),
     });
   }

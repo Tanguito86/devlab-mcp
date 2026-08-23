@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
-import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { link, lstat, mkdir, open, readFile, readdir, unlink } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
 import {
@@ -13,6 +13,8 @@ import {
 } from "@tanguito/devlab-gm-ide-adapter";
 import {
   planHash as adapterPlanHash,
+  isSameOrDescendantFilesystemPath,
+  readTransactionEvidence,
   resolveInsideRoot,
   resolveRealRoot,
   safeRelativePath,
@@ -39,6 +41,311 @@ export const DEFAULT_EVIDENCE_ROOT = ".devlab-gamemaker-mcp-write";
 export const UNRESTRICTED_WRITE_ALLOW = "*";
 
 const TIMEOUT_MS = 30_000;
+const WRITE_PLAN_EXTENSIONS = Object.freeze(["gml", "json", "resource_order", "yy", "yyp"]);
+const WRITE_PLAN_EXTENSION_SET = new Set<string>(WRITE_PLAN_EXTENSIONS);
+const CREATE_CLAIM_NAME = ".devlab-create-claim.json";
+const CREATE_FINALIZING_NAME = ".devlab-create-finalizing.json";
+const CREATE_LEDGER_DIR = "create-projects";
+
+type CreateFileBinding = Readonly<{ path: string; sha256: string; size: number }>;
+type CreateRequestBinding = Readonly<{
+  projectPath: string;
+  name: string;
+  confirm: true;
+  dryRun: false;
+}>;
+type CreateClaim = Readonly<{
+  schemaVersion: 1;
+  kind: "DEVLAB_GM_CREATE_CLAIM";
+  nonce: string;
+  request: CreateRequestBinding;
+  parentIdentity: string;
+  targetIdentity: string;
+  ledgerIdentity: string;
+  files: readonly CreateFileBinding[];
+}>;
+type CreateFinalizing = Readonly<{
+  schemaVersion: 1;
+  kind: "DEVLAB_GM_CREATE_FINALIZING";
+  claim: CreateClaim;
+}>;
+type CreateLedgerRecord = Readonly<{
+  schemaVersion: 1;
+  kind: "DEVLAB_GM_CREATE_LEDGER";
+  state: "PREPARING" | "COMPLETED";
+  claim: CreateClaim;
+}>;
+
+async function realDirectoryIdentity(path: string): Promise<string> {
+  const canonical = await resolveRealRoot(path); const info = await lstat(canonical, { bigint: true });
+  const physicalPath = canonical.replace(/\\/g, "/").replace(/\/+$/, "");
+  return `${process.platform}:${info.dev.toString()}:${info.ino.toString()}:${process.platform === "win32" ? physicalPath.toLowerCase() : physicalPath}`;
+}
+
+function jsonBytes(value: unknown): Buffer {
+  return Buffer.from(JSON.stringify(value), "utf8");
+}
+
+function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  return JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...keys].sort());
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseCreateClaim(bytes: Buffer): CreateClaim | null {
+  try {
+    const value: unknown = JSON.parse(bytes.toString("utf8"));
+    if (!isRecord(value) || !hasExactKeys(value, ["schemaVersion", "kind", "nonce", "request", "parentIdentity", "targetIdentity", "ledgerIdentity", "files"])) return null;
+    if (value.schemaVersion !== 1 || value.kind !== "DEVLAB_GM_CREATE_CLAIM" || typeof value.nonce !== "string" || !/^[0-9a-f-]{36}$/i.test(value.nonce)) return null;
+    if (typeof value.parentIdentity !== "string" || !value.parentIdentity || typeof value.targetIdentity !== "string" || !value.targetIdentity || typeof value.ledgerIdentity !== "string" || !value.ledgerIdentity) return null;
+    if (!isRecord(value.request) || !hasExactKeys(value.request, ["projectPath", "name", "confirm", "dryRun"])) return null;
+    if (typeof value.request.projectPath !== "string" || typeof value.request.name !== "string" || value.request.confirm !== true || value.request.dryRun !== false) return null;
+    if (!Array.isArray(value.files) || value.files.length === 0) return null;
+    const files: CreateFileBinding[] = [];
+    for (const file of value.files) {
+      if (!isRecord(file) || !hasExactKeys(file, ["path", "sha256", "size"])) return null;
+      if (typeof file.path !== "string" || typeof file.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(file.sha256) || !Number.isSafeInteger(file.size) || (file.size as number) < 0) return null;
+      files.push({ path: file.path, sha256: file.sha256, size: file.size as number });
+    }
+    const claim: CreateClaim = {
+      schemaVersion: 1,
+      kind: "DEVLAB_GM_CREATE_CLAIM",
+      nonce: value.nonce,
+      request: {
+        projectPath: value.request.projectPath,
+        name: value.request.name,
+        confirm: true,
+        dryRun: false,
+      },
+      parentIdentity: value.parentIdentity,
+      targetIdentity: value.targetIdentity,
+      ledgerIdentity: value.ledgerIdentity,
+      files,
+    };
+    return bytes.equals(jsonBytes(claim)) ? claim : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseCreateFinalizing(bytes: Buffer): CreateFinalizing | null {
+  try {
+    const value: unknown = JSON.parse(bytes.toString("utf8"));
+    if (!isRecord(value) || !hasExactKeys(value, ["schemaVersion", "kind", "claim"]) || value.schemaVersion !== 1 || value.kind !== "DEVLAB_GM_CREATE_FINALIZING") return null;
+    const claimBytes = jsonBytes(value.claim);
+    const claim = parseCreateClaim(claimBytes);
+    if (!claim) return null;
+    const finalizing: CreateFinalizing = { schemaVersion: 1, kind: "DEVLAB_GM_CREATE_FINALIZING", claim };
+    return bytes.equals(jsonBytes(finalizing)) ? finalizing : null;
+  } catch {
+    return null;
+  }
+}
+
+function createLedgerBytes(state: CreateLedgerRecord["state"], claim: CreateClaim): Buffer {
+  return jsonBytes({ schemaVersion: 1, kind: "DEVLAB_GM_CREATE_LEDGER", state, claim } satisfies CreateLedgerRecord);
+}
+
+function parseCreateLedger(bytes: Buffer, expectedState: CreateLedgerRecord["state"]): CreateLedgerRecord | null {
+  try {
+    const value: unknown = JSON.parse(bytes.toString("utf8"));
+    if (!isRecord(value) || !hasExactKeys(value, ["schemaVersion", "kind", "state", "claim"]) || value.schemaVersion !== 1 || value.kind !== "DEVLAB_GM_CREATE_LEDGER" || value.state !== expectedState) return null;
+    const claim = parseCreateClaim(jsonBytes(value.claim));
+    if (!claim) return null;
+    const record: CreateLedgerRecord = { schemaVersion: 1, kind: "DEVLAB_GM_CREATE_LEDGER", state: expectedState, claim };
+    return bytes.equals(jsonBytes(record)) ? record : null;
+  } catch {
+    return null;
+  }
+}
+
+function phaseName(index: number): string {
+  return `.devlab-create-phase-${index.toString().padStart(4, "0")}.json`;
+}
+
+function phaseBytes(claim: CreateClaim, index: number): Buffer {
+  return jsonBytes({
+    schemaVersion: 1,
+    kind: "DEVLAB_GM_CREATE_WRITING",
+    nonce: claim.nonce,
+    index,
+    file: claim.files[index],
+  });
+}
+
+async function readIfPresent(path: string): Promise<Buffer | null> {
+  const before = await lstat(path, { bigint: true }).catch((error: NodeJS.ErrnoException) => error.code === "ENOENT" ? null : Promise.reject(error));
+  if (before === null) return null;
+  if (!before.isFile() || before.isSymbolicLink()) {
+    throw new GmWriteError("GM_INVALID_REQUEST", "A project creation entry changed type unexpectedly.", true);
+  }
+  const bytes = await readFile(path);
+  const after = await lstat(path, { bigint: true });
+  if (before.dev !== after.dev || before.ino !== after.ino || before.size !== after.size || before.mtimeNs !== after.mtimeNs || before.ctimeNs !== after.ctimeNs) {
+    throw new GmWriteError("GM_INVALID_REQUEST", "A project creation entry changed unexpectedly.", true);
+  }
+  return bytes;
+}
+
+async function syncDirectoryPortable(path: string): Promise<void> {
+  // Windows does not expose portable directory fsync through Node. File data is
+  // still synced there; POSIX directory entries are synced where supported.
+  if (process.platform === "win32") return;
+  const handle = await open(path, "r");
+  try {
+    await handle.sync();
+  } catch (error) {
+    if (!["EINVAL", "ENOTSUP", "EISDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
+  } finally {
+    await handle.close();
+  }
+}
+
+async function ensureDurableDirectory(root: string, relativePath: string): Promise<string> {
+  const parts = safeRelativePath(relativePath).split("/");
+  let current = await resolveRealRoot(root);
+  const prefix: string[] = [];
+  for (const part of parts) {
+    prefix.push(part);
+    const candidate = await resolveInsideRoot(root, prefix.join("/"));
+    let created = false;
+    try {
+      await mkdir(candidate, { recursive: false });
+      created = true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+    const info = await lstat(candidate);
+    if (!info.isDirectory() || info.isSymbolicLink()) {
+      throw new GmWriteError("GM_CONFIG_INVALID", "The creation evidence directory must be a real directory.", true);
+    }
+    const verified = await resolveInsideRoot(root, prefix.join("/"), { existing: true });
+    if (created) await syncDirectoryPortable(current);
+    current = verified;
+  }
+  return current;
+}
+
+function relativePathIdentity(path: string): string {
+  return path.normalize("NFKC").toLowerCase();
+}
+
+function relativePathsOverlap(left: string, right: string): boolean {
+  const a = relativePathIdentity(left);
+  const b = relativePathIdentity(right);
+  return a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);
+}
+
+function creationLedgerKey(projectPath: string, parentIdentity: string): string {
+  return createHash("sha256").update(jsonBytes({
+    schemaVersion: 1,
+    projectPath: relativePathIdentity(projectPath),
+    parentIdentity,
+  })).digest("hex");
+}
+
+async function writeDurableExclusive(path: string, bytes: Buffer, mode = 0o600): Promise<void> {
+  const handle = await open(path, "wx", mode);
+  try {
+    await handle.writeFile(bytes);
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+}
+
+async function exactFile(path: string, expected: CreateFileBinding): Promise<"missing" | "exact" | "different"> {
+  const bytes = await readIfPresent(path);
+  if (bytes === null) return "missing";
+  if (bytes.length !== expected.size) return "different";
+  return createHash("sha256").update(bytes).digest("hex") === expected.sha256 ? "exact" : "different";
+}
+
+async function assertHardLinkSupport(ledgerDir: string, ledgerKey: string): Promise<void> {
+  const nonce = randomUUID();
+  const source = join(ledgerDir, `${ledgerKey}.link-probe-${nonce}.source`);
+  const destination = join(ledgerDir, `${ledgerKey}.link-probe-${nonce}.destination`);
+  const bytes = Buffer.from("DEVLAB_CREATE_LINK_PROBE", "ascii");
+  await writeDurableExclusive(source, bytes);
+  try {
+    await link(source, destination);
+    await syncDirectoryPortable(ledgerDir);
+  } catch {
+    throw new GmWriteError("GM_CONFIG_INVALID", "Create-only hard-link promotion is unavailable on the configured filesystem.", true);
+  } finally {
+    const sourceBytes = await readIfPresent(source);
+    if (sourceBytes !== null && sourceBytes.equals(bytes)) await unlinkExactMetadata(source, bytes, ledgerDir);
+    const destinationBytes = await readIfPresent(destination);
+    if (destinationBytes !== null && destinationBytes.equals(bytes)) await unlinkExactMetadata(destination, bytes, ledgerDir);
+  }
+}
+
+async function stageAndLinkBytes(
+  ledgerDir: string,
+  ledgerKey: string,
+  label: string,
+  destination: string,
+  destinationDirectory: string,
+  content: Buffer,
+  mode: number,
+): Promise<void> {
+  const stage = join(ledgerDir, `${ledgerKey}.${label}.${randomUUID()}.stage`);
+  await writeDurableExclusive(stage, content, mode);
+  await syncDirectoryPortable(ledgerDir);
+  try {
+    await link(stage, destination);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+      throw new GmWriteError("GM_CONFIG_INVALID", "Create-only hard-link promotion is unavailable on the configured filesystem.", true);
+    }
+    const present = await readIfPresent(destination);
+    if (present === null || !present.equals(content)) {
+      throw new GmWriteError("GM_INVALID_REQUEST", "A create-only destination already exists with different authority or bytes.", true);
+    }
+  }
+  await syncDirectoryPortable(destinationDirectory);
+  const promoted = await readIfPresent(destination);
+  if (promoted === null || !promoted.equals(content)) {
+    throw new GmWriteError("GM_INVALID_REQUEST", "A create-only destination changed during atomic promotion.", true);
+  }
+  const staged = await readIfPresent(stage);
+  if (staged !== null && staged.equals(content)) {
+    await unlinkExactMetadata(stage, content, ledgerDir);
+  }
+}
+
+async function stageAndLinkCreateFile(
+  ledgerDir: string,
+  ledgerKey: string,
+  index: number,
+  destination: string,
+  target: string,
+  content: Buffer,
+  expected: CreateFileBinding,
+): Promise<void> {
+  // Content is made durable outside the project first. A process or power loss
+  // can therefore leave only an evidence-stage fragment, never a partially
+  // authored GameMaker file. The hard link is create-only and atomic.
+  await stageAndLinkBytes(ledgerDir, ledgerKey, `file-${index.toString().padStart(4, "0")}`, destination, target, content, 0o666);
+  if (await exactFile(destination, expected) !== "exact") {
+    throw new GmWriteError("GM_INVALID_REQUEST", "A project file changed during create-only promotion.", true);
+  }
+}
+
+async function unlinkExactMetadata(path: string, expected: Buffer, directory: string): Promise<void> {
+  const before = await lstat(path, { bigint: true }).catch((error: NodeJS.ErrnoException) => error.code === "ENOENT" ? null : Promise.reject(error));
+  if (!before?.isFile() || before.isSymbolicLink() || !(await readFile(path)).equals(expected)) {
+    throw new GmWriteError("GM_INVALID_REQUEST", "Project creation metadata changed unexpectedly.", true);
+  }
+  const after = await lstat(path, { bigint: true });
+  if (before.dev !== after.dev || before.ino !== after.ino || before.size !== after.size || before.mtimeNs !== after.mtimeNs || before.ctimeNs !== after.ctimeNs) {
+    throw new GmWriteError("GM_INVALID_REQUEST", "Project creation metadata changed unexpectedly.", true);
+  }
+  await unlink(path);
+  await syncDirectoryPortable(directory);
+}
 
 /**
  * This server never compiles and never launches a runtime. The policy is fixed
@@ -187,6 +494,63 @@ export function assertWriteAllowed(paths: readonly string[], allowlist: readonly
   }
 }
 
+/** A plan hash proves coherence, not provenance. This fixed policy is the
+ * server-side authority a caller-controlled plan can never widen. */
+export function assertFixedWritePathPolicy(paths: readonly string[]): void {
+  const identities = new Set<string>();
+  for (const candidate of paths) {
+    const path = safeRelativePath(candidate); const identity = path.normalize("NFKC").toLowerCase();
+    const extension = path.split(".").pop()?.toLowerCase() ?? "";
+    if (!WRITE_PLAN_EXTENSION_SET.has(extension)) throw new GmWriteError("GM_WRITE_NOT_ALLOWED", "The write tier refuses a file type outside the fixed text-write policy.", false);
+    if (identities.has(identity)) throw new GmWriteError("GM_INVALID_REQUEST", "The write tier refuses duplicate file path identities.", false);
+    identities.add(identity);
+  }
+}
+
+export function assertFixedWritePlanPolicy(plan: GmMutationPlan): void {
+  const declared = plan.allowedExtensions.map((extension) => extension.toLowerCase());
+  if (declared.some((extension) => !WRITE_PLAN_EXTENSION_SET.has(extension))) {
+    throw new GmWriteError("GM_WRITE_NOT_ALLOWED", "The plan requests a file type outside the fixed text-write policy.", false);
+  }
+  assertFixedWritePathPolicy(plan.files.map(({ path }) => path));
+  const pathIdentity = (path: string): string => path.normalize("NFKC").toLowerCase();
+  const plannedPaths = new Map<string, string>();
+  for (const file of plan.files) {
+    const path = safeRelativePath(file.path);
+    const identity = pathIdentity(path);
+    if (plannedPaths.has(identity)) {
+      throw new GmWriteError("GM_INVALID_REQUEST", "The plan contains duplicate file path identities.", false);
+    }
+    const extension = path.split(".").pop()?.toLowerCase() ?? "";
+    if (!WRITE_PLAN_EXTENSION_SET.has(extension)) {
+      throw new GmWriteError("GM_WRITE_NOT_ALLOWED", "The plan requests a file type outside the fixed text-write policy.", false);
+    }
+    if ((file.action === "modify") !== (file.beforeSha256 !== null)) {
+      throw new GmWriteError("GM_INVALID_REQUEST", "The planned action does not match the recorded before state.", false);
+    }
+    const bytes = Buffer.from(file.afterContentBase64, "base64");
+    if (bytes.toString("base64") !== file.afterContentBase64) {
+      throw new GmWriteError("GM_WRITE_NOT_ALLOWED", "The write tier accepts only canonical base64 payloads.", false);
+    }
+    let text: string;
+    try { text = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+    catch { throw new GmWriteError("GM_WRITE_NOT_ALLOWED", "The write tier accepts only valid UTF-8 text content.", false); }
+    if (text.includes("\0")) throw new GmWriteError("GM_WRITE_NOT_ALLOWED", "The write tier accepts only text content without NUL bytes.", false);
+    plannedPaths.set(identity, path);
+  }
+  const allowlist = new Map<string, string>();
+  for (const candidate of plan.allowlist) {
+    const path = safeRelativePath(candidate, "allowlist"); const extension = path.split(".").pop()?.toLowerCase() ?? "";
+    if (!WRITE_PLAN_EXTENSION_SET.has(extension)) throw new GmWriteError("GM_WRITE_NOT_ALLOWED", "The plan allowlist requests a file type outside the fixed text-write policy.", false);
+    const identity = pathIdentity(path);
+    if (allowlist.has(identity)) throw new GmWriteError("GM_INVALID_REQUEST", "The plan allowlist contains duplicate path identities.", false);
+    allowlist.set(identity, path);
+  }
+  if (plannedPaths.size !== allowlist.size || [...plannedPaths.keys()].some((identity) => !allowlist.has(identity))) {
+    throw new GmWriteError("GM_INVALID_REQUEST", "The plan allowlist must exactly match the planned files.", false);
+  }
+}
+
 function derivedTransactionId(tool: string, input: unknown): string {
   const digest = createHash("sha256").update(JSON.stringify({ tool, input })).digest("hex").slice(0, 32);
   return `gm-write-${digest}`;
@@ -222,6 +586,7 @@ export class GovernedGameMakerWriteService {
     if (plan.projectRoot !== safeRelativePath(input.projectPath)) {
       throw new GmWriteError("GM_INTERNAL_ERROR", "The plan is bound to a different project than the request.", false);
     }
+    assertFixedWritePlanPolicy(plan);
     assertWriteAllowed(plan.files.map(({ path }) => path), resolveWriteAllowlist(this.env));
 
     const adapter = await this.adapter();
@@ -290,9 +655,17 @@ export class GovernedGameMakerWriteService {
   }
 
   async rollback(input: RollbackInput, requestId: PublicRequestId, signal: AbortSignal): Promise<RollbackOutput> {
+    const serverAllowlist = resolveWriteAllowlist(this.env);
+    const projectsDir = await resolveProjectsDir(this.env);
+    const evidenceRoot = resolveEvidenceRoot(this.env);
+    const transaction = await readTransactionEvidence(projectsDir, evidenceRoot, input.projectPath, input.transactionId);
+    if (transaction.planHash !== input.planHash) throw new GmAdapterError("ROLLBACK_UNAVAILABLE", "transaction plan binding is invalid", false);
+    const transactionPaths = transaction.files;
+    assertFixedWritePathPolicy(transactionPaths);
+    assertWriteAllowed(transactionPaths, serverAllowlist);
     const adapter = await this.adapter();
     const request: GmRollbackRequest = {
-      ...this.base(input.projectPath, input.transactionId, [], signal),
+      ...this.base(input.projectPath, input.transactionId, transactionPaths, signal),
       capability: "GM_ROLLBACK_V1",
       expectedProjectFingerprint: input.expectedProjectFingerprint,
       planHash: input.planHash,
@@ -319,24 +692,28 @@ export class GovernedGameMakerWriteService {
    * There is no plan, no fingerprint and no rollback here, because there is no
    * prior state to bind to or restore. The safety that remains is the safety
    * that applies: the path policy, the env-scoped write allowlist, an explicit
-   * confirm, and a refusal to touch a directory that already holds anything.
+   * confirm, and a refusal to touch any path that already exists.
    * Removing a project is not offered -- deleting is the destructive tier's
    * business and this server has none.
-   */
+  */
   async createProject(input: CreateProjectInput, requestId: PublicRequestId, signal: AbortSignal): Promise<CreateProjectOutput> {
+    if (input.confirm !== true) {
+      throw new GmWriteError("GM_INVALID_REQUEST", "Project creation requires explicit confirm=true.", true);
+    }
     const projectsDir = await resolveProjectsDir(this.env);
     const projectPath = safeRelativePath(input.projectPath);
     const authored = authorProject(input.name);
     assertWriteAllowed(authored.files.map(({ path }) => path), resolveWriteAllowlist(this.env));
-
-    const target = await resolveInsideRoot(projectsDir, projectPath);
-    const existing = await readdir(target).catch((error: NodeJS.ErrnoException) => {
-      if (error.code === "ENOENT") return null;
-      throw error;
-    });
-    if (existing !== null && existing.length > 0) {
-      throw new GmWriteError("GM_INVALID_REQUEST", `${projectPath} already contains files; a project is only created in an empty directory.`, true);
+    const projectParts = projectPath.split("/");
+    const parentRelative = projectParts.slice(0, -1).join("/");
+    const parent = parentRelative
+      ? await resolveInsideRoot(projectsDir, parentRelative, { existing: true })
+      : projectsDir;
+    const parentInfo = await lstat(parent);
+    if (!parentInfo.isDirectory() || parentInfo.isSymbolicLink()) {
+      throw new GmWriteError("GM_INVALID_REQUEST", "The new project's parent must be an existing real directory.", true);
     }
+    const parentIdentity = await realDirectoryIdentity(parent);
 
     const dryRun = input.dryRun ?? true;
     const files = authored.files.map(({ path, content }) => ({
@@ -344,14 +721,285 @@ export class GovernedGameMakerWriteService {
       sha256: createHash("sha256").update(content, "utf8").digest("hex"),
       size: Buffer.byteLength(content, "utf8"),
     }));
+    const requestBinding: CreateRequestBinding = {
+      projectPath: input.projectPath,
+      name: input.name,
+      confirm: true,
+      dryRun: false,
+    };
+    const target = await resolveInsideRoot(projectsDir, projectPath);
+    const existing = await lstat(target).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
 
-    if (!dryRun) {
+    if (dryRun) {
+      if (existing !== null) {
+        throw new GmWriteError("GM_INVALID_REQUEST", `${projectPath} already exists; a project is only created at an absent path.`, true);
+      }
+    } else {
       signal.throwIfAborted();
-      await mkdir(target, { recursive: true });
-      for (const file of authored.files) {
-        signal.throwIfAborted();
-        // wx: never overwrite, even if something appeared since the check.
-        await writeFile(join(target, file.path), file.content, { encoding: "utf8", flag: "wx" });
+      const evidenceRelative = resolveEvidenceRoot(this.env);
+      const ledgerRelative = `${evidenceRelative}/${CREATE_LEDGER_DIR}`;
+      if (relativePathsOverlap(projectPath, evidenceRelative)
+        || await isSameOrDescendantFilesystemPath(projectsDir, projectPath, evidenceRelative)
+        || await isSameOrDescendantFilesystemPath(projectsDir, evidenceRelative, projectPath)) {
+        throw new GmWriteError("GM_CONFIG_INVALID", "Project creation evidence must remain outside the project target.", true);
+      }
+      const ledgerKey = creationLedgerKey(projectPath, parentIdentity);
+      let ledgerDir = await resolveInsideRoot(projectsDir, ledgerRelative);
+      let ledgerPath = join(ledgerDir, `${ledgerKey}.preparing.json`);
+      let completedLedgerPath = join(ledgerDir, `${ledgerKey}.completed.json`);
+      const claimPath = join(target, CREATE_CLAIM_NAME);
+      const finalizingPath = join(target, CREATE_FINALIZING_NAME);
+      const expectedFileNames = new Set(files.map((file) => file.path));
+      if (expectedFileNames.size !== files.length || [...expectedFileNames].some((path) => path.includes("/"))) {
+        throw new GmWriteError("GM_INTERNAL_ERROR", "Project authoring returned an unsupported file layout.", false);
+      }
+
+      const refuseClaim = (): never => {
+        throw new GmWriteError("GM_INVALID_REQUEST", "The existing project creation claim is not authorized for this request.", true);
+      };
+      const assertClaimBinding = async (claim: CreateClaim): Promise<void> => {
+        if (JSON.stringify(claim.request) !== JSON.stringify(requestBinding) || JSON.stringify(claim.files) !== JSON.stringify(files)) refuseClaim();
+        if (await realDirectoryIdentity(parent) !== claim.parentIdentity || await realDirectoryIdentity(target) !== claim.targetIdentity || await realDirectoryIdentity(ledgerDir) !== claim.ledgerIdentity) refuseClaim();
+        const ledger = await readIfPresent(ledgerPath);
+        if (ledger === null || !ledger.equals(createLedgerBytes("PREPARING", claim))) refuseClaim();
+        const completedLedger = await readIfPresent(completedLedgerPath);
+        if (completedLedger !== null && !completedLedger.equals(createLedgerBytes("COMPLETED", claim))) refuseClaim();
+      };
+
+      let claim: CreateClaim;
+      let finalizing = false;
+      let completed = false;
+      let completedReceipt = false;
+      if (existing === null) {
+        ledgerDir = await ensureDurableDirectory(projectsDir, ledgerRelative);
+        ledgerPath = join(ledgerDir, `${ledgerKey}.preparing.json`);
+        completedLedgerPath = join(ledgerDir, `${ledgerKey}.completed.json`);
+        if (await readIfPresent(ledgerPath) !== null || await readIfPresent(completedLedgerPath) !== null) refuseClaim();
+        const [parentVolume, ledgerVolume] = await Promise.all([
+          lstat(parent, { bigint: true }),
+          lstat(ledgerDir, { bigint: true }),
+        ]);
+        if (parentVolume.dev !== ledgerVolume.dev) {
+          throw new GmWriteError("GM_CONFIG_INVALID", "Creation evidence and the target parent must use the same filesystem.", true);
+        }
+        await assertHardLinkSupport(ledgerDir, ledgerKey);
+        // mkdir is the portable no-clobber claim. A crash between mkdir and the
+        // external authority record leaves an unowned empty directory which is
+        // preserved and refused on retry; no portable Node primitive can make
+        // those two acts atomic.
+        await (input as CreateProjectInput & { beforeClaim?: () => Promise<void> }).beforeClaim?.();
+        try {
+          await mkdir(target, { recursive: false });
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+            throw new GmWriteError("GM_INVALID_REQUEST", `${projectPath} appeared during project creation.`, true);
+          }
+          throw error;
+        }
+        await syncDirectoryPortable(parent);
+        const targetIdentity = await realDirectoryIdentity(target);
+        const ledgerIdentity = await realDirectoryIdentity(ledgerDir);
+        if (await realDirectoryIdentity(parent) !== parentIdentity) {
+          throw new GmWriteError("GM_INVALID_REQUEST", "The new project's parent changed during creation.", true);
+        }
+        claim = {
+          schemaVersion: 1,
+          kind: "DEVLAB_GM_CREATE_CLAIM",
+          nonce: randomUUID(),
+          request: requestBinding,
+          parentIdentity,
+          targetIdentity,
+          ledgerIdentity,
+          files,
+        };
+        // This external, server-owned record is the authority. The marker in
+        // the target is deliberately secondary and cannot bootstrap a write by
+        // itself, even if a project actor forges every calculable field.
+        await stageAndLinkBytes(ledgerDir, ledgerKey, "authority-preparing", ledgerPath, ledgerDir, createLedgerBytes("PREPARING", claim), 0o600);
+        if ((input as CreateProjectInput & { faultAt?: string }).faultAt === "after-external-authority") {
+          throw new GmWriteError("GM_INTERNAL_ERROR", "Injected project creation failure.", true);
+        }
+        await stageAndLinkBytes(ledgerDir, ledgerKey, "claim", claimPath, target, jsonBytes(claim), 0o600);
+      } else {
+        if (!existing.isDirectory() || existing.isSymbolicLink()) refuseClaim();
+        const ledgerInfo = await lstat(ledgerDir).catch((error: NodeJS.ErrnoException) => error.code === "ENOENT" ? null : Promise.reject(error));
+        if (!ledgerInfo?.isDirectory() || ledgerInfo.isSymbolicLink()) refuseClaim();
+        ledgerDir = await resolveInsideRoot(projectsDir, ledgerRelative, { existing: true });
+        ledgerPath = join(ledgerDir, `${ledgerKey}.preparing.json`);
+        completedLedgerPath = join(ledgerDir, `${ledgerKey}.completed.json`);
+        const ledgerMarker = await readIfPresent(ledgerPath) ?? refuseClaim();
+        const authoritative = parseCreateLedger(ledgerMarker, "PREPARING") ?? refuseClaim();
+        claim = authoritative.claim;
+        const completedLedgerMarker = await readIfPresent(completedLedgerPath);
+        if (completedLedgerMarker !== null) {
+          const terminal = parseCreateLedger(completedLedgerMarker, "COMPLETED") ?? refuseClaim();
+          if (!jsonBytes(terminal.claim).equals(jsonBytes(claim))) refuseClaim();
+          completedReceipt = true;
+        }
+        await assertClaimBinding(claim);
+        const [claimMarker, finalizingMarker] = await Promise.all([
+          readIfPresent(claimPath),
+          readIfPresent(finalizingPath),
+        ]);
+        if (finalizingMarker !== null) {
+          const parsed = parseCreateFinalizing(finalizingMarker);
+          if (!parsed || !jsonBytes(parsed.claim).equals(jsonBytes(claim))) refuseClaim();
+          finalizing = true;
+          if (claimMarker !== null) {
+            const base = parseCreateClaim(claimMarker);
+            if (!base || !claimMarker.equals(jsonBytes(claim))) refuseClaim();
+          }
+        } else if (claimMarker !== null) {
+          if (completedReceipt) refuseClaim();
+          const parsed = parseCreateClaim(claimMarker);
+          if (!parsed || !claimMarker.equals(jsonBytes(claim))) refuseClaim();
+        } else {
+          // The external authority is retained as a terminal receipt. If the
+          // final marker was removed just before a crash or a lost response,
+          // the exact completed project can be acknowledged idempotently.
+          const entries = (await readdir(target)).sort();
+          if (!completedReceipt && entries.length === 0) {
+            // The authority record was published but the secondary target
+            // marker was not. Recreate only that exact marker and resume.
+            await stageAndLinkBytes(ledgerDir, ledgerKey, "claim-resume", claimPath, target, jsonBytes(claim), 0o600);
+          } else if (completedReceipt) {
+            if (JSON.stringify(entries) !== JSON.stringify([...expectedFileNames].sort())) refuseClaim();
+            for (const file of files) if (await exactFile(join(target, file.path), file) !== "exact") refuseClaim();
+            completed = true;
+          } else refuseClaim();
+        }
+      }
+      await assertClaimBinding(claim);
+      const claimMarkerBytes = jsonBytes(claim);
+      const finalizingMarkerBytes = jsonBytes({ schemaVersion: 1, kind: "DEVLAB_GM_CREATE_FINALIZING", claim } satisfies CreateFinalizing);
+
+      const inspectPreparing = async (): Promise<{ phaseCount: number; states: readonly ("missing" | "exact")[] }> => {
+        await assertClaimBinding(claim);
+        const marker = await readIfPresent(claimPath);
+        if (marker === null || !marker.equals(claimMarkerBytes) || await readIfPresent(finalizingPath) !== null) refuseClaim();
+        const entries = await readdir(target);
+        const allowed = new Set([CREATE_CLAIM_NAME, ...files.map((_, index) => phaseName(index)), ...expectedFileNames]);
+        if (entries.some((entry) => !allowed.has(entry))) refuseClaim();
+
+        let phaseCount = 0;
+        let sawGap = false;
+        for (const [index] of files.entries()) {
+          const phase = await readIfPresent(join(target, phaseName(index)));
+          if (phase === null) {
+            sawGap = true;
+          } else {
+            if (sawGap || !phase.equals(phaseBytes(claim, index))) refuseClaim();
+            phaseCount += 1;
+          }
+        }
+        const states: ("missing" | "exact")[] = [];
+        for (const [index, file] of files.entries()) {
+          const state = await exactFile(join(target, file.path), file);
+          if (state === "different") return refuseClaim();
+          // Only the most recent durable WRITING record may authorize a file
+          // that is still missing. A file without its record is foreign even if
+          // its bytes happen to have the expected digest.
+          if (index < phaseCount - 1 && state !== "exact") refuseClaim();
+          if (index >= phaseCount && state !== "missing") refuseClaim();
+          states.push(state);
+        }
+        return { phaseCount, states };
+      };
+
+      const inspectFinalizing = async (): Promise<ReadonlySet<string>> => {
+        await assertClaimBinding(claim);
+        const finalMarker = await readIfPresent(finalizingPath);
+        if (finalMarker === null || !finalMarker.equals(finalizingMarkerBytes)) refuseClaim();
+        const entries = await readdir(target);
+        const allowed = new Set([CREATE_CLAIM_NAME, CREATE_FINALIZING_NAME, ...files.map((_, index) => phaseName(index)), ...expectedFileNames]);
+        if (entries.some((entry) => !allowed.has(entry))) refuseClaim();
+        const base = await readIfPresent(claimPath);
+        if (base !== null && !base.equals(claimMarkerBytes)) refuseClaim();
+        for (const [index, file] of files.entries()) {
+          const phase = await readIfPresent(join(target, phaseName(index)));
+          if (phase !== null && !phase.equals(phaseBytes(claim, index))) refuseClaim();
+          if (await exactFile(join(target, file.path), file) !== "exact") refuseClaim();
+        }
+        return new Set(entries);
+      };
+
+      if (!finalizing && !completed) {
+        for (const [index, file] of authored.files.entries()) {
+          signal.throwIfAborted();
+          let inspected = await inspectPreparing();
+          if (inspected.phaseCount < index || inspected.phaseCount > index + 1) refuseClaim();
+          if (inspected.phaseCount === index) {
+            await stageAndLinkBytes(
+              ledgerDir,
+              ledgerKey,
+              `phase-${index.toString().padStart(4, "0")}`,
+              join(target, phaseName(index)),
+              target,
+              phaseBytes(claim, index),
+              0o600,
+            );
+            inspected = await inspectPreparing();
+            if ((input as CreateProjectInput & { faultAt?: string }).faultAt === "after-first-write-phase" && index === 0) {
+              throw new GmWriteError("GM_INTERNAL_ERROR", "Injected project creation failure.", true);
+            }
+          }
+          if (inspected.phaseCount !== index + 1) refuseClaim();
+          if (inspected.states[index] === "missing") {
+            const destination = await resolveInsideRoot(projectsDir, `${projectPath}/${safeRelativePath(file.path)}`);
+            await assertClaimBinding(claim);
+            await stageAndLinkCreateFile(
+              ledgerDir,
+              ledgerKey,
+              index,
+              destination,
+              target,
+              Buffer.from(file.content, "utf8"),
+              files[index]!,
+            );
+          }
+          inspected = await inspectPreparing();
+          if (inspected.states[index] !== "exact") refuseClaim();
+          if ((input as CreateProjectInput & { faultAt?: string }).faultAt === "after-first-staged-file" && index === 0) {
+            throw new GmWriteError("GM_INTERNAL_ERROR", "Injected project creation failure.", true);
+          }
+        }
+        const ready = await inspectPreparing();
+        if (ready.phaseCount !== files.length || ready.states.some((state) => state !== "exact")) refuseClaim();
+        await stageAndLinkBytes(ledgerDir, ledgerKey, "finalizing", finalizingPath, target, finalizingMarkerBytes, 0o600);
+        finalizing = true;
+      }
+
+      if (finalizing) {
+        for (const [index] of files.entries()) {
+          const entries = await inspectFinalizing();
+          const name = phaseName(index);
+          if (entries.has(name)) await unlinkExactMetadata(join(target, name), phaseBytes(claim, index), target);
+        }
+        let entries = await inspectFinalizing();
+        if (entries.has(CREATE_CLAIM_NAME)) await unlinkExactMetadata(claimPath, claimMarkerBytes, target);
+        entries = await inspectFinalizing();
+        const expectedBeforeCommit = [...expectedFileNames, CREATE_FINALIZING_NAME].sort();
+        if (JSON.stringify([...entries].sort()) !== JSON.stringify(expectedBeforeCommit)) refuseClaim();
+        if (!completedReceipt) {
+          await stageAndLinkBytes(
+            ledgerDir,
+            ledgerKey,
+            "authority-completed",
+            completedLedgerPath,
+            ledgerDir,
+            createLedgerBytes("COMPLETED", claim),
+            0o600,
+          );
+          completedReceipt = true;
+        }
+        await assertClaimBinding(claim);
+        await unlinkExactMetadata(finalizingPath, finalizingMarkerBytes, target);
+        if ((input as CreateProjectInput & { faultAt?: string }).faultAt === "after-final-marker-removal") {
+          throw new GmWriteError("GM_INTERNAL_ERROR", "Injected project creation failure.", true);
+        }
       }
     }
 

@@ -15,7 +15,7 @@
   "prompts": 0,
   "inputSchema": "packages/gamemaker-dev-mcp/schemas/gamemaker-readonly-v1.schema.json",
   "configuration": "DEVLAB_GM_PROJECTS_DIR absolute existing real directory",
-  "dependencies": ["@tanguito/devlab-gm-ide-adapter"],
+  "dependencies": ["@tanguito/devlab-gm-ide-adapter", "@tanguito/devlab-gm-authoring"],
   "runtimeStatus": "LOCAL_VERIFIED",
   "productionVerified": false,
   "assetBridgeAvailable": false,

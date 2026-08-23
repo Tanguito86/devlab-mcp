@@ -4,7 +4,14 @@ import {
   GovernedGameMakerIdeAdapter, type GmApplyResult, type GmMutationPlan, type GmProjectSnapshot,
   type GmVerificationResult,
 } from "@tanguito/devlab-gm-ide-adapter";
-import { planHash as adapterPlanHash, resolveInsideRoot, safeRelativePath, safeTransactionId, type ProcessInventory } from "@tanguito/devlab-gm-ide-adapter/internal";
+import {
+  isSameOrDescendantFilesystemPath,
+  planHash as adapterPlanHash,
+  resolveInsideRoot,
+  safeRelativePath,
+  safeTransactionId,
+  type ProcessInventory,
+} from "@tanguito/devlab-gm-ide-adapter/internal";
 import {
   type AssetCatalog, AssetForgeError, validateAssetCatalog, scanCatalogProvenance, parsePng,
 } from "@tanguito/devlab-img2threejs-asset-forge";
@@ -71,6 +78,16 @@ interface ArtifactManifest {
 }
 
 const ALLOWED_EXTENSIONS = Object.freeze(["gml", "yy", "yyp", "json", "png", "resource_order"]);
+
+async function assertEvidenceOutsideProject(projectsDir: string, projectRoot: string, evidenceRoot: string): Promise<void> {
+  if (await isSameOrDescendantFilesystemPath(
+    projectsDir,
+    safeRelativePath(projectRoot),
+    safeRelativePath(evidenceRoot),
+  )) {
+    fail("PATH_NOT_ALLOWED", "evidenceRoot must be outside the target project");
+  }
+}
 
 export class GovernedAssetGmBridge {
   readonly adapter: GovernedGameMakerIdeAdapter;
@@ -179,7 +196,8 @@ export class GovernedAssetGmBridge {
     return sha256(await readFile(path));
   }
 
-  private async loadBindingChain(evidenceRoot: string, transactionId: string, bindingHash: string, phase: string): Promise<Readonly<{ manifest: AssetGmBridgeManifest; record: BindingRecord; manifestPath: string }>> {
+  private async loadBindingChain(projectRoot: string, evidenceRoot: string, transactionId: string, bindingHash: string, phase: string): Promise<Readonly<{ manifest: AssetGmBridgeManifest; record: BindingRecord; manifestPath: string }>> {
+    await assertEvidenceOutsideProject(this.projectsDir, projectRoot, evidenceRoot);
     const root = await this.bridgeEvidenceRoot(evidenceRoot, transactionId);
     const manifestPath = join(root, "manifest.json");
     let record: BindingRecord;
@@ -257,6 +275,7 @@ export class GovernedAssetGmBridge {
   async planImport(request: AssetGmBridgePlanRequest): Promise<AssetGmBridgePlanResult> {
     this.gate(request.capability);
     if (!request.expectedProjectFingerprint) fail("INVALID_REQUEST", "planImport requires an expected project fingerprint");
+    await assertEvidenceOutsideProject(this.projectsDir, request.projectRoot, request.evidenceRoot);
     const catalog = await this.loadCatalog();
     const entry = this.catalogEntry(catalog, request.assetId, request.assetVersion);
     this.assertAssetApproved(entry, "plan");
@@ -467,7 +486,7 @@ export class GovernedAssetGmBridge {
   async applyImport(request: AssetGmBridgeApplyRequest): Promise<AssetGmBridgeApplyResult> {
     this.gate(request.capability);
     if (!request.confirm) fail("GATE_VIOLATION", "applyImport requires confirm=true");
-    const { manifest, record } = await this.loadBindingChain(request.evidenceRoot, request.transactionId, request.bindingHash, "apply");
+    const { manifest, record } = await this.loadBindingChain(request.projectRoot, request.evidenceRoot, request.transactionId, request.bindingHash, "apply");
     if (request.planHash !== adapterPlanHash(request.plan)) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the provided plan");
     if (request.planHash !== record.adapterPlanHash) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the binding record");
     if (request.plan.transactionId !== request.transactionId) fail("STALE_OR_TAMPERED_PLAN", "plan transaction id does not match the request");
@@ -521,7 +540,7 @@ export class GovernedAssetGmBridge {
 
   async verifyImport(request: AssetGmBridgeVerifyRequest): Promise<GmVerificationResult> {
     this.gate(request.capability);
-    const { manifest, record } = await this.loadBindingChain(request.evidenceRoot, request.transactionId, request.bindingHash, "verify");
+    const { manifest, record } = await this.loadBindingChain(request.projectRoot, request.evidenceRoot, request.transactionId, request.bindingHash, "verify");
     if (request.planHash !== adapterPlanHash(request.plan)) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the provided plan");
     if (request.planHash !== record.adapterPlanHash) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the binding record");
     const signal = runtimeSignalFor(manifest) ?? undefined;
@@ -555,7 +574,7 @@ export class GovernedAssetGmBridge {
   async rollbackImport(request: AssetGmBridgeRollbackRequest): Promise<AssetGmBridgeRollbackResult> {
     this.gate(request.capability);
     if (!request.confirm) fail("GATE_VIOLATION", "rollbackImport requires confirm=true");
-    const { manifest, record, manifestPath } = await this.loadBindingChain(request.evidenceRoot, request.transactionId, request.bindingHash, "rollback");
+    const { manifest, record, manifestPath } = await this.loadBindingChain(request.projectRoot, request.evidenceRoot, request.transactionId, request.bindingHash, "rollback");
     if (request.planHash !== record.adapterPlanHash) fail("STALE_OR_TAMPERED_PLAN", "plan hash does not match the binding record");
     try {
       const result = await this.adapter.rollback({
@@ -586,6 +605,7 @@ export class GovernedAssetGmBridge {
 
   async status(request: AssetGmBridgeInspectTargetRequest): Promise<AssetGmBridgeStatus> {
     this.gate(request.capability);
+    await assertEvidenceOutsideProject(this.projectsDir, request.projectRoot, request.evidenceRoot);
     const catalog = await this.loadCatalog().catch(() => null);
     const entry = catalog ? catalog.entries.find((candidate) => candidate.assetId === request.assetId && candidate.version === request.assetVersion) ?? null : null;
     const adapterStatus = await this.adapter.status({

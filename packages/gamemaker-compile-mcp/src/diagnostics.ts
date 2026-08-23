@@ -41,9 +41,25 @@ const DIAGNOSTIC_LINE = /^\s*(Error|Warning)\s*:\s*([^()]+?)\((\d+)\)\s*:\s*(.+?
 const OBJECT_SYMBOL = /^gml_Object_(.+)_([A-Za-z]+_\d+)$/;
 const SCRIPT_SYMBOL = /^gml_(?:Global)?Script_(.+)$/;
 
+function scrubSymbol(raw: string): string {
+  const symbol = raw.trim();
+  if (/[\\/]/.test(symbol) || /^[A-Za-z]:/.test(symbol)) return "<path>";
+  // Compiler symbols are ASCII identifiers. Treat any other shape as opaque
+  // rather than reflecting arbitrary log text through the MCP response.
+  return /^[A-Za-z0-9_.$-]{1,200}$/.test(symbol) ? symbol : "<symbol>";
+}
+
 /** Drops anything that looks like a filesystem path before it reaches a caller. */
 function scrub(message: string): string {
   const cleaned = message
+    // Consume path segments through the final filename as a unit. The older
+    // whitespace-bounded expressions leaked the tail of paths such as
+    // `C:\\Users\\Alice\\My Project\\secret.gml`.
+    .replace(/(?:[A-Za-z]:[\\/]|\\\\[^\\/\r\n]+[\\/]|\/)(?:[^\\/\r\n"'<>|]*[\\/])+[^\\/\r\n"'<>|]*\.[A-Za-z0-9]{1,16}\b/g, "<path>")
+    // A directory path has no reliable lexical terminator when it contains
+    // spaces. Prefer redacting the rest of that diagnostic over reflecting a
+    // partial host path.
+    .replace(/(^|[\s("'=:\[])(?:[A-Za-z]:[\\/]|\\\\|\/).*$/g, "$1<path>")
     .replace(/[A-Za-z]:[\\/][^\s"']*/g, "<path>")
     .replace(/\\\\[^\s"']+/g, "<path>")
     .replace(/(?:\/[\w.-]+){2,}/g, "<path>");
@@ -69,7 +85,7 @@ export function parseIgorDiagnostics(log: string): DiagnosticReport {
     const match = DIAGNOSTIC_LINE.exec(rawLine);
     if (!match) continue;
     const severity: DiagnosticSeverity = match[1] === "Warning" ? "warning" : "error";
-    const symbol = match[2]!.trim();
+    const symbol = scrubSymbol(match[2]!);
     const line = Number(match[3]);
     if (!Number.isSafeInteger(line) || line < 0) continue;
     const message = scrub(match[4]!);

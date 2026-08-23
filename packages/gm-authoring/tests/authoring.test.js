@@ -235,3 +235,20 @@ test("ORDER: the next index follows the highest existing one", () => {
   assert.equal(nextResourceOrder(YYP), 1);
   assert.equal(nextResourceOrder('{"ResourceOrderSettings":[]}'), 0);
 });
+
+test("ORDER: sequential additions advance from .resource_order, not stale project metadata", () => {
+  const first = authorScript(project(), { name: "scr_first", gml: "return 1;" });
+  const firstYyp = first.files.find(({ path }) => path === "Demo.yyp").content;
+  const firstOrder = first.files.find(({ path }) => path === "Demo.resource_order").content;
+  const second = authorScript(project({ yyp: firstYyp, resourceOrder: firstOrder }), {
+    name: "scr_second",
+    gml: "return 2;",
+  });
+  const secondOrder = parseGmJson(
+    second.files.find(({ path }) => path === "Demo.resource_order").content,
+  );
+  assert.deepEqual(
+    secondOrder.ResourceOrderSettings.map(({ order }) => order),
+    [0, 1, 2],
+  );
+});

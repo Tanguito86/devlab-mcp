@@ -47,7 +47,7 @@ test("GameMaker MCP registry exposes only the local read-only stdio slice", () =
   assert.equal(gmMcp.writeTools, 0);
   assert.equal(gmMcp.resources, 0);
   assert.equal(gmMcp.prompts, 0);
-  assert.deepEqual(gmMcp.dependencies, ["@tanguito/devlab-gm-ide-adapter"]);
+  assert.deepEqual(gmMcp.dependencies, ["@tanguito/devlab-gm-ide-adapter", "@tanguito/devlab-gm-authoring"]);
   assert.equal(gmMcp.runtimeStatus, "LOCAL_VERIFIED");
   assert.equal(gmMcp.productionVerified, false);
   assert.equal(gmMcp.assetBridgeAvailable, false);
@@ -172,7 +172,7 @@ test("GameMaker asset MCP imports only APPROVED assets and never compiles", () =
   }
 });
 
-test("Aseprite ingest MCP confines its sources and cannot self-approve", () => {
+test("Aseprite ingest MCP confines sources and verifies autonomous approval", () => {
   assert.equal(ingestMcp.package, "@tanguito/aseprite-ingest-mcp");
   // The library stays library-only; the MCP surface is a separate package.
   assert.notEqual(ingestMcp.package, asepriteIngest.package);
@@ -209,9 +209,10 @@ test("Aseprite ingest MCP confines its sources and cannot self-approve", () => {
   const entry = registry.capabilities.find(({ id }) => id === "ASEPRITE_INGEST_MCP_V1");
   assert.ok(entry, "ASEPRITE_INGEST_MCP_V1 must be registered in the manifest");
   assert.equal(entry.integrationMode, "STDIO_MCP_SERVER");
-  for (const prohibited of ["absolute or traversing source paths", "Aseprite --script execution", "approving its own catalog entry"]) {
+  for (const prohibited of ["absolute or traversing source paths", "Aseprite --script execution", "writing outside the configured catalog root"]) {
     assert.ok(entry.prohibitedActions.includes(prohibited), prohibited);
   }
+  assert.ok(!entry.prohibitedActions.includes("approving its own catalog entry"));
 });
 
 test("GameMaker registry exposes exactly six governed capabilities and no Hermes tools", () => {
@@ -249,6 +250,9 @@ test("ASSET_GM_BRIDGE_V1 is a governed composition of ASSET_FORGE + GM_ADAPTER",
   const entry = registry.capabilities.find(({ id }) => id === "ASSET_GM_BRIDGE_V1");
   assert.ok(entry, "ASSET_GM_BRIDGE_V1 must be registered in the manifest");
   assert.equal(entry.status, "INTEGRATED");
+  assert.equal(entry.sourcePin, `asset-gm-bridge-v${assetBridge.version}`);
+  assert.equal(entry.evidencePath, "packages/asset-gm-bridge/README.md", "the current version pin must use current package evidence, not the historical v1 pilot record");
+  assert.equal(entry.securityStatus, "PLAN_BOUND_FAIL_CLOSED_LOCAL_VERIFIED");
   // The bridge never exposes raw GameMaker/Igor/Asset Forge tools to its callers.
   assert.deepEqual(entry.prohibitedActions, ["raw GameMaker/Igor/Asset Forge tool exposure", "implicit toolchain", "implicit work root", "publish without authorization"]);
 });
