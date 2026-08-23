@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@tanguito/devlab-gm-authoring": "workspace:*",
     "@tanguito/devlab-gm-ide-adapter": "workspace:*",
     "zod": "^4.1.13"
   },

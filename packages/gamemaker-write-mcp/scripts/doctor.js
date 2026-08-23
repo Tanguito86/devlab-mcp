@@ -16,7 +16,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(__dirname, "..");
 const binPath = join(packageRoot, "dist", "index.js");
-const EXPECTED_TOOLS = ["gamemaker_apply", "gamemaker_rollback", "gamemaker_verify_text"];
+const EXPECTED_TOOLS = ["gamemaker_apply", "gamemaker_create_project", "gamemaker_rollback", "gamemaker_verify_text"];
 const FORBIDDEN_TOOLS = ["gamemaker_compile", "gamemaker_run", "gamemaker_verify", "gamemaker_import"];
 
 const ok = [];

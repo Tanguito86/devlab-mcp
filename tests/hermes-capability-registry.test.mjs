@@ -32,7 +32,7 @@ test("GameMaker MCP registry exposes only the local read-only stdio slice", () =
   assert.equal(gmMcp.package, "@tanguito/gamemaker-dev-mcp");
   assert.equal(gmMcp.transport, "STDIO");
   assert.deepEqual(gmMcp.publicTools, [
-    "gamemaker_status", "gamemaker_inspect", "gamemaker_plan",
+    "gamemaker_status", "gamemaker_inspect", "gamemaker_read_text", "gamemaker_plan",
     "gamemaker_plan_new_script", "gamemaker_plan_new_object",
     "gamemaker_plan_new_room", "gamemaker_plan_place_instance",
     "gamemaker_plan_new_tileset", "gamemaker_plan_tile_layer",
@@ -66,8 +66,8 @@ test("GameMaker write MCP is registered as a separate, process-free write tier",
   assert.equal(gmWriteMcp.package, "@tanguito/gamemaker-write-mcp");
   assert.notEqual(gmWriteMcp.package, gmMcp.package, "the write tier must not share a package with the read tier");
   assert.equal(gmWriteMcp.transport, "STDIO");
-  assert.deepEqual(gmWriteMcp.publicTools, ["gamemaker_apply", "gamemaker_verify_text", "gamemaker_rollback"]);
-  assert.deepEqual(gmWriteMcp.internalCapabilities, ["GM_APPLY_SAFE_V1", "GM_VERIFY_V1", "GM_ROLLBACK_V1"]);
+  assert.deepEqual(gmWriteMcp.publicTools, ["gamemaker_apply", "gamemaker_verify_text", "gamemaker_rollback", "gamemaker_create_project"]);
+  assert.deepEqual(gmWriteMcp.internalCapabilities, ["GM_APPLY_SAFE_V1", "GM_VERIFY_V1", "GM_ROLLBACK_V1", "GM_CREATE_PROJECT_V1"]);
   assert.equal(gmWriteMcp.mode, "SAFE_WRITE_NO_PROCESS_EXECUTION");
   assert.deepEqual(gmWriteMcp.verificationLevels, ["TEXT_VALID"]);
   assert.equal(gmWriteMcp.compilerExecution, false);
@@ -76,7 +76,10 @@ test("GameMaker write MCP is registered as a separate, process-free write tier",
   assert.equal(gmWriteMcp.prompts, 0);
   assert.equal(gmWriteMcp.assetBridgeAvailable, false);
   assert.equal(gmWriteMcp.networkAccess, false);
-  assert.deepEqual(gmWriteMcp.dependencies, ["@tanguito/devlab-gm-ide-adapter"]);
+  // The authoring library joined the write tier when project creation did:
+  // an empty project is a rendered record like any other, and rendering it in
+  // two places would let the two copies drift.
+  assert.deepEqual(gmWriteMcp.dependencies, ["@tanguito/devlab-gm-ide-adapter", "@tanguito/devlab-gm-authoring"]);
   assert.doesNotThrow(() => readFileSync(new URL("../" + gmWriteMcp.inputSchema, import.meta.url), "utf8"));
   // The read tier must keep advertising zero write tools now that a write tier exists.
   assert.equal(gmMcp.writeTools, 0);

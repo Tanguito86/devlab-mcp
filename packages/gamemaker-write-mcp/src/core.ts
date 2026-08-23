@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { isAbsolute } from "node:path";
+import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { isAbsolute, join } from "node:path";
 
 import {
   GmAdapterError,
@@ -12,13 +13,17 @@ import {
 } from "@tanguito/devlab-gm-ide-adapter";
 import {
   planHash as adapterPlanHash,
+  resolveInsideRoot,
   resolveRealRoot,
   safeRelativePath,
 } from "@tanguito/devlab-gm-ide-adapter/internal";
+import { authorProject, GmAuthoringError } from "@tanguito/devlab-gm-authoring";
 
 import type {
   ApplyInput,
   ApplyOutput,
+  CreateProjectInput,
+  CreateProjectOutput,
   MutationPlanInput,
   RollbackInput,
   RollbackOutput,
@@ -51,6 +56,7 @@ export type GmWriteErrorCode =
   | "GM_CONFIG_REQUIRED"
   | "GM_CONFIG_INVALID"
   | "GM_WRITE_NOT_ALLOWED"
+  | "GM_INVALID_REQUEST"
   | "GM_INTERNAL_ERROR";
 
 export class GmWriteError extends Error {
@@ -306,6 +312,62 @@ export class GovernedGameMakerWriteService {
       projectFingerprint: result.projectFingerprint,
     };
   }
+
+  /**
+   * Creates the two files an empty GameMaker project consists of.
+   *
+   * There is no plan, no fingerprint and no rollback here, because there is no
+   * prior state to bind to or restore. The safety that remains is the safety
+   * that applies: the path policy, the env-scoped write allowlist, an explicit
+   * confirm, and a refusal to touch a directory that already holds anything.
+   * Removing a project is not offered -- deleting is the destructive tier's
+   * business and this server has none.
+   */
+  async createProject(input: CreateProjectInput, requestId: PublicRequestId, signal: AbortSignal): Promise<CreateProjectOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const projectPath = safeRelativePath(input.projectPath);
+    const authored = authorProject(input.name);
+    assertWriteAllowed(authored.files.map(({ path }) => path), resolveWriteAllowlist(this.env));
+
+    const target = await resolveInsideRoot(projectsDir, projectPath);
+    const existing = await readdir(target).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+    if (existing !== null && existing.length > 0) {
+      throw new GmWriteError("GM_INVALID_REQUEST", `${projectPath} already contains files; a project is only created in an empty directory.`, true);
+    }
+
+    const dryRun = input.dryRun ?? true;
+    const files = authored.files.map(({ path, content }) => ({
+      path,
+      sha256: createHash("sha256").update(content, "utf8").digest("hex"),
+      size: Buffer.byteLength(content, "utf8"),
+    }));
+
+    if (!dryRun) {
+      signal.throwIfAborted();
+      await mkdir(target, { recursive: true });
+      for (const file of authored.files) {
+        signal.throwIfAborted();
+        // wx: never overwrite, even if something appeared since the check.
+        await writeFile(join(target, file.path), file.content, { encoding: "utf8", flag: "wx" });
+      }
+    }
+
+    return {
+      ok: true,
+      schemaVersion: 1,
+      requestId,
+      capability: "GM_CREATE_PROJECT_V1",
+      serverGate: "SAFE_WRITE",
+      created: !dryRun,
+      dryRun,
+      projectPath,
+      projectFile: authored.projectFile,
+      files,
+    };
+  }
 }
 
 export function mapToolError(error: unknown, requestId: PublicRequestId): ToolOutput {
@@ -319,6 +381,10 @@ export function mapToolError(error: unknown, requestId: PublicRequestId): ToolOu
       requestId,
       error: { code: error.code, message: ADAPTER_PUBLIC_MESSAGES[error.code], recoverable: error.recoverable },
     };
+  }
+  // A rejected project name is the caller's to fix, so it keeps its own message.
+  if (error instanceof GmAuthoringError) {
+    return { ok: false, schemaVersion: 1, requestId, error: { code: error.code, message: error.message, recoverable: true } };
   }
   const type = error instanceof Error ? error.name : typeof error;
   process.stderr.write(`[gamemaker-write-mcp] GM_INTERNAL_ERROR request=${String(requestId)} type=${type}\n`);

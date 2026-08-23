@@ -109,3 +109,7 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 # bytes must materialize identically on every checkout.
 /fixtures/gamemaker/tile-reference/** text eol=lf
 /fixtures/gamemaker/tile-reference/**/*.png binary
+
+# GM-MCP-BOOTSTRAP-01 ProjectTool's own PROJECT NEW output, compared against
+# field for field by a test.
+/fixtures/gamemaker/new-project/** text eol=lf

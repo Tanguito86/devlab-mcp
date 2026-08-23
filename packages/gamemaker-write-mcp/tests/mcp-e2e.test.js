@@ -129,6 +129,7 @@ test("MCP E2E: apply, verify and rollback complete a byte-exact write loop", { t
       "gamemaker_apply",
       "gamemaker_verify_text",
       "gamemaker_rollback",
+      "gamemaker_create_project",
     ]);
     for (const tool of listed.tools) {
       assert.equal(tool.annotations.readOnlyHint, false, `${tool.name} must not claim to be read-only`);

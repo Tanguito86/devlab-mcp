@@ -12,6 +12,8 @@ import {
   planInputSchema,
   planWireOutputSchema,
   READ_ONLY_ANNOTATIONS,
+  readTextInputSchema,
+  readTextWireOutputSchema,
   statusInputSchema,
   statusWireOutputSchema,
   tileLayerInputSchema,
@@ -65,6 +67,25 @@ export function createGameMakerMcpServer(
     async (input, extra) => {
       try {
         return response(await service.inspect(input, extra.requestId, extra.signal));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "gamemaker_read_text",
+    {
+      title: "Read GameMaker project files",
+      description:
+        "Return the text of project files, so an edit can be planned against what a file actually says. Readable extensions are exactly the ones the plan tools may write: .gml, .yy, .yyp, .json, .resource_order. Each file comes back with the digest of the bytes on disk; hand that same text, modified, to gamemaker_plan. Requires the exact inspect fingerprint, because text read against one project state and edited against another is how a concurrent change gets overwritten.",
+      inputSchema: readTextInputSchema,
+      outputSchema: readTextWireOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.readText(input, extra.requestId, extra.signal));
       } catch (error) {
         return response(mapToolError(error, extra.requestId));
       }

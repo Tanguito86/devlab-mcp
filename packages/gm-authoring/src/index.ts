@@ -27,3 +27,7 @@ export {
   renderTilesetYy, spliceTileLayerIntoRoom, tileLayerRecord, tilesetLayout, tilesetResourcePath,
   type TileLayerSpec, type TilesetGeometry, type TilesetLayout,
 } from "./tiles.js";
+export {
+  assertProjectName, authorProject, renderProjectYyp, renderResourceOrder,
+  type AuthoredProject, type AuthoredProjectFile,
+} from "./project.js";

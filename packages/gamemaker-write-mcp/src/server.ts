@@ -3,6 +3,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   applyInputSchema,
   applyWireOutputSchema,
+  createProjectInputSchema,
+  createProjectWireOutputSchema,
   EVIDENCE_ONLY_ANNOTATIONS,
   MUTATING_ANNOTATIONS,
   rollbackInputSchema,
@@ -81,6 +83,25 @@ export function createGameMakerWriteMcpServer(
     async (input, extra) => {
       try {
         return response(await service.rollback(input, extra.requestId, extra.signal));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "gamemaker_create_project",
+    {
+      title: "Create an empty GameMaker project",
+      description:
+        "Write the two files an empty GameMaker project consists of, byte-identical to what ProjectTool's PROJECT NEW produces, into an absent or empty directory. This is the one write with no plan and no rollback: there is no prior state to bind to, and removing a project is not offered. Defaults to a dry run. Follow it with gamemaker_inspect to get the fingerprint the plan tools require.",
+      inputSchema: createProjectInputSchema,
+      outputSchema: createProjectWireOutputSchema,
+      annotations: MUTATING_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.createProject(input, extra.requestId, extra.signal));
       } catch (error) {
         return response(mapToolError(error, extra.requestId));
       }

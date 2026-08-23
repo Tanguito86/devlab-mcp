@@ -4,6 +4,7 @@ export const TOOL_NAMES = Object.freeze([
   "gamemaker_apply",
   "gamemaker_verify_text",
   "gamemaker_rollback",
+  "gamemaker_create_project",
 ] as const);
 
 /**
@@ -38,6 +39,35 @@ const digestSchema = z.string().regex(/^[a-f0-9]{64}$/);
 const relativePathSchema = z.string().min(1).max(1024);
 const transactionIdSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]{0,127}$/);
 const base64Schema = z.string().max(6 * 1024 * 1024).regex(/^[A-Za-z0-9+/]*={0,2}$/);
+
+/**
+ * Creating a project is the one write with nothing to fingerprint: there is no
+ * prior state, so there is no plan and no rollback either. Undoing it means
+ * deleting a directory, which this tier must never do -- the caller removes it.
+ */
+export const createProjectInputSchema = z.object({
+  projectPath: projectPathSchema.describe("New project directory relative to DEVLAB_GM_PROJECTS_DIR; must be absent or empty"),
+  name: z.string().min(1).max(64).describe("Project name, a GML-safe identifier; also the .yyp filename"),
+  confirm: z.literal(true).describe("Must be true; the server refuses to write otherwise"),
+  dryRun: z.boolean().optional().describe("Defaults to true; pass false to actually write"),
+}).strict();
+
+export const createProjectSuccessSchema = z.object({
+  ok: z.literal(true),
+  schemaVersion: z.literal(1),
+  requestId: requestIdSchema,
+  capability: z.literal("GM_CREATE_PROJECT_V1"),
+  serverGate: z.literal("SAFE_WRITE"),
+  created: z.boolean(),
+  dryRun: z.boolean(),
+  projectPath: relativePathSchema,
+  projectFile: relativePathSchema,
+  files: z.array(z.object({
+    path: relativePathSchema,
+    sha256: digestSchema,
+    size: z.number().int().nonnegative(),
+  }).strict()),
+}).strict();
 
 const verificationPolicySchema = z.object({
   projectLoad: z.boolean(),
@@ -172,6 +202,7 @@ export const rollbackSuccessSchema = z.object({
 export const applyOutputSchema = z.discriminatedUnion("ok", [applySuccessSchema, errorSchema]);
 export const verifyTextOutputSchema = z.discriminatedUnion("ok", [verifyTextSuccessSchema, errorSchema]);
 export const rollbackOutputSchema = z.discriminatedUnion("ok", [rollbackSuccessSchema, errorSchema]);
+export const createProjectOutputSchema = z.discriminatedUnion("ok", [createProjectSuccessSchema, errorSchema]);
 
 // SDK 1.29 publishes object output schemas but omits top-level unions from
 // tools/list, mirroring the read-only server's transport envelope.
@@ -184,12 +215,15 @@ const wireFields = {
 export const applyWireOutputSchema = applySuccessSchema.partial().extend(wireFields).strict();
 export const verifyTextWireOutputSchema = verifyTextSuccessSchema.partial().extend(wireFields).strict();
 export const rollbackWireOutputSchema = rollbackSuccessSchema.partial().extend(wireFields).strict();
+export const createProjectWireOutputSchema = createProjectSuccessSchema.partial().extend(wireFields).strict();
 
 export type MutationPlanInput = z.infer<typeof mutationPlanSchema>;
 export type ApplyInput = z.infer<typeof applyInputSchema>;
 export type VerifyTextInput = z.infer<typeof verifyTextInputSchema>;
 export type RollbackInput = z.infer<typeof rollbackInputSchema>;
+export type CreateProjectInput = z.infer<typeof createProjectInputSchema>;
 export type ApplyOutput = z.infer<typeof applyOutputSchema>;
 export type VerifyTextOutput = z.infer<typeof verifyTextOutputSchema>;
 export type RollbackOutput = z.infer<typeof rollbackOutputSchema>;
-export type ToolOutput = ApplyOutput | VerifyTextOutput | RollbackOutput;
+export type CreateProjectOutput = z.infer<typeof createProjectOutputSchema>;
+export type ToolOutput = ApplyOutput | VerifyTextOutput | RollbackOutput | CreateProjectOutput;

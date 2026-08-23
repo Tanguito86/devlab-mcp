@@ -3,6 +3,7 @@ import { z } from "zod";
 export const TOOL_NAMES = Object.freeze([
   "gamemaker_status",
   "gamemaker_inspect",
+  "gamemaker_read_text",
   "gamemaker_plan",
   "gamemaker_plan_new_script",
   "gamemaker_plan_new_object",
@@ -128,6 +129,45 @@ export const placeInstanceInputSchema = z.object({
   expectedProjectFingerprint: digestSchema.describe("Exact fingerprint returned by gamemaker_inspect"),
   roomName: z.string().min(1).max(64).describe("Existing room to place into"),
   instances: z.array(roomInstanceSchema).min(1).max(256),
+}).strict();
+
+/**
+ * A read tier that could list a project but never show it left the plan tool
+ * unusable: `gamemaker_plan` replaces a file wholesale, and there was no way to
+ * learn what the file already said. Readable extensions are exactly the ones
+ * the plan tools may write, so a caller can read anything it can edit and
+ * nothing it cannot.
+ */
+export const READABLE_EXTENSIONS = Object.freeze(["gml", "json", "resource_order", "yy", "yyp"]);
+export const MAX_READ_FILES = 32;
+export const MAX_READ_BYTES_PER_FILE = 256 * 1024;
+export const MAX_READ_BYTES_TOTAL = 1024 * 1024;
+
+export const readTextInputSchema = z.object({
+  projectPath: projectPathSchema,
+  expectedProjectFingerprint: digestSchema.describe("Exact fingerprint returned by gamemaker_inspect"),
+  paths: z.array(relativePathSchema).min(1).max(MAX_READ_FILES).describe(
+    `Project-relative paths, as gamemaker_inspect reports them. Readable extensions: ${READABLE_EXTENSIONS.join(", ")}`,
+  ),
+}).strict();
+
+const readFileSchema = z.object({
+  path: relativePathSchema,
+  sha256: digestSchema.describe("Digest of the bytes on disk; pass the same content back to gamemaker_plan to edit it"),
+  size: z.number().int().nonnegative(),
+  text: z.string(),
+}).strict();
+
+export const readTextSuccessSchema = z.object({
+  ok: z.literal(true),
+  schemaVersion: z.literal(1),
+  requestId: requestIdSchema,
+  capability: z.literal("GM_INSPECT_V1"),
+  serverGate: z.literal("READ_ONLY"),
+  projectPath: relativePathSchema,
+  projectFingerprint: digestSchema,
+  files: z.array(readFileSchema),
+  totalBytes: z.number().int().nonnegative(),
 }).strict();
 
 export const newTilesetInputSchema = z.object({
@@ -285,6 +325,7 @@ export const statusOutputSchema = z.discriminatedUnion("ok", [statusSuccessSchem
 export const inspectOutputSchema = z.discriminatedUnion("ok", [inspectSuccessSchema, errorSchema]);
 export const planOutputSchema = z.discriminatedUnion("ok", [planSuccessSchema, errorSchema]);
 export const authoredPlanOutputSchema = z.discriminatedUnion("ok", [authoredPlanSuccessSchema, errorSchema]);
+export const readTextOutputSchema = z.discriminatedUnion("ok", [readTextSuccessSchema, errorSchema]);
 
 // SDK 1.29 publishes object output schemas but omits top-level unions from
 // tools/list. These strict transport envelopes validate both structured success
@@ -300,6 +341,7 @@ export const statusWireOutputSchema = statusSuccessSchema.partial().extend(wireF
 export const inspectWireOutputSchema = inspectSuccessSchema.partial().extend(wireFields).strict();
 export const planWireOutputSchema = planSuccessSchema.partial().extend(wireFields).strict();
 export const authoredPlanWireOutputSchema = authoredPlanSuccessSchema.partial().extend(wireFields).strict();
+export const readTextWireOutputSchema = readTextSuccessSchema.partial().extend(wireFields).strict();
 
 export type StatusInput = z.infer<typeof statusInputSchema>;
 export type InspectInput = z.infer<typeof inspectInputSchema>;
@@ -310,8 +352,10 @@ export type NewRoomInput = z.infer<typeof newRoomInputSchema>;
 export type PlaceInstanceInput = z.infer<typeof placeInstanceInputSchema>;
 export type NewTilesetInput = z.infer<typeof newTilesetInputSchema>;
 export type TileLayerInput = z.infer<typeof tileLayerInputSchema>;
+export type ReadTextInput = z.infer<typeof readTextInputSchema>;
+export type ReadTextOutput = z.infer<typeof readTextOutputSchema>;
 export type StatusOutput = z.infer<typeof statusOutputSchema>;
 export type InspectOutput = z.infer<typeof inspectOutputSchema>;
 export type PlanOutput = z.infer<typeof planOutputSchema>;
 export type AuthoredPlanOutput = z.infer<typeof authoredPlanOutputSchema>;
-export type ToolOutput = StatusOutput | InspectOutput | PlanOutput | AuthoredPlanOutput;
+export type ToolOutput = StatusOutput | InspectOutput | PlanOutput | AuthoredPlanOutput | ReadTextOutput;

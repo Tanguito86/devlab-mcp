@@ -69,6 +69,7 @@ test("CHAIN: an authored object is planned, applied, verified and rolled back ac
     assert.deepEqual(tools, [
       "gamemaker_status",
       "gamemaker_inspect",
+      "gamemaker_read_text",
       "gamemaker_plan",
       "gamemaker_plan_new_script",
       "gamemaker_plan_new_object",

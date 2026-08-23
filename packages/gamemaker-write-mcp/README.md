@@ -20,7 +20,13 @@ enabling read-only inspection must not implicitly enable writes.
 - `gamemaker_rollback` fixes `GM_ROLLBACK_V1`. Restores an applied transaction
   from its verified backup blobs and reports whether the result was byte-exact.
 
-The server registers exactly these three tools. It has no resources and no
+- `gamemaker_create_project` fixes `GM_CREATE_PROJECT_V1`. Writes the two files
+  an empty GameMaker project consists of, byte-identical to what ProjectTool's
+  `PROJECT NEW` produces, into an absent or empty directory. **Defaults to a dry
+  run.** Follow it with `gamemaker_inspect` on the read tier to get the
+  fingerprint every plan tool requires.
+
+The server registers exactly these four tools. It has no resources and no
 prompts, and exposes no compile, run, Igor, Runner, Asset Forge, Asset-GM Bridge,
 import, or command-execution operation. `COMPILE_VALID` and `RUNTIME_VALID` are
 unreachable: the verification policy is fixed in the server and the tool
@@ -28,6 +34,20 @@ contracts have no field for a toolchain.
 
 The adapter's fault-injection hook (`faultAt`) is a test seam and is rejected by
 the tool contract.
+
+### Creating a project is the one write without a plan
+
+Every other tool here binds to a fingerprint and can be rolled back. A project
+that does not exist yet has neither: nothing to fingerprint, and nothing to
+restore. What remains is the safety that still applies -- the path policy, the
+env-scoped write allowlist, an explicit `confirm`, and a refusal to touch a
+directory that already holds anything. Removing a project is **not** offered:
+deleting is the destructive tier's business, and this server has none. Undoing a
+creation means deleting the directory yourself.
+
+Until this existed the stack could not start a game. Every tool took an existing
+`projectPath`, so the first file of any new project had to be written by hand,
+outside the governed surface -- which is exactly the thing the surface is for.
 
 ## Configuration
 
