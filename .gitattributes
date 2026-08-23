@@ -126,3 +126,6 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 
 # The bullet benchmark: its GML is embedded verbatim into a generated project.
 /examples/shmup-bench/** text eol=lf
+
+# FORTYTWO: its GML is embedded verbatim into a generated project.
+/examples/fortytwo/** text eol=lf
