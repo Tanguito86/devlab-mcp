@@ -11,9 +11,10 @@ export {
   scriptCodePath, scriptResourcePath, type ObjectOptions, type ProjectIdentity,
 } from "./resources.js";
 export {
-  authorObject, authorPlaceInstance, authorRoom, authorScript,
+  authorObject, authorPlaceInstance, authorRoom, authorScript, authorTileLayer, authorTileset,
   type AuthoredFile, type AuthoredResource, type NewObjectRequest, type NewRoomRequest,
-  type NewScriptRequest, type PlaceInstanceRequest, type ProjectTexts,
+  type NewScriptRequest, type NewTileLayerRequest, type NewTilesetRequest,
+  type PlaceInstanceRequest, type ProjectTexts,
 } from "./authoring.js";
 export {
   BACKGROUND_LAYER_NAME, INSTANCE_LAYER_NAME, MAX_INSTANCES_PER_ROOM, MAX_ROOM_DIMENSION,
@@ -21,3 +22,8 @@ export {
   roomOrderEntry, roomResourcePath, spliceInstancesIntoRoom,
   type ResolvedInstance, type RoomInstance, type RoomOptions,
 } from "./rooms.js";
+export {
+  EMPTY_TILE, MAX_TILE_LAYER_CELLS, assertTileCells, decodeTileData, encodeTileData,
+  renderTilesetYy, spliceTileLayerIntoRoom, tileLayerRecord, tilesetLayout, tilesetResourcePath,
+  type TileLayerSpec, type TilesetGeometry, type TilesetLayout,
+} from "./tiles.js";

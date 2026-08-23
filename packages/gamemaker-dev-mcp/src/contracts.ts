@@ -8,6 +8,8 @@ export const TOOL_NAMES = Object.freeze([
   "gamemaker_plan_new_object",
   "gamemaker_plan_new_room",
   "gamemaker_plan_place_instance",
+  "gamemaker_plan_new_tileset",
+  "gamemaker_plan_tile_layer",
 ] as const);
 
 export const READ_ONLY_ANNOTATIONS = Object.freeze({
@@ -128,6 +130,40 @@ export const placeInstanceInputSchema = z.object({
   instances: z.array(roomInstanceSchema).min(1).max(256),
 }).strict();
 
+export const newTilesetInputSchema = z.object({
+  projectPath: projectPathSchema,
+  expectedProjectFingerprint: digestSchema.describe("Exact fingerprint returned by gamemaker_inspect"),
+  name: z.string().min(1).max(64).describe("GML identifier, e.g. ts_ground"),
+  spriteName: z.string().min(1).max(64).describe(
+    "Existing sprite to slice. Its pixel size is read from the project, not supplied here",
+  ),
+  tileWidth: z.number().int().positive().max(4096),
+  tileHeight: z.number().int().positive().max(4096),
+}).strict();
+
+/**
+ * A whole tile layer arrives as one flat array, which is the only shape that
+ * survives a strict schema without a second encoding to get wrong. The ceiling
+ * is well under the library's, because a plan change is capped at a megabyte
+ * and every cell costs up to eleven JSON bytes.
+ */
+export const MAX_MCP_TILE_CELLS = 65_536;
+
+export const tileLayerInputSchema = z.object({
+  projectPath: projectPathSchema,
+  expectedProjectFingerprint: digestSchema.describe("Exact fingerprint returned by gamemaker_inspect"),
+  roomName: z.string().min(1).max(64).describe("Existing room to add the layer to"),
+  layerName: z.string().min(1).max(64).describe("New layer name, e.g. Tiles_ground"),
+  tilesetName: z.string().min(1).max(64).describe("Existing tileset the cells index into"),
+  width: z.number().int().positive().max(4096).describe("Layer width in tiles"),
+  height: z.number().int().positive().max(4096).describe("Layer height in tiles"),
+  cells: z.array(z.number().int()).min(1).max(MAX_MCP_TILE_CELLS).describe(
+    "Row-major tile indices, width * height of them. Use -2147483648 for a blank cell; "
+    + "index 0 is GameMaker's reserved blank tile and also draws nothing",
+  ),
+  depth: z.number().int().min(-16_000).max(16_000).optional().describe("Draw depth; defaults to 100, behind instances"),
+}).strict();
+
 const errorBodySchema = z.object({
   code: z.string().min(1),
   message: z.string().min(1),
@@ -233,7 +269,7 @@ export const authoredPlanSuccessSchema = z.object({
   capability: z.literal("GM_PLAN_V1"),
   serverGate: z.literal("PLAN_ONLY"),
   immutable: z.literal(true),
-  resourceKind: z.enum(["script", "object", "room", "instance"]),
+  resourceKind: z.enum(["script", "object", "room", "instance", "tileset", "tileLayer"]),
   resourceName: z.string().min(1),
   resourcePath: relativePathSchema,
   projectPath: relativePathSchema,
@@ -272,6 +308,8 @@ export type NewScriptInput = z.infer<typeof newScriptInputSchema>;
 export type NewObjectInput = z.infer<typeof newObjectInputSchema>;
 export type NewRoomInput = z.infer<typeof newRoomInputSchema>;
 export type PlaceInstanceInput = z.infer<typeof placeInstanceInputSchema>;
+export type NewTilesetInput = z.infer<typeof newTilesetInputSchema>;
+export type TileLayerInput = z.infer<typeof tileLayerInputSchema>;
 export type StatusOutput = z.infer<typeof statusOutputSchema>;
 export type InspectOutput = z.infer<typeof inspectOutputSchema>;
 export type PlanOutput = z.infer<typeof planOutputSchema>;

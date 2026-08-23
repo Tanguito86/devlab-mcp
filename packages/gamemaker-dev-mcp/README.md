@@ -20,8 +20,17 @@ Local stdio MCP server that exposes the governed read-only and plan-only slice o
 - `gamemaker_plan_place_instance` plans adding instances to a room that already
   exists. The room is patched as text, never re-rendered, so layers and
   settings this server does not model survive untouched.
+- `gamemaker_plan_new_tileset` plans a **new** tileset from a sprite already in
+  the project. The sprite's pixel size is read from the project rather than
+  taken on the caller's word, so the tile count cannot silently disagree with
+  the image.
+- `gamemaker_plan_tile_layer` plans a run-length encoded tile layer for a room
+  that already exists. Cells are row-major tile indices; `-2147483648` leaves a
+  cell blank, and index `0` is GameMaker's reserved blank tile. The tile size
+  and tile count are read from the tileset and every index is bounds-checked
+  against it. The room is patched as text, so unmodelled layers survive.
 
-The server registers exactly these seven tools.
+The server registers exactly these nine tools.
 
 ## Plans compose with the write tier
 

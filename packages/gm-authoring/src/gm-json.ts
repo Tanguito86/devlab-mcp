@@ -25,6 +25,7 @@ export type GmAuthoringErrorCode =
   | "RESOURCE_EXISTS"
   | "INVALID_PROJECT_TEXT"
   | "INVALID_ROOM"
+  | "INVALID_TILE_DATA"
   | "LIMIT_EXCEEDED";
 
 export function renderGmJson(value: unknown, depth = 0): string {

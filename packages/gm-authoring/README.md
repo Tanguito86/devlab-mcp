@@ -95,38 +95,42 @@ package emits matches it. The grammar is `"v<N>"` for 1..1000 and **`""` for
 version 0** — writing the literal `"v0"` is rejected with "Failed to parse
 tag-and-version field".
 
+## Tiles
+
+`authorTileset` slices an existing sprite into a `GMTileSet`; `authorTileLayer`
+splices a `GMRTileLayer` into a room that already exists. Both records were read
+from files the IDE itself wrote — committed as
+`fixtures/gamemaker/tile-reference/`, a complete two-tile project — rather than
+inferred. Three details cost a sprint each and are worth stating plainly:
+
+- **The tileset and the room layer use different payload shapes.** A tileset's
+  `macroPageTiles` carries `TileSerialiseData` and *no* `TileDataFormat`; a
+  room's `tiles` carries `TileCompressedData` *with* `TileDataFormat: 1`.
+  Putting the compressed shape in a tileset is what produces
+  `Failed to parse run-length encoded data` — the error names the room layer's
+  concept but the blocker is inside `GMTileSet`.
+- **The run-length grammar** is: `n > 0` means the next `n` values are literal,
+  `n < 0` means the next single value repeats `|n|` times, and the decoded total
+  must equal `width * height`. Any encoding obeying it decodes identically, so
+  `encodeTileData` need not reproduce the IDE's chunking — only its own output
+  must be deterministic, which the plan-hash model depends on.
+- **A blank cell is `-2147483648`, and index `0` is blank too.** GameMaker
+  reserves the tileset's first slot as the empty tile; `tilemap_get` returns the
+  same `0` for both. The IDE never writes `0` into a layer.
+
+Verified against the real compiler, not just the fixture: a project authored by
+these functions compiles under Igor (VM, exit 0), and the running game reports
+`tilemap_get_width`/`tilemap_get_height` equal to the authored grid and
+`tile_get_index` equal to the authored index for every non-blank cell.
+
+Not covered: tileset animation, auto-tiling, and the tileset's own
+`macroPageTiles` brush pages, which are all authored empty.
+
 ## Not covered
 
-Tile layers, sprite and asset layers, room inheritance, views beyond the single
-default, and creation code. A room authored here is a plain instance surface.
-
-### What a tile-layer sprint already knows
-
-An attempt was made and stopped rather than shipping a guess. Findings, so the
-next one does not rediscover them:
-
-- There is **no tileset or tile layer anywhere on a typical dev machine** to
-  copy from — 343 rooms across 20 real projects, the GameMaker install and the
-  bundled templates all came up empty.
-- Authoritative versions: `GMRTileLayer` is **0** (tag `""`), `GMTileSet` is
-  **1**, `GMTileAnimation` and `GMAutoTileSet` are **0**.
-- `ProjectTool PROJECT OPEN` + `PROJECT SAVE` is a fast round-trip that reports
-  clearer errors than a full compile, and would emit canonical form for any
-  record it can load.
-- A project with **no tileset and no tile layer round-trips cleanly**, which
-  proves the sprite, room, layer and project shapes here are correct.
-- Adding a `GMTileSet` fails with `Failed to parse run-length encoded data`
-  **even when `macroPageTiles` and `tileAnimation` are both omitted**. The
-  blocker is inside `GMTileSet`, not the room layer, and there is no "absent"
-  form of the payload that satisfies the reader.
-- `TileCompressedData` is genuinely run-length encoded; eight candidate
-  encodings were rejected. `PackageZip`, which might have offered another
-  diagnostic path, is licence-gated on this install.
-
-The cheap unblock is to create one tileset and one painted tile layer in the
-IDE by hand and read the resulting `.yy`. That file is the ground truth this
-package normally works from, and every record it already emits was derived the
-same way.
+Sprite and asset layers, room inheritance, views beyond the single default, and
+creation code. A room authored here is an instance surface plus, optionally,
+tile layers.
 
 ## A note on duplication
 

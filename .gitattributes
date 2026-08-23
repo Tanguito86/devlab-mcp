@@ -103,3 +103,9 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 # The authoritative record-version table, emitted by ProjectTool. A test
 # compares our tags against it, so its bytes must be stable.
 /fixtures/gamemaker/ide-versioned-types.json text eol=lf
+
+# GM-MCP-TILES-01 the IDE-authored tileset and painted tile layer these records
+# were derived from. Ground truth compared field-for-field by a test, so its
+# bytes must materialize identically on every checkout.
+/fixtures/gamemaker/tile-reference/** text eol=lf
+/fixtures/gamemaker/tile-reference/**/*.png binary

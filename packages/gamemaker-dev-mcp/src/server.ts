@@ -7,12 +7,14 @@ import {
   newObjectInputSchema,
   newRoomInputSchema,
   newScriptInputSchema,
+  newTilesetInputSchema,
   placeInstanceInputSchema,
   planInputSchema,
   planWireOutputSchema,
   READ_ONLY_ANNOTATIONS,
   statusInputSchema,
   statusWireOutputSchema,
+  tileLayerInputSchema,
   type ToolOutput,
 } from "./contracts.js";
 import { mapToolError, ReadonlyGameMakerService } from "./core.js";
@@ -157,6 +159,44 @@ export function createGameMakerMcpServer(
     async (input, extra) => {
       try {
         return response(await service.planPlaceInstance(input, extra.requestId, extra.signal));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "gamemaker_plan_new_tileset",
+    {
+      title: "Plan a new GameMaker tileset",
+      description:
+        "Return an immutable plan that slices an existing sprite into a tileset and registers it in the project. The sprite's pixel size is read from the project, so only the tile size is supplied; the resulting tile count is (spriteWidth / tileWidth) * (spriteHeight / tileHeight), indexed from zero in reading order. Writes nothing; hand the returned plan to gamemaker_apply of the write-tier server.",
+      inputSchema: newTilesetInputSchema,
+      outputSchema: authoredPlanWireOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.planNewTileset(input, extra.requestId, extra.signal));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "gamemaker_plan_tile_layer",
+    {
+      title: "Plan a tile layer for an existing room",
+      description:
+        "Return an immutable plan that adds a run-length encoded tile layer to a room that already exists, painting cells from a tileset already in the project. Cells are row-major tile indices; -2147483648 leaves a cell blank, and index 0 is GameMaker's reserved blank tile. The tile size and tile count are read from the tileset, and every index is bounds-checked against it. The room is patched as text, so layers and settings this server does not model survive untouched. Writes nothing; hand the returned plan to gamemaker_apply of the write-tier server.",
+      inputSchema: tileLayerInputSchema,
+      outputSchema: authoredPlanWireOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.planTileLayer(input, extra.requestId, extra.signal));
       } catch (error) {
         return response(mapToolError(error, extra.requestId));
       }
