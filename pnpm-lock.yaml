@@ -53,6 +53,28 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/aseprite-ingest-mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@4.4.3)
+      '@tanguito/devlab-aseprite-ingest':
+        specifier: workspace:*
+        version: link:../aseprite-ingest
+      '@tanguito/devlab-gm-ide-adapter':
+        specifier: workspace:*
+        version: link:../gm-ide-adapter
+      zod:
+        specifier: ^4.1.13
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.12.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/asset-gm-bridge:
     dependencies:
       '@tanguito/devlab-gm-ide-adapter':
