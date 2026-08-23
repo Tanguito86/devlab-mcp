@@ -80,10 +80,53 @@ Verified at runtime, not just compiled: a placed instance reports its exact
 coordinates via `instance_find`, and a generated room reports the right
 `instance_number` once the game enters it.
 
+## Record versions are pinned to the toolchain
+
+Every tag-and-version this package writes is a claim about the project format.
+The installed ProjectTool will state the truth directly:
+
+```text
+ProjectTool.exe SHOWVERSIONEDTYPES DESTINATION=<file>
+```
+
+Its answer for all 140 record classes is committed as
+`fixtures/gamemaker/ide-versioned-types.json`, and a test asserts every tag this
+package emits matches it. The grammar is `"v<N>"` for 1..1000 and **`""` for
+version 0** — writing the literal `"v0"` is rejected with "Failed to parse
+tag-and-version field".
+
 ## Not covered
 
 Tile layers, sprite and asset layers, room inheritance, views beyond the single
 default, and creation code. A room authored here is a plain instance surface.
+
+### What a tile-layer sprint already knows
+
+An attempt was made and stopped rather than shipping a guess. Findings, so the
+next one does not rediscover them:
+
+- There is **no tileset or tile layer anywhere on a typical dev machine** to
+  copy from — 343 rooms across 20 real projects, the GameMaker install and the
+  bundled templates all came up empty.
+- Authoritative versions: `GMRTileLayer` is **0** (tag `""`), `GMTileSet` is
+  **1**, `GMTileAnimation` and `GMAutoTileSet` are **0**.
+- `ProjectTool PROJECT OPEN` + `PROJECT SAVE` is a fast round-trip that reports
+  clearer errors than a full compile, and would emit canonical form for any
+  record it can load.
+- A project with **no tileset and no tile layer round-trips cleanly**, which
+  proves the sprite, room, layer and project shapes here are correct.
+- Adding a `GMTileSet` fails with `Failed to parse run-length encoded data`
+  **even when `macroPageTiles` and `tileAnimation` are both omitted**. The
+  blocker is inside `GMTileSet`, not the room layer, and there is no "absent"
+  form of the payload that satisfies the reader.
+- `TileCompressedData` is genuinely run-length encoded; eight candidate
+  encodings were rejected. `PackageZip`, which might have offered another
+  diagnostic path, is licence-gated on this install.
+
+The cheap unblock is to create one tileset and one painted tile layer in the
+IDE by hand and read the resulting `.yy`. That file is the ground truth this
+package normally works from, and every record it already emits was derived the
+same way.
 
 ## A note on duplication
 
