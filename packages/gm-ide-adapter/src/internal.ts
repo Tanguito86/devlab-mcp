@@ -12,6 +12,15 @@
  * capability barrel.
  */
 export { planHash } from "./planning/index.js";
-export { safeAllowedExtensions, safeRelativePath, safeTransactionId, resolveRealRoot, resolveInsideRoot } from "./paths/index.js";
+export {
+  isSameOrDescendantFilesystemPath,
+  resolveFilesystemPathIdentity,
+  safeAllowedExtensions,
+  safeRelativePath,
+  safeTransactionId,
+  resolveRealRoot,
+  resolveInsideRoot,
+} from "./paths/index.js";
 export { windowsProcessInventory } from "./processes/index.js";
 export type { ProcessInventory, RawProcess, OwnedProcessRecord, OwnedCommandResult } from "./processes/index.js";
+export { readTransactionEvidence, transactionProjectNamespace, transactionRelativeRoot } from "./transactions/index.js";

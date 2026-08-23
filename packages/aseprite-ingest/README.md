@@ -69,9 +69,14 @@ replaces the human review is verification rather than trust:
 - every exported frame's digest and byte length must still match what the
   artifact manifest recorded at ingest, so an asset whose pixels changed after
   ingest cannot be published at all,
-- any ingest gate that did not pass blocks the publish,
-- and every promotion is appended to `assets/catalog/approvals.jsonl`, which a
-  republish cannot rewrite.
+- the manifest must contain exactly the five ingest gates (`SPEC`, `BUDGET`,
+  `PNG`, `DETERMINISM`, and `LIFECYCLE`) and every one must be `PASS`,
+- and every promotion records durable `PREPARED` and `COMMITTED` audit phases
+  in `assets/catalog/approvals.jsonl` before the atomic catalog replacement can
+  expose `APPROVED`;
+- catalog publishers are serialized by an exclusive fail-closed lock, and the
+  original catalog digest is checked again before replacement so a concurrent
+  or non-cooperating edit is preserved instead of silently lost.
 
 The catalog header is written rather than carried through, so a publish can
 never leave an index the bridge is unable to read.

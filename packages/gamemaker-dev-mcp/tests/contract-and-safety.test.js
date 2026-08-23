@@ -17,10 +17,17 @@ import test from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
-import { TOOL_NAMES } from "../dist/contracts.js";
 import {
+  MAX_PLAN_CONTENT_BYTES_TOTAL,
+  MAX_READ_BYTES_PER_FILE,
+  planInputSchema,
+  TOOL_NAMES,
+} from "../dist/contracts.js";
+import {
+  assertPlanContentLimits,
   GmMcpError,
   mapToolError,
+  readSnapshotTextFile,
   ReadonlyGameMakerService,
   resolveProjectsDir,
 } from "../dist/core.js";
@@ -99,6 +106,22 @@ test("MCP CONTRACT: tools/list exposes exactly the stable read-only and plan-onl
   }
 });
 
+test("SCHEMA CATALOG: documents the same ten applicable tool contracts", async () => {
+  const catalog = JSON.parse(await readFile(
+    new URL("../schemas/gamemaker-readonly-v1.schema.json", import.meta.url),
+    "utf8",
+  ));
+  assert.deepEqual(catalog["x-tools"].map(({ name }) => name), TOOL_NAMES);
+  for (const tool of catalog["x-tools"]) {
+    const input = tool.input.replace("#/$defs/", "");
+    const output = tool.output.replace("#/$defs/", "");
+    assert.ok(catalog.$defs[input], `${tool.name} input`);
+    assert.ok(catalog.$defs[output], `${tool.name} output`);
+  }
+  assert.equal(JSON.stringify(catalog).includes("non-applicable"), false);
+  assert.ok(catalog.$defs.planOutput.oneOf[0].required.includes("plan"));
+});
+
 test("MCP CONTRACT: unknown and malformed inputs are rejected by the protocol schema", async () => {
   const session = await inMemoryClient();
   try {
@@ -125,6 +148,29 @@ test("MCP CONTRACT: unknown and malformed inputs are rejected by the protocol sc
   } finally {
     await session.close();
   }
+});
+
+test("PLAN LIMIT: aggregate content is bounded by UTF-8 bytes in schema and service", () => {
+  const content = "x".repeat(900 * 1024);
+  const changes = Array.from({ length: 5 }, (_, index) => ({ path: `scripts/s${index}.gml`, content }));
+  const input = {
+    projectPath: "Project",
+    expectedProjectFingerprint: "0".repeat(64),
+    allowlist: changes.map(({ path }) => path),
+    changes,
+  };
+  assert.equal(Buffer.byteLength(content) * changes.length > MAX_PLAN_CONTENT_BYTES_TOTAL, true);
+  assert.equal(planInputSchema.safeParse(input).success, false);
+  assert.throws(
+    () => assertPlanContentLimits(changes),
+    (error) => error.code === "GM_LIMIT_EXCEEDED",
+  );
+
+  const multibyte = [{ path: targetFile, content: "é".repeat(600 * 1024) }];
+  assert.throws(
+    () => assertPlanContentLimits(multibyte),
+    (error) => error.code === "GM_LIMIT_EXCEEDED",
+  );
 });
 
 test("CONFIG: tools/list works without configuration and calls fail with GM_CONFIG_REQUIRED", async () => {
@@ -268,6 +314,159 @@ test("FUNCTION: status, inspect, and plan preserve the complete project tree byt
     assert.equal(JSON.stringify(planned).includes(box.root), false);
 
     assert.deepEqual(await treeState(join(box.root, box.projectPath)), before);
+  } finally {
+    await box.cleanup();
+  }
+});
+
+test("READ TEXT: content, byte size, and digest come from the same bounded buffer", async () => {
+  const box = await sandbox();
+  try {
+    const service = new ReadonlyGameMakerService({ DEVLAB_GM_PROJECTS_DIR: box.root });
+    const inspected = await service.inspect({ projectPath: box.projectPath }, "read-inspect", signal);
+    const output = await service.readText({
+      projectPath: box.projectPath,
+      expectedProjectFingerprint: inspected.fingerprint,
+      paths: [targetFile],
+    }, "read", signal);
+    const bytes = await readFile(join(box.root, box.projectPath, targetFile));
+    assert.equal(output.files[0].size, bytes.byteLength);
+    assert.equal(output.files[0].sha256, createHash("sha256").update(bytes).digest("hex"));
+    assert.equal(output.files[0].text, bytes.toString("utf8"));
+    assert.equal(output.totalBytes, bytes.byteLength);
+  } finally {
+    await box.cleanup();
+  }
+});
+
+test("READ TEXT: a UTF-8 BOM survives the read/edit/plan round trip", async () => {
+  const box = await sandbox("Bom");
+  try {
+    const bytes = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from("value = 1;\n")]);
+    await writeFile(join(box.root, box.projectPath, targetFile), bytes);
+    const service = new ReadonlyGameMakerService({ DEVLAB_GM_PROJECTS_DIR: box.root });
+    const inspected = await service.inspect({ projectPath: box.projectPath }, "bom-inspect", signal);
+    const output = await service.readText({
+      projectPath: box.projectPath,
+      expectedProjectFingerprint: inspected.fingerprint,
+      paths: [targetFile],
+    }, "bom-read", signal);
+    assert.equal(output.files[0].text.charCodeAt(0), 0xfeff);
+    assert.deepEqual(Buffer.from(output.files[0].text, "utf8"), bytes);
+  } finally {
+    await box.cleanup();
+  }
+});
+
+test("READ TEXT: invalid UTF-8 and files over the byte ceiling fail closed", async () => {
+  const invalid = await sandbox("InvalidUtf8");
+  try {
+    const absolute = join(invalid.root, invalid.projectPath, targetFile);
+    await writeFile(absolute, Buffer.from([0xc3, 0x28]));
+    const service = new ReadonlyGameMakerService({ DEVLAB_GM_PROJECTS_DIR: invalid.root });
+    const inspected = await service.inspect({ projectPath: invalid.projectPath }, "utf-inspect", signal);
+    await assert.rejects(
+      () => service.readText({
+        projectPath: invalid.projectPath,
+        expectedProjectFingerprint: inspected.fingerprint,
+        paths: [targetFile],
+      }, "utf-read", signal),
+      (error) => error.code === "GM_INVALID_REQUEST",
+    );
+  } finally {
+    await invalid.cleanup();
+  }
+
+  const oversized = await sandbox("Oversized");
+  try {
+    const absolute = join(oversized.root, oversized.projectPath, targetFile);
+    await writeFile(absolute, Buffer.alloc(MAX_READ_BYTES_PER_FILE + 1, 0x61));
+    const service = new ReadonlyGameMakerService({ DEVLAB_GM_PROJECTS_DIR: oversized.root });
+    const inspected = await service.inspect({ projectPath: oversized.projectPath }, "large-inspect", signal);
+    await assert.rejects(
+      () => service.readText({
+        projectPath: oversized.projectPath,
+        expectedProjectFingerprint: inspected.fingerprint,
+        paths: [targetFile],
+      }, "large-read", signal),
+      (error) => error.code === "GM_LIMIT_EXCEEDED",
+    );
+  } finally {
+    await oversized.cleanup();
+  }
+});
+
+test("READ TEXT: a same-size edit after inspection is reported as concurrent modification", async () => {
+  const box = await sandbox();
+  try {
+    const service = new ReadonlyGameMakerService({ DEVLAB_GM_PROJECTS_DIR: box.root });
+    const inspected = await service.inspect({ projectPath: box.projectPath }, "race-inspect", signal);
+    const expected = inspected.files.find(({ path }) => path === targetFile);
+    assert.ok(expected);
+    await writeFile(join(box.root, box.projectPath, targetFile), Buffer.alloc(expected.size, 0x78));
+    await assert.rejects(
+      () => readSnapshotTextFile(join(box.root, box.projectPath), targetFile, expected, signal),
+      (error) => error.code === "CONCURRENT_MODIFICATION",
+    );
+  } finally {
+    await box.cleanup();
+  }
+});
+
+test("AUTHORING READ: transient project metadata drift is bound to the inspected bytes", async () => {
+  const box = await sandbox("AuthoringDrift");
+  try {
+    const env = { DEVLAB_GM_PROJECTS_DIR: box.root };
+    const service = new ReadonlyGameMakerService(env);
+    const inspected = await service.inspect({ projectPath: box.projectPath }, "authoring-inspect", signal);
+    const projectFile = inspected.projectFile;
+    const expected = inspected.files.find(({ path }) => path === projectFile);
+    assert.ok(expected);
+    const projectRoot = join(box.root, box.projectPath);
+    const absolute = join(box.root, box.projectPath, ...projectFile.split("/"));
+    const original = await readFile(absolute);
+    const drifted = Buffer.from(original);
+    drifted[0] = drifted[0] === 0x7b ? 0x5b : 0x7b;
+    await writeFile(absolute, drifted);
+    try {
+      await assert.rejects(
+        () => readSnapshotTextFile(projectRoot, projectFile, expected, signal),
+        (error) => error.code === "CONCURRENT_MODIFICATION",
+      );
+    } finally {
+      await writeFile(absolute, original);
+    }
+    const planned = await service.planNewScript({
+        projectPath: box.projectPath,
+        expectedProjectFingerprint: inspected.fingerprint,
+        name: "scr_snapshot_bound",
+        gml: "return true;",
+      }, "authoring-drift", signal);
+    assert.equal(planned.ok, true, "a restored transient drift cannot contaminate the authored plan");
+    assert.deepEqual(await readFile(absolute), original, "the transient test drift is restored");
+  } finally {
+    await box.cleanup();
+  }
+});
+
+test("AUTHORING READ: invalid UTF-8 in project metadata is never rewritten lossily", async () => {
+  const box = await sandbox("AuthoringUtf8");
+  try {
+    const yyp = join(box.root, box.projectPath, "HermesBridgePilot.yyp");
+    const bytes = await readFile(yyp);
+    const marker = Buffer.from('"IDEVersion":"2026.0.0.16"');
+    const markerIndex = bytes.indexOf(marker);
+    assert.notEqual(markerIndex, -1);
+    bytes[markerIndex + '"IDEVersion":"'.length] = 0xff;
+    await writeFile(yyp, bytes);
+
+    const service = new ReadonlyGameMakerService({ DEVLAB_GM_PROJECTS_DIR: box.root });
+    const before = await readFile(yyp);
+    await assert.rejects(
+      () => service.inspect({ projectPath: box.projectPath }, "authoring-utf8-inspect", signal),
+      (error) => error.code === "INVALID_REQUEST",
+    );
+    assert.deepEqual(await readFile(yyp), before, "the rejected metadata must remain byte-exact");
   } finally {
     await box.cleanup();
   }

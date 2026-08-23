@@ -35,6 +35,9 @@ export const inspectInputSchema = z.object({
   projectPath: projectPathSchema,
 }).strict();
 
+export const MAX_PLAN_CONTENT_BYTES_PER_FILE = 1024 * 1024;
+export const MAX_PLAN_CONTENT_BYTES_TOTAL = 4 * 1024 * 1024;
+
 export const planInputSchema = z.object({
   projectPath: projectPathSchema,
   expectedProjectFingerprint: digestSchema.describe(
@@ -43,9 +46,29 @@ export const planInputSchema = z.object({
   allowlist: z.array(relativePathSchema).min(1).max(64),
   changes: z.array(z.object({
     path: relativePathSchema,
-    content: z.string().max(1024 * 1024),
+    content: z.string().max(MAX_PLAN_CONTENT_BYTES_PER_FILE),
   }).strict()).min(1).max(64),
-}).strict();
+}).strict().superRefine(({ changes }, context) => {
+  let totalBytes = 0;
+  for (let index = 0; index < changes.length; index += 1) {
+    const bytes = Buffer.byteLength(changes[index]!.content, "utf8");
+    if (bytes > MAX_PLAN_CONTENT_BYTES_PER_FILE) {
+      context.addIssue({
+        code: "custom",
+        path: ["changes", index, "content"],
+        message: `planned content exceeds the ${MAX_PLAN_CONTENT_BYTES_PER_FILE} byte per-file limit`,
+      });
+    }
+    totalBytes += bytes;
+  }
+  if (totalBytes > MAX_PLAN_CONTENT_BYTES_TOTAL) {
+    context.addIssue({
+      code: "custom",
+      path: ["changes"],
+      message: `planned content exceeds the ${MAX_PLAN_CONTENT_BYTES_TOTAL} byte aggregate limit`,
+    });
+  }
+});
 
 const transactionIdSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]{0,127}$/);
 const base64Schema = z.string().max(6 * 1024 * 1024).regex(/^[A-Za-z0-9+/]*={0,2}$/);

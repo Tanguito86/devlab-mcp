@@ -72,16 +72,25 @@ function findArrayClose(text: string, openIndex: number): number {
 
 /**
  * Splices one canonical entry into the named array, preserving every other
- * byte. Returns the text unchanged when the entry path is already present, so
- * repeated planning of the same resource is idempotent.
+ * byte. Returns the text unchanged when the entry identity is already present,
+ * so repeated planning of the same resource is idempotent. Most arrays identify
+ * entries by a quoted path; callers with nested records can supply the exact
+ * semantic identity field to avoid matching an unrelated nested value.
  */
-export function insertIntoGmArray(text: string, openMarker: string, entryPath: string, entryLine: string, indent = "    "): string {
+export function insertIntoGmArray(
+  text: string,
+  openMarker: string,
+  entryPath: string,
+  entryLine: string,
+  indent = "    ",
+  entryIdentity = `"${entryPath}"`,
+): string {
   const open = text.indexOf(openMarker);
   if (open < 0) throw new GmAuthoringError("INVALID_PROJECT_TEXT", `GameMaker file is missing ${openMarker}`);
   const arrayOpen = text.indexOf("[", open);
   if (arrayOpen < 0) throw new GmAuthoringError("INVALID_PROJECT_TEXT", `GameMaker file is missing the ${openMarker} array`);
   const close = findArrayClose(text, arrayOpen);
-  if (text.slice(arrayOpen, close).includes(`"${entryPath}"`)) return text;
+  if (text.slice(arrayOpen, close).includes(entryIdentity)) return text;
   const before = text.slice(0, close);
   const trimmed = before.trimEnd();
   // An empty array needs no separator -- the entry becomes its first element.

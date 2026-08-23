@@ -96,7 +96,7 @@ export function createGameMakerMcpServer(
     "gamemaker_plan",
     {
       title: "Plan a hypothetical GameMaker edit",
-      description: "Validate an allowlisted text-only hypothetical modification and return a non-applicable immutable plan summary.",
+      description: "Validate an allowlisted text-only hypothetical modification and return an immutable plan that the write-tier gamemaker_apply tool can revalidate and apply.",
       inputSchema: planInputSchema,
       outputSchema: planWireOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,

@@ -31,13 +31,28 @@
         "detail": { "type": "string" }
       }
     },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "symbol", "line", "message"],
+      "properties": {
+        "severity": { "enum": ["error", "warning"] },
+        "symbol": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "object": { "type": "string", "minLength": 1 },
+        "event": { "type": "string", "minLength": 1 },
+        "script": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 0 },
+        "message": { "type": "string", "minLength": 1, "maxLength": 300 }
+      }
+    },
     "verifyBuildResponse": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "ok", "schemaVersion", "requestId", "capability", "serverGate", "igorInvoked",
         "compileExitCode", "levels", "highestLevel", "runtimeObserved", "ownedProcessCount",
-        "rollbackRequired", "evidencePath", "transactionId"
+        "rollbackRequired", "evidencePath", "transactionId", "diagnostics",
+        "errorCount", "warningCount", "diagnosticsTruncated"
       ],
       "properties": {
         "ok": { "const": true },
@@ -62,7 +77,11 @@
         "ownedProcessCount": { "type": "integer", "minimum": 0 },
         "rollbackRequired": { "type": "boolean" },
         "evidencePath": { "type": "string", "minLength": 1 },
-        "transactionId": { "type": "string", "minLength": 1 }
+        "transactionId": { "type": "string", "minLength": 1 },
+        "diagnostics": { "type": "array", "items": { "$ref": "#/$defs/diagnostic" }, "maxItems": 50 },
+        "errorCount": { "type": "integer", "minimum": 0 },
+        "warningCount": { "type": "integer", "minimum": 0 },
+        "diagnosticsTruncated": { "type": "boolean" }
       }
     }
   }

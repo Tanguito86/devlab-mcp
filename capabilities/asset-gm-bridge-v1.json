@@ -16,7 +16,7 @@
   "determinism": "BYTE_DETERMINISTIC_OUTPUTS_OPERATIONAL_TIMINGS_EXCLUDED",
   "timeout": "REQUEST_BOUNDED",
   "reversibility": "byte-exact backup and rollback required (gm-ide-adapter model)",
-  "authorizedRoots": "explicit projectsDir + relative projectRoot/evidenceRoot per request; catalog and asset work root are explicit absolute config paths",
+  "authorizedRoots": "explicit projectsDir + relative projectRoot/evidenceRoot per request; evidenceRoot must be outside projectRoot; catalog and asset work root are explicit absolute config paths",
   "evidence": ["bridge manifest", "binding record", "adapter plan", "compile invocation/log", "process ledger", "verify result", "pilot summary"],
   "errorTypes": [
     "ASSET_NOT_APPROVED", "ASSET_NOT_FOUND", "ASSET_HASH_MISMATCH", "ASSET_BUDGET_EXCEEDED",

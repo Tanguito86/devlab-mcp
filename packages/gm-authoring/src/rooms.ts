@@ -266,6 +266,7 @@ export function spliceInstancesIntoRoom(
       instance.instanceName,
       renderGmJson(instanceRecord(instance)).replace(/\s*\n\s*/g, ""),
       "      ",
+      `"%Name":"${instance.instanceName}"`,
     );
     patched = insertIntoGmArray(
       patched,
@@ -273,6 +274,7 @@ export function spliceInstancesIntoRoom(
       instance.instanceName,
       `{"name":"${instance.instanceName}","path":"${roomPath}",}`,
       "    ",
+      `"name":"${instance.instanceName}"`,
     );
   }
   return patched;

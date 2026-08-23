@@ -165,6 +165,40 @@ test("MCP E2E: inspect and status read without touching the project", { timeout:
   }
 });
 
+test("MCP E2E: planning cannot place evidence inside the project", { timeout: 60_000 }, async () => {
+  const ws = workspace();
+  const gameRoot = join(ws.projectsDir, "game");
+  const before = treeState(gameRoot);
+  let statusSession;
+  let nestedSession;
+  try {
+    statusSession = await connect(ws, { DEVLAB_GM_EVIDENCE_ROOT: ".safe-evidence" });
+    const status = body(await statusSession.client.callTool({
+      name: "asset_status", arguments: { projectPath: "game", assetId: "bridge-test-beacon", assetVersion: "1.0.0" },
+    }), "safe status");
+    await close(statusSession);
+    statusSession = null;
+
+    nestedSession = await connect(ws, { DEVLAB_GM_EVIDENCE_ROOT: "GAME/.evidence" });
+    const planned = await nestedSession.client.callTool({
+      name: "asset_plan_import",
+      arguments: {
+        projectPath: "game", expectedProjectFingerprint: status.projectFingerprint,
+        assetId: "bridge-test-beacon", assetVersion: "1.0.0",
+        resourceName: "spr_bridge_test_beacon", transactionId: "nested-evidence-001",
+      },
+    });
+    assert.equal(planned.isError, true);
+    assert.equal(planned.structuredContent.error.code, "PATH_NOT_ALLOWED");
+    assert.deepEqual(treeState(gameRoot), before);
+    assert.equal(existsSync(join(gameRoot, ".evidence")), false);
+  } finally {
+    if (statusSession) await close(statusSession);
+    if (nestedSession) await close(nestedSession);
+    rmSync(ws.root, { recursive: true, force: true });
+  }
+});
+
 test("MCP E2E: import plans, applies and rolls back byte-exactly", { timeout: 120_000 }, async () => {
   const ws = workspace();
   const gameRoot = join(ws.projectsDir, "game");

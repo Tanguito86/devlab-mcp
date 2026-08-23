@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
   applyInputSchema,
+  createProjectInputSchema,
   EVIDENCE_ONLY_ANNOTATIONS,
   MUTATING_ANNOTATIONS,
   ROLLBACK_ANNOTATIONS,
@@ -12,9 +16,12 @@ import {
 } from "../dist/contracts.js";
 import {
   assertWriteAllowed,
+  assertFixedWritePathPolicy,
+  assertFixedWritePlanPolicy,
   DEFAULT_EVIDENCE_ROOT,
   EVIDENCE_ROOT_ENV,
   GmWriteError,
+  GovernedGameMakerWriteService,
   mapToolError,
   PROJECTS_DIR_ENV,
   resolveEvidenceRoot,
@@ -24,11 +31,20 @@ import {
   WRITE_ALLOW_ENV,
 } from "../dist/core.js";
 import { GmAdapterError } from "@tanguito/devlab-gm-ide-adapter";
+import { transactionProjectNamespace } from "@tanguito/devlab-gm-ide-adapter/internal";
+import { canonicalBytes } from "../../gm-ide-adapter/dist/transactions/canonical.js";
 
 const digest = (character) => character.repeat(64);
 
 test("TOOL SET: exactly four write-tier tools are declared", () => {
   assert.deepEqual([...TOOL_NAMES], ["gamemaker_apply", "gamemaker_verify_text", "gamemaker_rollback", "gamemaker_create_project"]);
+});
+
+test("CATALOG SCHEMA: declares createProject and its request contract", async () => {
+  const schema = JSON.parse(await readFile(new URL("../schemas/gamemaker-write-v1.schema.json", import.meta.url), "utf8"));
+  assert.deepEqual(schema.$defs.tool.enum, [...TOOL_NAMES]);
+  assert.deepEqual(schema.$defs.createProjectRequest.required, ["projectPath", "name", "confirm"]);
+  assert.equal(schema.$defs.createProjectRequest.additionalProperties, false);
 });
 
 test("ANNOTATIONS: no tool claims to be read-only or open-world", () => {
@@ -63,6 +79,13 @@ test("INPUT CONTRACT: apply requires confirm=true and rejects unknown keys", () 
     false,
     "no toolchain may be supplied through the tool contract",
   );
+});
+
+test("INPUT CONTRACT: createProject fault hooks remain test-only", () => {
+  const request = { projectPath: "Demo", name: "Demo", confirm: true, dryRun: false };
+  assert.equal(createProjectInputSchema.safeParse(request).success, true);
+  assert.equal(createProjectInputSchema.safeParse({ ...request, faultAt: "after-first-staged-file" }).success, false);
+  assert.equal(createProjectInputSchema.safeParse({ ...request, beforeClaim: "hook" }).success, false);
 });
 
 test("INPUT CONTRACT: verify and rollback reject compile, runtime and toolchain arguments", () => {
@@ -123,6 +146,56 @@ test("WRITE ALLOWLIST: one denied path in a batch denies the whole batch", () =>
 test("WRITE ALLOWLIST: unrestricted mode still enforces path safety on the candidates", () => {
   assert.throws(() => assertWriteAllowed(["../escape"], resolveWriteAllowlist({ [WRITE_ALLOW_ENV]: "objects/" })));
   assert.throws(() => assertWriteAllowed(["../escape"], null), (error) => error.code === "PATH_ESCAPE");
+});
+
+test("FIXED PLAN POLICY: caller-controlled extensions, binary payloads and actions cannot widen write authority", () => {
+  const text = Buffer.from("// safe text\n", "utf8");
+  const plan = {
+    schemaVersion: 1, transactionId: "fixed-policy", operation: "apply-safe", capability: "GM_APPLY_SAFE_V1",
+    gate: "PLAN_ONLY", projectRoot: "Demo", snapshotHash: digest("a"), projectFingerprint: digest("b"),
+    expectedHead: null, allowlist: ["scripts/a.gml"], allowedExtensions: ["gml"],
+    files: [{ path: "scripts/a.gml", action: "modify", beforeSha256: digest("c"), afterSha256: digest("d"), afterContentBase64: text.toString("base64") }],
+    verification: { projectLoad: false, compile: false, runtime: "forbidden" }, rollback: { required: true },
+  };
+  assert.doesNotThrow(() => assertFixedWritePlanPolicy(plan));
+  const cases = [
+    { ...plan, allowedExtensions: ["gml", "exe"] },
+    { ...plan, allowlist: ["scripts/a.gml", "payload.exe"] },
+    { ...plan, allowlist: ["scripts/a.gml", "scripts/extra.gml"] },
+    { ...plan, allowlist: ["scripts/a.gml", "scripts/\uff21.gml"] },
+    { ...plan, files: [{ ...plan.files[0], path: "payload.exe" }], allowlist: ["payload.exe"], allowedExtensions: ["exe"] },
+    { ...plan, files: [plan.files[0], { ...plan.files[0], path: "scripts/\uff21.gml" }], allowlist: ["scripts/a.gml"] },
+    { ...plan, files: [{ ...plan.files[0], action: "create" }] },
+    { ...plan, files: [{ ...plan.files[0], afterContentBase64: "eA" }] },
+    { ...plan, files: [{ ...plan.files[0], afterContentBase64: Buffer.from([0xff, 0xfe]).toString("base64") }] },
+  ];
+  for (const hostile of cases) assert.throws(() => assertFixedWritePlanPolicy(hostile), (error) => error.code === "GM_WRITE_NOT_ALLOWED" || error.code === "GM_INVALID_REQUEST");
+});
+
+test("FIXED PATH POLICY: rollback evidence cannot widen the write tier by extension", () => {
+  assert.doesNotThrow(() => assertFixedWritePathPolicy(["scripts/a.gml", "Project.yyp"]));
+  assert.throws(() => assertFixedWritePathPolicy(["assets/payload.exe"]), (error) => error.code === "GM_WRITE_NOT_ALLOWED");
+});
+
+test("ROLLBACK POLICY: verified transaction evidence is rechecked against fixed extensions", async () => {
+  const root = await mkdtemp(join(tmpdir(), "gm-write-rollback-policy-"));
+  try {
+    await mkdir(join(root, "Project"));
+    const namespace = await transactionProjectNamespace(root, "Project"); const transactionId = "foreign-extension"; const planHash = digest("a");
+    const transactionRoot = join(root, ".evidence", "transactions", namespace, transactionId); await mkdir(transactionRoot, { recursive: true });
+    const manifest = {
+      capability: "GM_APPLY_SAFE_V1", confirm: true, expectedHead: null, expectedProjectFingerprint: digest("b"),
+      files: [{ action: "create", afterSha256: digest("c"), backupPath: null, beforeSha256: null, path: "payload.exe", stagingPath: "staging/payload.exe" }],
+      gate: "SAFE_WRITE", operation: "apply-safe", planHash, projectRoot: "Project", rollback: { available: true, required: true }, schemaVersion: 1,
+      state: "APPLIED", transactionId, verification: { compile: false, projectLoad: false, runtime: "forbidden" },
+    };
+    await writeFile(join(transactionRoot, "manifest.json"), canonicalBytes(manifest));
+    const service = new GovernedGameMakerWriteService({ DEVLAB_GM_PROJECTS_DIR: root, DEVLAB_GM_EVIDENCE_ROOT: ".evidence", DEVLAB_GM_WRITE_ALLOW: "*" });
+    await assert.rejects(
+      () => service.rollback({ projectPath: "Project", transactionId, planHash, expectedProjectFingerprint: digest("d"), confirm: true }, "foreign-extension", new AbortController().signal),
+      (error) => error.code === "GM_WRITE_NOT_ALLOWED",
+    );
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("ERROR MAPPING: adapter codes are surfaced with fixed public messages", () => {

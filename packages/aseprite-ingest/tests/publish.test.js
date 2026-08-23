@@ -95,16 +95,22 @@ test("PUBLISH: an ingested asset reaches the catalog as APPROVED", async () => {
       "license", "manifest", "manifestSha256", "source", "sourceSha256",
     ]);
 
-    // The approval is attributable, in an append-only log beside the catalog.
+    // Both durable audit phases exist before the catalog exposes APPROVED.
     assert.equal(result.approvalLogPath, "assets/catalog/approvals.jsonl");
     const log = (await readFile(join(root, "assets/catalog/approvals.jsonl"), "utf8")).trim().split(/\r?\n/);
-    assert.equal(log.length, 1);
-    assert.deepEqual(JSON.parse(log[0]), {
+    assert.equal(log.length, 2);
+    const [prepared, committed] = log.map((line) => JSON.parse(line));
+    assert.match(prepared.approvalId, /^[a-f0-9]{64}$/);
+    assert.equal(committed.approvalId, prepared.approvalId);
+    const common = {
+      approvalId: prepared.approvalId,
       assetId: ID, at: "2026-01-01T00:00:00.000Z", by: "test",
       catalogSha256: result.catalogSha256,
       manifestSha256: JSON.parse(await readFile(join(root, CATALOG), "utf8")).entries[0].provenance.manifestSha256,
       status: "APPROVED", version: VERSION,
-    });
+    };
+    assert.deepEqual(prepared, { ...common, phase: "PREPARED" });
+    assert.deepEqual(committed, { ...common, phase: "COMMITTED" });
     assert.equal(result.catalogSha256, sha256(await readFile(join(root, CATALOG), "utf8")));
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -218,6 +224,89 @@ test("PUBLISH: a failed ingest gate cannot be published", async () => {
       publishAsepriteAsset(request(root)),
       (error) => error.code === "ASEPRITE_PUBLISH_REFUSED" && /DETERMINISM_GATE did not pass/.test(error.message),
     );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("PUBLISH: missing or extra ingest gates cannot be published", async () => {
+  const exact = { SPEC_GATE: "PASS", BUDGET_GATE: "PASS", PNG_GATE: "PASS", DETERMINISM_GATE: "PASS", LIFECYCLE_GATE: "PASS" };
+  const cases = [
+    {},
+    Object.fromEntries(Object.entries(exact).filter(([gate]) => gate !== "PNG_GATE")),
+    { ...exact, UNRECOGNIZED_GATE: "PASS" },
+  ];
+  for (const gates of cases) {
+    const { root } = await ingested({ gates });
+    try {
+      await assert.rejects(
+        publishAsepriteAsset(request(root)),
+        (error) => error.code === "ASEPRITE_PUBLISH_REFUSED" && /exactly these ingest gates/.test(error.message),
+      );
+      assert.equal((await catalogOf(root)).entries.length, 0);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }
+});
+
+test("PUBLISH: audit persistence failure cannot expose APPROVED", async () => {
+  const { root } = await ingested();
+  try {
+    const catalogBefore = await readFile(join(root, CATALOG));
+    // A directory at the audit-file path deterministically makes the durable
+    // append fail on every supported host without relying on permissions.
+    await mkdir(join(root, "assets/catalog/approvals.jsonl"));
+    await assert.rejects(publishAsepriteAsset(request(root)));
+    assert.deepEqual(await readFile(join(root, CATALOG)), catalogBefore);
+    assert.equal((await catalogOf(root)).entries.length, 0, "APPROVED must remain invisible when audit persistence fails");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("PUBLISH: concurrent publishers fail closed instead of losing an update", async () => {
+  const { root } = await ingested();
+  let enteredCommit;
+  let releaseCommit;
+  const entered = new Promise((resolve) => { enteredCommit = resolve; });
+  const hold = new Promise((resolve) => { releaseCommit = resolve; });
+  try {
+    const first = publishAsepriteAsset(request(root, {
+      status: "DRAFT",
+      beforeCatalogCommit: async () => { enteredCommit(); await hold; },
+    }));
+    await entered;
+    await assert.rejects(
+      publishAsepriteAsset(request(root, { status: "DRAFT" })),
+      (error) => error.code === "ASEPRITE_PUBLISH_REFUSED" && /already being published/.test(error.message),
+    );
+    releaseCommit();
+    await first;
+    assert.equal((await catalogOf(root)).entries.length, 1);
+    await assert.rejects(readFile(join(root, `${CATALOG}.devlab-publish.lock`)), "the owned lock must be released");
+  } finally {
+    releaseCommit?.();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("PUBLISH: a non-cooperating catalog edit is preserved and aborts commit", async () => {
+  const { root } = await ingested();
+  const external = `${canonicalJson({
+    entries: [{ assetId: "external", version: "1.0.0", status: "DRAFT" }],
+    migration: "asset-catalog-v1",
+    schemaVersion: 1,
+  })}\n`;
+  try {
+    await assert.rejects(
+      publishAsepriteAsset(request(root, {
+        beforeCatalogCommit: async () => { await writeFile(join(root, CATALOG), external, "utf8"); },
+      })),
+      (error) => error.code === "ASEPRITE_PUBLISH_REFUSED" && /changed during publish/.test(error.message),
+    );
+    assert.equal(await readFile(join(root, CATALOG), "utf8"), external);
+    await assert.rejects(readFile(join(root, "assets/catalog/approvals.jsonl"), "utf8"), "audit must not commit after a failed compare");
   } finally {
     await rm(root, { recursive: true, force: true });
   }

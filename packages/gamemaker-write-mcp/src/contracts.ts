@@ -38,7 +38,7 @@ const projectPathSchema = z.string().min(1).max(1024).describe(
 const digestSchema = z.string().regex(/^[a-f0-9]{64}$/);
 const relativePathSchema = z.string().min(1).max(1024);
 const transactionIdSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]{0,127}$/);
-const base64Schema = z.string().max(6 * 1024 * 1024).regex(/^[A-Za-z0-9+/]*={0,2}$/);
+const base64Schema = z.string().max(6 * 1024 * 1024).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/);
 
 /**
  * Creating a project is the one write with nothing to fingerprint: there is no
@@ -46,7 +46,7 @@ const base64Schema = z.string().max(6 * 1024 * 1024).regex(/^[A-Za-z0-9+/]*={0,2
  * deleting a directory, which this tier must never do -- the caller removes it.
  */
 export const createProjectInputSchema = z.object({
-  projectPath: projectPathSchema.describe("New project directory relative to DEVLAB_GM_PROJECTS_DIR; must be absent or empty"),
+  projectPath: projectPathSchema.describe("New project directory relative to DEVLAB_GM_PROJECTS_DIR; target must be absent and its parent must already exist"),
   name: z.string().min(1).max(64).describe("Project name, a GML-safe identifier; also the .yyp filename"),
   confirm: z.literal(true).describe("Must be true; the server refuses to write otherwise"),
   dryRun: z.boolean().optional().describe("Defaults to true; pass false to actually write"),

@@ -93,6 +93,33 @@ test("LEAK: a path inside a compiler message is scrubbed", () => {
   assert.ok(report.diagnostics[0].message.includes("<path>"));
 });
 
+test("LEAK: absolute paths with spaces are scrubbed as complete units", () => {
+  const report = parseIgorDiagnostics([
+    "Error : gml_Object_obj_a_Create_0(1) : failed at C:\\Users\\Alice\\My Project\\private file.gml: unexpected token",
+    "Warning : gml_Script_scr_a(2) : failed at \\\\build-server\\Private Share\\game files\\secret.yy; unavailable",
+    "Error : gml_Script_scr_b(3) : failed at /home/alice/My Project/private/script.gml: unexpected token",
+    "Warning : gml_Script_scr_c(4) : output directory C:\\Users\\Alice\\My Project is unavailable",
+  ].join("\n"));
+  const serialized = JSON.stringify(report);
+  for (const leaked of ["Alice", "My Project", "private file", "build-server", "Private Share", "game files", "secret.yy", "/home/alice", "private/script.gml"]) {
+    assert.equal(serialized.includes(leaked), false, `${leaked} must not survive path scrubbing`);
+  }
+  assert.equal(report.diagnostics.every(({ message }) => message.includes("<path>")), true);
+});
+
+test("LEAK: a path presented as the compiler symbol is never reflected", () => {
+  const report = parseIgorDiagnostics([
+    "Error : C:\\Users\\Alice\\secret\\Player.gml(12) : unexpected symbol",
+    "Warning : /home/alice/private/Player.gml(3) : deprecated",
+  ].join("\n"));
+  const serialized = JSON.stringify(report);
+  assert.equal(serialized.includes("Alice"), false);
+  assert.equal(serialized.includes("secret"), false);
+  assert.equal(serialized.includes("alice"), false);
+  assert.equal(serialized.includes("private"), false);
+  assert.deepEqual(report.diagnostics.map(({ symbol }) => symbol), ["<path>", "<path>"]);
+});
+
 test("CAP: a flood of diagnostics is truncated but still counted", () => {
   const lines = Array.from({ length: MAX_DIAGNOSTICS + 25 }, (_, index) =>
     `Error : gml_Object_obj_a_Create_0(${index + 1}) : problem ${index}`);

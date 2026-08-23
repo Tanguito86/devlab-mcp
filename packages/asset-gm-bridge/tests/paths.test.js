@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { GovernedAssetGmBridge, scanPathCollisions } from "../dist/index.js";
@@ -63,4 +63,15 @@ test("symlink inside the target project fails closed (PATH_ESCAPE via adapter in
   try { await bridge.inspectTarget(baseRequest(workspace)); } catch (caught) { error = caught; }
   assert.ok(error, "inspection must fail on a symlink inside the project");
   assert.equal(error.code, "PATH_ESCAPE");
+});
+
+test("evidence roots inside the project are rejected before planning writes", async () => {
+  for (const evidenceRoot of ["pilot-a/.evidence", "PILOT-A/.evidence"]) {
+    const workspace = makeWorkspace({});
+    const bridge = new GovernedAssetGmBridge(workspace.projectsDir, { catalogPath: workspace.catalogPath, repoRoot: workspace.root });
+    const target = await bridge.inspectTarget(baseRequest(workspace));
+    const request = { ...baseRequest(workspace), evidenceRoot, expectedProjectFingerprint: target.fingerprint };
+    await expectBridgeError(bridge.planImport(request), "PATH_NOT_ALLOWED");
+    assert.equal(existsSync(join(workspace.projectsDir, evidenceRoot, "asset-bridge")), false);
+  }
 });

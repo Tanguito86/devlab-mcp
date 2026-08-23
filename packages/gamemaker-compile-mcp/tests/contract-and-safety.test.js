@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -35,6 +36,7 @@ import { GmAdapterError } from "@tanguito/devlab-gm-ide-adapter";
 const digest = (character) => character.repeat(64);
 const WIN = process.platform === "win32";
 const abs = (tail) => (WIN ? `C:\\gm\\${tail}` : `/gm/${tail}`);
+const catalogSchema = JSON.parse(readFileSync(new URL("../schemas/gamemaker-compile-v1.schema.json", import.meta.url), "utf8"));
 
 const fullToolchain = () => ({
   [IGOR_ENV]: abs("Igor.exe"),
@@ -45,6 +47,15 @@ const fullToolchain = () => ({
 
 test("TOOL SET: exactly two tools are declared", () => {
   assert.deepEqual([...TOOL_NAMES], ["gamemaker_toolchain_status", "gamemaker_verify_build"]);
+});
+
+test("CATALOG SCHEMA: build output includes the runtime diagnostic fields", () => {
+  const response = catalogSchema.$defs.verifyBuildResponse;
+  for (const field of ["diagnostics", "errorCount", "warningCount", "diagnosticsTruncated"]) {
+    assert.ok(response.required.includes(field));
+    assert.ok(response.properties[field]);
+  }
+  assert.equal(response.properties.diagnostics.items.$ref, "#/$defs/diagnostic");
 });
 
 test("ANNOTATIONS: the build tool does not claim to be read-only", () => {

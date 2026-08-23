@@ -208,3 +208,16 @@ test("PLACE INSTANCE: placing the same instance twice is idempotent in text", ()
   const twice = spliceInstancesIntoRoom(once, "rm_start", resolveInstances([{ objectName: "obj_hero", x: 1, y: 2, instanceName: "inst_fixed" }]));
   assert.equal(once, twice);
 });
+
+test("PLACE INSTANCE: an object name matching the instance name does not suppress the instance record", () => {
+  const patched = spliceInstancesIntoRoom(
+    ROOM_TEXT,
+    "rm_start",
+    resolveInstances([{ objectName: "obj_hero", x: 7, y: 8, instanceName: "obj_hero" }]),
+  );
+  const room = parseGmJson(patched);
+  const added = room.layers[0].instances.find(({ name }) => name === "obj_hero");
+  assert.ok(added, "the instance must not be confused with objectId.name");
+  assert.equal(added.objectId.name, "obj_hero");
+  assert.equal(room.instanceCreationOrder.some(({ name }) => name === "obj_hero"), true);
+});

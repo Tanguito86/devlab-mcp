@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +9,10 @@ import { createBridgeTestBeacon } from "../dist/index.js";
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const here = fileURLToPath(new URL(".", import.meta.url));
 export const FIXTURE_PROJECT = join(here, "../../../fixtures/gamemaker/asset-bridge-pilot");
+const temporaryWorkspaces = new Set();
+process.once("exit", () => {
+  for (const root of temporaryWorkspaces) rmSync(root, { recursive: true, force: true });
+});
 
 export const SPEC_V1 = Object.freeze({
   schemaVersion: 1, assetId: "bridge-test-beacon", version: "1.0.0", width: 64, height: 64,
@@ -74,6 +78,7 @@ export function writeCatalog(root, entries) {
 /** Builds a complete temp workspace with catalog, artifacts and a GM project copy. */
 export function makeWorkspace({ status = "APPROVED", version = "1.0.0", spec = SPEC_V1, extraEntries = [], extraVersions = [] } = {}) {
   const root = join(tmpdir(), `asset-bridge-test-${process.pid}-${Math.random().toString(36).slice(2)}`);
+  temporaryWorkspaces.add(root);
   mkdirSync(root, { recursive: true });
   const entries = [buildAssetArtifacts(root, spec, status).entry];
   for (const extra of extraVersions) entries.push(buildAssetArtifacts(root, extra.spec ?? SPEC_V1, extra.status ?? "APPROVED").entry);
