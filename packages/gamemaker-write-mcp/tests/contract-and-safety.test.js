@@ -27,8 +27,8 @@ import { GmAdapterError } from "@tanguito/devlab-gm-ide-adapter";
 
 const digest = (character) => character.repeat(64);
 
-test("TOOL SET: exactly three write-tier tools are declared", () => {
-  assert.deepEqual([...TOOL_NAMES], ["gamemaker_apply", "gamemaker_verify_text", "gamemaker_rollback"]);
+test("TOOL SET: exactly four write-tier tools are declared", () => {
+  assert.deepEqual([...TOOL_NAMES], ["gamemaker_apply", "gamemaker_verify_text", "gamemaker_rollback", "gamemaker_create_project"]);
 });
 
 test("ANNOTATIONS: no tool claims to be read-only or open-world", () => {

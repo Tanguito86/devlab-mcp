@@ -30,6 +30,11 @@ import {
   type ProjectTexts,
 } from "@tanguito/devlab-gm-authoring";
 
+import {
+  MAX_READ_BYTES_PER_FILE,
+  MAX_READ_BYTES_TOTAL,
+  READABLE_EXTENSIONS,
+} from "./contracts.js";
 import type {
   AuthoredPlanOutput,
   InspectInput,
@@ -41,6 +46,8 @@ import type {
   PlaceInstanceInput,
   PlanInput,
   PlanOutput,
+  ReadTextInput,
+  ReadTextOutput,
   StatusInput,
   StatusOutput,
   TileLayerInput,
@@ -67,7 +74,12 @@ type PublicRequestId = string | number;
 
 export class GmMcpError extends Error {
   constructor(
-    readonly code: "GM_CONFIG_REQUIRED" | "GM_CONFIG_INVALID" | "GM_INTERNAL_ERROR",
+    readonly code:
+      | "GM_CONFIG_REQUIRED"
+      | "GM_CONFIG_INVALID"
+      | "GM_INTERNAL_ERROR"
+      | "GM_INVALID_REQUEST"
+      | "GM_LIMIT_EXCEEDED",
     message: string,
     readonly recoverable: boolean,
   ) {
@@ -405,6 +417,64 @@ export class ReadonlyGameMakerService {
     const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal, input.roomName);
     const authored = authorPlaceInstance(texts, { roomName: input.roomName, instances: input.instances });
     return this.planAuthored(input, authored, requestId, signal, input);
+  }
+
+  /**
+   * Returns the text of project files the plan tools could write.
+   *
+   * The fingerprint is required for the same reason planning requires it: text
+   * read against one project state and edited against another is how a
+   * concurrent change gets silently overwritten. Each file's digest comes back
+   * so the caller can prove the bytes it plans against are the bytes it read.
+   */
+  async readText(input: ReadTextInput, requestId: PublicRequestId, signal: AbortSignal): Promise<ReadTextOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const adapter = new GovernedGameMakerIdeAdapter(projectsDir);
+    const snapshot = await adapter.inspect({
+      ...baseRequest(input.projectPath, "GM_INSPECT_V1", input, signal),
+      expectedProjectFingerprint: input.expectedProjectFingerprint,
+    });
+    const root = await resolveInsideRoot(projectsDir, safeRelativePath(input.projectPath), { existing: true });
+    const known = new Map(snapshot.files.map((file) => [file.path, file]));
+
+    const files: Array<{ path: string; sha256: string; size: number; text: string }> = [];
+    const seen = new Set<string>();
+    let totalBytes = 0;
+    for (const requested of input.paths) {
+      // The path policy first, so a hostile path is refused for the right
+      // reason rather than for merely being absent from the snapshot.
+      const path = safeRelativePath(requested);
+      if (seen.has(path)) continue;
+      seen.add(path);
+
+      const extension = path.includes(".") ? path.slice(path.lastIndexOf(".") + 1).toLowerCase() : "";
+      if (!READABLE_EXTENSIONS.includes(extension)) {
+        throw new GmMcpError("GM_INVALID_REQUEST", `${path} is not one of the readable extensions: ${READABLE_EXTENSIONS.join(", ")}.`, true);
+      }
+      const file = known.get(path);
+      if (file === undefined) throw new GmMcpError("GM_INVALID_REQUEST", `${path} is not a file in this project.`, true);
+      if (file.size > MAX_READ_BYTES_PER_FILE) {
+        throw new GmMcpError("GM_LIMIT_EXCEEDED", `${path} is larger than the ${MAX_READ_BYTES_PER_FILE} byte per-file read limit.`, true);
+      }
+      totalBytes += file.size;
+      if (totalBytes > MAX_READ_BYTES_TOTAL) {
+        throw new GmMcpError("GM_LIMIT_EXCEEDED", `The request exceeds the ${MAX_READ_BYTES_TOTAL} byte total read limit.`, true);
+      }
+      const text = await readFile(await resolveInsideRoot(root, path), "utf8");
+      files.push({ path, sha256: file.sha256, size: file.size, text });
+    }
+
+    return {
+      ok: true,
+      schemaVersion: 1,
+      requestId,
+      capability: "GM_INSPECT_V1",
+      serverGate: "READ_ONLY",
+      projectPath: snapshot.projectRoot,
+      projectFingerprint: snapshot.fingerprint,
+      files,
+      totalBytes,
+    };
   }
 
   async planNewTileset(input: NewTilesetInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {

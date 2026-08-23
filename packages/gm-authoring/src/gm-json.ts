@@ -83,9 +83,13 @@ export function insertIntoGmArray(text: string, openMarker: string, entryPath: s
   const close = findArrayClose(text, arrayOpen);
   if (text.slice(arrayOpen, close).includes(`"${entryPath}"`)) return text;
   const before = text.slice(0, close);
-  const separator = /,\s*$/.test(before) ? "" : ",";
-  const insertionPoint = before.trimEnd().length;
-  return `${before.slice(0, insertionPoint)}${separator}\n${indent}${entryLine},${before.slice(insertionPoint)}${text.slice(close)}`;
+  const trimmed = before.trimEnd();
+  // An empty array needs no separator -- the entry becomes its first element.
+  // A brand-new project has nothing but empty arrays, and so does a room
+  // authored without instances, so this is the common case rather than an edge.
+  const isEmpty = trimmed.length - 1 === arrayOpen;
+  const separator = isEmpty || trimmed.endsWith(",") ? "" : ",";
+  return `${trimmed}${separator}\n${indent}${entryLine},${before.slice(trimmed.length)}${text.slice(close)}`;
 }
 
 /** Canonical `.yyp` resources entry for any resource kind. */

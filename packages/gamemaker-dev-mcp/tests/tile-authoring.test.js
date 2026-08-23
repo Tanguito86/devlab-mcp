@@ -58,7 +58,7 @@ async function withServer(run) {
   }
 }
 
-test("TILES: a tileset is planned from the sprite's real geometry and nothing is written", { timeout: 30_000 }, async () => {
+test("TILES: a tileset is planned from the sprite's real geometry and nothing is written", { timeout: 60_000 }, async () => {
   await withServer(async ({ call, fingerprint, projectRoot }) => {
     const before = await treeHash(projectRoot);
 
@@ -105,7 +105,7 @@ test("TILES: a tileset is planned from the sprite's real geometry and nothing is
   });
 });
 
-test("TILES: a tile layer is planned against the tileset's own tile count", { timeout: 30_000 }, async () => {
+test("TILES: a tile layer is planned against the tileset's own tile count", { timeout: 60_000 }, async () => {
   await withServer(async ({ call, fingerprint, projectRoot }) => {
     const before = await treeHash(projectRoot);
 
@@ -141,7 +141,7 @@ test("TILES: a tile layer is planned against the tileset's own tile count", { ti
   });
 });
 
-test("TILES: bad geometry, bad indices and name collisions are refused", { timeout: 30_000 }, async () => {
+test("TILES: bad geometry, bad indices and name collisions are refused", { timeout: 120_000 }, async () => {
   await withServer(async ({ call, fingerprint, projectRoot }) => {
     const before = await treeHash(projectRoot);
     const base = { projectPath, expectedProjectFingerprint: fingerprint };

@@ -24,6 +24,7 @@ const EXPECTED_TOOLS = [
   "gamemaker_plan_new_tileset",
   "gamemaker_plan_place_instance",
   "gamemaker_plan_tile_layer",
+  "gamemaker_read_text",
   "gamemaker_status",
 ];
 

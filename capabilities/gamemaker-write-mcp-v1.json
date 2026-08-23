@@ -4,15 +4,15 @@
   "version": "0.1.0",
   "package": "@tanguito/gamemaker-write-mcp",
   "transport": "STDIO",
-  "publicTools": ["gamemaker_apply", "gamemaker_verify_text", "gamemaker_rollback"],
-  "internalCapabilities": ["GM_APPLY_SAFE_V1", "GM_VERIFY_V1", "GM_ROLLBACK_V1"],
+  "publicTools": ["gamemaker_apply", "gamemaker_verify_text", "gamemaker_rollback", "gamemaker_create_project"],
+  "internalCapabilities": ["GM_APPLY_SAFE_V1", "GM_VERIFY_V1", "GM_ROLLBACK_V1", "GM_CREATE_PROJECT_V1"],
   "mode": "SAFE_WRITE_NO_PROCESS_EXECUTION",
-  "writeTools": 2,
+  "writeTools": 3,
   "resources": 0,
   "prompts": 0,
   "inputSchema": "packages/gamemaker-write-mcp/schemas/gamemaker-write-v1.schema.json",
   "configuration": "DEVLAB_GM_PROJECTS_DIR absolute existing real directory; DEVLAB_GM_WRITE_ALLOW explicit path list or deliberate * opt-out; DEVLAB_GM_EVIDENCE_ROOT optional relative path outside every project",
-  "dependencies": ["@tanguito/devlab-gm-ide-adapter"],
+  "dependencies": ["@tanguito/devlab-gm-ide-adapter", "@tanguito/devlab-gm-authoring"],
   "runtimeStatus": "LOCAL_VERIFIED",
   "productionVerified": false,
   "assetBridgeAvailable": false,
@@ -21,7 +21,7 @@
   "verificationLevels": ["TEXT_VALID"],
   "compilerExecution": false,
   "runtimeExecution": false,
-  "reversibility": "byte-exact backup verified before promotion; rollback required",
+  "reversibility": "byte-exact backup verified before promotion; rollback required. Project creation is the exception: it has no prior state to restore, so it is refused on any directory that is not absent or empty, and removing a project is not offered here.",
   "prohibitedOperations": [
     "compile",
     "run",
@@ -32,6 +32,7 @@
     "import",
     "Asset Forge",
     "Asset-GM Bridge",
-    "network"
+    "network",
+    "project deletion"
   ]
 }

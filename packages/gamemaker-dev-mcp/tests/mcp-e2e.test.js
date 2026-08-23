@@ -92,6 +92,7 @@ test("MCP E2E: stdio handshake and every tool leaves the project untouched", { t
     assert.deepEqual(listed.tools.map(({ name }) => name), [
       "gamemaker_status",
       "gamemaker_inspect",
+      "gamemaker_read_text",
       "gamemaker_plan",
       "gamemaker_plan_new_script",
       "gamemaker_plan_new_object",

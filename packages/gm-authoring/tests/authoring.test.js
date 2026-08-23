@@ -202,6 +202,28 @@ test("SPLICE: insertion is idempotent and preserves surrounding bytes", () => {
   assert.doesNotThrow(() => parseGmJson(once));
 });
 
+test("SPLICE: the first entry of an empty array gets no leading comma", () => {
+  // A brand-new project has nothing but empty arrays, and a room authored
+  // without instances has two of them. Emitting a separator there produced
+  // `[,{...},]`, which GameMaker refuses to load -- and the write tier would
+  // have applied it happily.
+  const empties = ['{"resources":[]}', '{"resources":[\n  ]}', '{"resources":[\n\n]}'];
+  for (const empty of empties) {
+    const spliced = insertIntoGmArray(empty, '"resources":[', "a/a.yy", '{"id":"a",}');
+    assert.ok(!/\[\s*,/.test(spliced), `leading comma in ${JSON.stringify(spliced)}`);
+    assert.doesNotThrow(() => parseGmJson(spliced), spliced);
+    assert.deepEqual(parseGmJson(spliced), { resources: [{ id: "a" }] });
+  }
+});
+
+test("SPLICE: a nested empty array is not mistaken for the target being empty", () => {
+  const nested = '{"resources":[\n    {"id":"a","tags":[],},\n  ]}';
+  const spliced = insertIntoGmArray(nested, '"resources":[', "b/b.yy", '{"id":"b",}');
+  // The nested `"tags":[]` must not make the outer array look empty; the entry
+  // still lands after the element that is already there.
+  assert.deepEqual(parseGmJson(spliced), { resources: [{ id: "a", tags: [] }, { id: "b" }] });
+});
+
 test("SPLICE: a project file missing the target array fails closed", () => {
   assert.throws(
     () => insertIntoGmArray("{}", '"resources":[', "a", "b"),

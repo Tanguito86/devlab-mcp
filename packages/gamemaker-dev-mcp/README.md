@@ -30,7 +30,14 @@ Local stdio MCP server that exposes the governed read-only and plan-only slice o
   and tile count are read from the tileset and every index is bounds-checked
   against it. The room is patched as text, so unmodelled layers survive.
 
-The server registers exactly these nine tools.
+- `gamemaker_read_text` returns the text of project files, so an edit can be
+  planned against what a file actually says. Readable extensions are exactly the
+  ones the plan tools may write, and each file comes back with the digest of the
+  bytes on disk. Without it `gamemaker_plan` was unusable on its own: it replaces
+  a file wholesale, and nothing here could reveal what the file already
+  contained.
+
+The server registers exactly these ten tools.
 
 ## Plans compose with the write tier
 
