@@ -3,7 +3,14 @@
 
 import { access, readFile } from "node:fs/promises";
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
+
+// Resolve against the package, not the caller's working directory: this doctor
+// reports on THIS package's build output, and cwd-relative paths would make the
+// answer depend on where it was launched from.
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const inPackage = (...parts) => path.join(packageRoot, ...parts);
 
 const checks = [];
 
@@ -25,7 +32,7 @@ try {
 
 // Playwright check
 try {
-  const pkgPath = path.resolve(process.cwd(), "node_modules/playwright/package.json");
+  const pkgPath = inPackage("node_modules/playwright/package.json");
   await access(pkgPath);
   const pkg = JSON.parse(await readFile(pkgPath, "utf8"));
   ok(`Playwright ${pkg.version}`);
@@ -41,41 +48,54 @@ try {
   warn("Chromium may not be installed (run: npx playwright install chromium)");
 }
 
-// Build check
+// Build check. Structural: the server cannot run without it, so this is fatal
+// rather than advisory.
 try {
-  await access(path.resolve(process.cwd(), "dist/index.js"));
+  await access(inPackage("dist/index.js"));
   ok("dist/ build found");
 } catch {
-  warn("No dist/ build (run: npm run build)");
+  fail("No dist/ build (run: pnpm --filter @tanguito/browser-dev-mcp build)");
 }
 
-// Profiles
+// Profiles. Shipped with the package; absence means a packaging fault, not an
+// environment quirk.
 try {
-  const profilesDir = path.resolve(process.cwd(), "profiles");
   const { readdir } = await import("node:fs/promises");
-  const entries = await readdir(profilesDir);
+  const entries = await readdir(inPackage("profiles"));
   const profiles = entries.filter(e => e.endsWith(".json"));
-  ok(`${profiles.length} profiles: ${profiles.join(", ")}`);
-} catch { warn("No profiles/ directory"); }
+  if (profiles.length === 0) fail("profiles/ contains no profile");
+  else ok(`${profiles.length} profiles: ${profiles.join(", ")}`);
+} catch { fail("No profiles/ directory"); }
 
-// Workflows
+// Workflows. Shipped likewise.
 try {
-  const wfDir = path.resolve(process.cwd(), "workflows");
   const { readdir } = await import("node:fs/promises");
   let count = 0;
-  const profileDirs = await readdir(wfDir, { withFileTypes: true });
+  const profileDirs = await readdir(inPackage("workflows"), { withFileTypes: true });
   for (const entry of profileDirs) {
     if (entry.isDirectory()) {
-      const wfs = await readdir(path.join(wfDir, entry.name));
+      const wfs = await readdir(inPackage("workflows", entry.name));
       count += wfs.filter(w => w.endsWith(".json")).length;
     }
   }
-  ok(`${count} workflow files`);
-} catch { warn("No workflows/ directory"); }
+  if (count === 0) fail("workflows/ contains no workflow");
+  else ok(`${count} workflow files`);
+} catch { fail("No workflows/ directory"); }
 
 // Summary
 console.log("browser-dev-mcp Doctor");
 console.log("═".repeat(40));
 for (const c of checks) console.log(c);
 console.log("═".repeat(40));
-console.log(`Result: ${checks.every(c => !c.startsWith("❌")) ? "Ready 🚀" : "Issues found — see above"}`);
+
+// This doctor previously printed "Issues found" and exited 0 regardless, so a
+// green CI step said nothing about the package. Structural faults now fail.
+// Environment-dependent checks -- npm, Playwright, the Chromium binary -- stay
+// advisory: CI does not install browsers for this job, and their absence does
+// not make the package broken.
+const failures = checks.filter((line) => line.startsWith("❌"));
+if (failures.length > 0) {
+  console.log(`Result: 🔴 ${failures.length} failure(s)`);
+  process.exit(1);
+}
+console.log("Result: Ready 🚀");
