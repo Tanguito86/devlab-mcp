@@ -123,3 +123,6 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 # entries cover the review record and the policy test beside it.
 /docs/reviews/devlab-ab04-isolation-provision-02/** text eol=lf
 /packages/browser-dev-mcp/tests/ab04-isolation-provision.test.js text eol=lf
+
+# The bullet benchmark: its GML is embedded verbatim into a generated project.
+/examples/shmup-bench/** text eol=lf
