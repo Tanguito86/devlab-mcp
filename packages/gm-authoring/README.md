@@ -126,6 +126,16 @@ these functions compiles under Igor (VM, exit 0), and the running game reports
 Not covered: tileset animation, auto-tiling, and the tileset's own
 `macroPageTiles` brush pages, which are all authored empty.
 
+**A tileset record on its own does not draw.** GameMaker expects an
+`output_tileset.png` beside it -- every tile re-laid-out into a
+`(tileWidth + 2 x out_tilehborder)` cell with its edges bled outward -- and
+`renderTilesetYy` does not produce it. Without the page, `tilemap_get` still
+returns the authored indices and a compiled game still runs; the layer is simply
+invisible. The runtime verification above asked the engine for data rather than
+for pixels, which is precisely why it passed. Emitting the page needs a PNG
+encoder, which this package deliberately has no dependency for; the fix belongs
+with the shared-codec extraction already tracked under duplication, below.
+
 ## Not covered
 
 Sprite and asset layers, room inheritance, views beyond the single default, and

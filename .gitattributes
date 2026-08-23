@@ -113,3 +113,7 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 # GM-MCP-BOOTSTRAP-01 ProjectTool's own PROJECT NEW output, compared against
 # field for field by a test.
 /fixtures/gamemaker/new-project/** text eol=lf
+
+# THAW: the GML is embedded verbatim into a generated project and parsed by the
+# example's own solve checker, so its bytes must not vary by checkout.
+/examples/thaw/** text eol=lf
