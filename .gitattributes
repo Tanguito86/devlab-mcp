@@ -117,3 +117,9 @@ benchmarks/threejs-game-skills-ab/**/*.webp binary
 # THAW: the GML is embedded verbatim into a generated project and parsed by the
 # example's own solve checker, so its bytes must not vary by checkout.
 /examples/thaw/** text eol=lf
+
+# DEVLAB-AB04-ISOLATION-TOKEN-03 static review. The scripts carry their own
+# eol=lf rule because a hash manifest authenticates them byte for byte; these
+# entries cover the review record and the policy test beside it.
+/docs/reviews/devlab-ab04-isolation-provision-02/** text eol=lf
+/packages/browser-dev-mcp/tests/ab04-isolation-provision.test.js text eol=lf
