@@ -7,6 +7,12 @@ import {
 } from "./gm-json.js";
 import { resolveEvents, type GmEventSpec } from "./events.js";
 import {
+  assertTileCells,
+  renderTilesetYy,
+  spliceTileLayerIntoRoom,
+  tilesetResourcePath,
+} from "./tiles.js";
+import {
   existingInstanceNames,
   renderRoomYy,
   resolveInstances,
@@ -37,7 +43,7 @@ export interface AuthoredFile {
 }
 
 export interface AuthoredResource {
-  readonly resourceKind: "script" | "object" | "room" | "instance";
+  readonly resourceKind: "script" | "object" | "room" | "instance" | "tileset" | "tileLayer";
   readonly resourceName: string;
   readonly resourcePath: string;
   readonly files: readonly AuthoredFile[];
@@ -201,6 +207,93 @@ export function authorPlaceInstance(project: ProjectTexts, request: PlaceInstanc
   return Object.freeze({
     resourceKind: "instance",
     resourceName: instances.map(({ instanceName }) => instanceName).join(","),
+    resourcePath,
+    files: Object.freeze(files),
+    allowlist: Object.freeze(files.map(({ path }) => path)),
+  });
+}
+
+export interface NewTilesetRequest {
+  readonly name: string;
+  readonly spriteName: string;
+  readonly spriteWidth: number;
+  readonly spriteHeight: number;
+  readonly tileWidth: number;
+  readonly tileHeight: number;
+}
+
+export function authorTileset(project: ProjectTexts, request: NewTilesetRequest): AuthoredResource {
+  const name = assertResourceName(request.name, "tileset");
+  const resourcePath = tilesetResourcePath(name);
+  assertAvailable(project, resourcePath, name);
+
+  const spritePath = `sprites/${request.spriteName}/${request.spriteName}.yy`;
+  if (!project.existingReferences.includes(spritePath) && !project.existingFiles.includes(spritePath)) {
+    throw new GmAuthoringError("INVALID_RESOURCE_NAME", `sprite ${request.spriteName} is not in this project`);
+  }
+
+  const files: AuthoredFile[] = [
+    { path: resourcePath, action: "create", content: renderTilesetYy(name, project.identity, request) },
+    ...projectFileEdits(project, name, resourcePath),
+  ];
+  return Object.freeze({
+    resourceKind: "tileset",
+    resourceName: name,
+    resourcePath,
+    files: Object.freeze(files),
+    allowlist: Object.freeze(files.map(({ path }) => path)),
+  });
+}
+
+export interface NewTileLayerRequest {
+  readonly roomName: string;
+  readonly layerName: string;
+  readonly tilesetName: string;
+  readonly width: number;
+  readonly height: number;
+  readonly cells: readonly number[];
+  readonly tileWidth: number;
+  readonly tileHeight: number;
+  readonly depth?: number;
+  /** Tile count of the referenced tileset, used to bounds-check every cell. */
+  readonly tilesetTileCount: number;
+}
+
+/**
+ * Adds a tile layer to a room that already exists. Like instance placement,
+ * the room is patched as text so unmodelled layers and settings survive.
+ */
+export function authorTileLayer(project: ProjectTexts, request: NewTileLayerRequest): AuthoredResource {
+  const roomName = assertResourceName(request.roomName, "room");
+  const layerName = assertResourceName(request.layerName, "layer");
+  const tilesetName = assertResourceName(request.tilesetName, "tileset");
+  const resourcePath = roomResourcePath(roomName);
+  if (!project.existingReferences.includes(resourcePath) && !project.existingFiles.includes(resourcePath)) {
+    throw new GmAuthoringError("INVALID_ROOM", `room ${roomName} is not in this project`);
+  }
+  if (project.roomText === undefined) throw new GmAuthoringError("INVALID_ROOM", "the room body is required to add a tile layer");
+
+  const tilesetPath = tilesetResourcePath(tilesetName);
+  if (!project.existingReferences.includes(tilesetPath) && !project.existingFiles.includes(tilesetPath)) {
+    throw new GmAuthoringError("INVALID_TILE_DATA", `tileset ${tilesetName} is not in this project`);
+  }
+
+  const spec = {
+    layerName, tilesetName,
+    width: request.width, height: request.height, cells: request.cells,
+    tileWidth: request.tileWidth, tileHeight: request.tileHeight,
+    ...(request.depth === undefined ? {} : { depth: request.depth }),
+  };
+  assertTileCells(spec, request.tilesetTileCount);
+
+  const files: AuthoredFile[] = [{
+    path: resourcePath,
+    action: "modify",
+    content: spliceTileLayerIntoRoom(project.roomText, spec),
+  }];
+  return Object.freeze({
+    resourceKind: "tileLayer",
+    resourceName: layerName,
     resourcePath,
     files: Object.freeze(files),
     allowlist: Object.freeze(files.map(({ path }) => path)),

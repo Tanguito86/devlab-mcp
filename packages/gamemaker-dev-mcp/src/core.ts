@@ -21,8 +21,11 @@ import {
   authorPlaceInstance,
   authorRoom,
   authorScript,
+  authorTileLayer,
+  authorTileset,
   GmAuthoringError,
   parseGmJson,
+  tilesetResourcePath,
   type AuthoredResource,
   type ProjectTexts,
 } from "@tanguito/devlab-gm-authoring";
@@ -34,11 +37,13 @@ import type {
   NewObjectInput,
   NewRoomInput,
   NewScriptInput,
+  NewTilesetInput,
   PlaceInstanceInput,
   PlanInput,
   PlanOutput,
   StatusInput,
   StatusOutput,
+  TileLayerInput,
   ToolOutput,
 } from "./contracts.js";
 
@@ -401,6 +406,75 @@ export class ReadonlyGameMakerService {
     const authored = authorPlaceInstance(texts, { roomName: input.roomName, instances: input.instances });
     return this.planAuthored(input, authored, requestId, signal, input);
   }
+
+  async planNewTileset(input: NewTilesetInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal);
+    // The sprite's pixel size decides how many tiles the set has, so it is read
+    // from the project rather than taken on the caller's word; a wrong size
+    // silently produces a tileset whose indices run off the end of the image.
+    const spritePath = `sprites/${input.spriteName}/${input.spriteName}.yy`;
+    const sprite = await this.readResource(projectsDir, input.projectPath, texts, spritePath, `sprite ${input.spriteName}`);
+    const spriteWidth = numericField(sprite, "width", `sprite ${input.spriteName}`);
+    const spriteHeight = numericField(sprite, "height", `sprite ${input.spriteName}`);
+    const authored = authorTileset(texts, {
+      name: input.name,
+      spriteName: input.spriteName,
+      spriteWidth,
+      spriteHeight,
+      tileWidth: input.tileWidth,
+      tileHeight: input.tileHeight,
+    });
+    return this.planAuthored(input, authored, requestId, signal, input);
+  }
+
+  async planTileLayer(input: TileLayerInput, requestId: PublicRequestId, signal: AbortSignal): Promise<AuthoredPlanOutput> {
+    const projectsDir = await resolveProjectsDir(this.env);
+    const texts = await this.projectTexts(projectsDir, input.projectPath, input.expectedProjectFingerprint, signal, input.roomName);
+    const tilesetPath = tilesetResourcePath(input.tilesetName);
+    const tileset = await this.readResource(projectsDir, input.projectPath, texts, tilesetPath, `tileset ${input.tilesetName}`);
+    const authored = authorTileLayer(texts, {
+      roomName: input.roomName,
+      layerName: input.layerName,
+      tilesetName: input.tilesetName,
+      width: input.width,
+      height: input.height,
+      cells: input.cells,
+      tileWidth: numericField(tileset, "tileWidth", `tileset ${input.tilesetName}`),
+      tileHeight: numericField(tileset, "tileHeight", `tileset ${input.tilesetName}`),
+      tilesetTileCount: numericField(tileset, "tile_count", `tileset ${input.tilesetName}`),
+      ...(input.depth === undefined ? {} : { depth: input.depth }),
+    });
+    return this.planAuthored(input, authored, requestId, signal, input);
+  }
+
+  /** Reads one `.yy` the caller named, refusing anything not in the snapshot. */
+  private async readResource(
+    projectsDir: string,
+    projectPath: string,
+    texts: ProjectTexts,
+    resourcePath: string,
+    label: string,
+  ): Promise<Record<string, unknown>> {
+    if (!texts.existingFiles.includes(resourcePath)) {
+      throw new GmAuthoringError("INVALID_RESOURCE_NAME", `${label} is not in this project`);
+    }
+    const root = await resolveInsideRoot(projectsDir, safeRelativePath(projectPath), { existing: true });
+    const text = await readFile(await resolveInsideRoot(root, resourcePath), "utf8");
+    const parsed = parseGmJson(text);
+    if (typeof parsed !== "object" || parsed === null) {
+      throw new GmAuthoringError("INVALID_PROJECT_TEXT", `${label} is not a readable resource file`);
+    }
+    return parsed as Record<string, unknown>;
+  }
+}
+
+function numericField(record: Record<string, unknown>, field: string, label: string): number {
+  const value = record[field];
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
+    throw new GmAuthoringError("INVALID_PROJECT_TEXT", `${label} declares no usable ${field}`);
+  }
+  return value;
 }
 
 export function mapToolError(error: unknown, requestId: PublicRequestId): ToolOutput {
