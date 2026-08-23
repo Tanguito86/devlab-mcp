@@ -188,6 +188,9 @@ export async function ingestAsepriteSprite(request: IngestRequest): Promise<Inge
     version: spec.version,
     specPath: specRelative,
     specSha256: sha256(specText),
+    // Carried here so publishing can attribute the entry to its source without
+    // the .aseprite file still being on disk.
+    sourceSha256: sha256(sourceBytes),
     generatedModuleSha256: "0".repeat(64),
     budgetProfile: spec.budgetProfile,
     gates: { SPEC_GATE: "PASS", BUDGET_GATE: "PASS", PNG_GATE: "PASS", DETERMINISM_GATE: "PASS", LIFECYCLE_GATE: "PASS" },
@@ -199,8 +202,8 @@ export async function ingestAsepriteSprite(request: IngestRequest): Promise<Inge
   const catalogEntry = Object.freeze({
     assetId: spec.assetId,
     version: spec.version,
-    // Ingest never approves its own output. Promotion to APPROVED, which is
-    // what the bridge requires before an import, stays a human decision.
+    // Ingest never approves its own output; it does not even register the
+    // entry. Both are publishAsepriteAsset's job.
     status: "DRAFT",
     assetClass: "bridge-sprite",
     specPath: specRelative,

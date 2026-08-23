@@ -7,3 +7,7 @@ export {
   ORIGIN_PRESETS, ORIGIN_PRESET_NAMES, canonicalJson, ingestAsepriteSprite,
   type IngestRequest, type IngestResult, type IngestedFrame, type OriginPreset,
 } from "./ingest.js";
+export {
+  publishAsepriteAsset,
+  type PublishRequest, type PublishResult, type PublishStatus,
+} from "./publish.js";

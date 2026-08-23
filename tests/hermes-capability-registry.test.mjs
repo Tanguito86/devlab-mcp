@@ -177,12 +177,27 @@ test("Aseprite ingest MCP confines its sources and cannot self-approve", () => {
   // The library stays library-only; the MCP surface is a separate package.
   assert.notEqual(ingestMcp.package, asepriteIngest.package);
   assert.equal(asepriteIngest.mcpServer, false);
-  assert.deepEqual(ingestMcp.publicTools, ["aseprite_status", "aseprite_inspect", "aseprite_ingest"]);
+  assert.deepEqual(ingestMcp.publicTools, ["aseprite_status", "aseprite_inspect", "aseprite_ingest", "aseprite_publish"]);
   // A tool caller must never name an absolute path or a binary.
   assert.equal(ingestMcp.sourcePaths, "RELATIVE_TO_SOURCE_ROOT_ONLY");
   assert.equal(ingestMcp.toolchainSource, "ENVIRONMENT_ONLY");
   assert.equal(ingestMcp.callerSuppliedFlags, false);
-  assert.equal(ingestMcp.emittedLifecycleStatus, "DRAFT");
+  assert.equal(ingestMcp.emittedLifecycleStatus, "DRAFT", "an ingest still never approves its own output");
+  // Promotion to APPROVED was a human decision until the repository owner asked
+  // for it to be autonomous. The manifest is the record of that, so the change
+  // has to show up in a diff rather than drift quietly.
+  assert.equal(ingestMcp.approvalPolicy, "AUTONOMOUS_WITH_AUDIT_LOG");
+  assert.equal(ingestMcp.approvalVerification, "ENTRY_REBUILT_FROM_DISK_AND_FRAME_DIGESTS_REVERIFIED");
+  assert.equal(ingestMcp.approvalAuditLog, "assets/catalog/approvals.jsonl");
+  assert.ok(
+    ingestMcp.prohibitedOperations.includes("publishing an asset whose exported frames or spec changed after ingest"),
+    "autonomy is bounded by verification, and the manifest must say so",
+  );
+  assert.ok(
+    !ingestMcp.prohibitedOperations.includes("approving its own catalog entry"),
+    "the manifest must not still claim approval is prohibited",
+  );
+  assert.equal(ingestMcp.catalogIndexMutation, true);
   assert.equal(ingestMcp.determinismGate, "EARNED_BY_DOUBLE_EXPORT");
   assert.equal(ingestMcp.projectMutation, false, "ingest writes the catalog, never a project");
   assert.equal(ingestMcp.catalogMutation, true);

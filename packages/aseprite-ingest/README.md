@@ -56,9 +56,25 @@ that ever stops being true.
 `validateSpriteSpec` before anything is written. If the bridge would reject it,
 the ingest fails instead of leaving an unusable asset in the catalog.
 
-**Ingest never approves its own output.** The catalog entry is emitted with
-status `DRAFT`. The bridge imports only `APPROVED` assets, so promotion stays a
-human decision.
+**Ingest never approves its own output, and never registers it either.** The
+catalog entry is emitted with status `DRAFT` and handed back; putting it in the
+index is `publishAsepriteAsset`'s job.
+
+**Publishing can grant `APPROVED` without a human.** That was previously
+reserved for one, and the repository owner asked for it to be available without
+one; the change is deliberate and is recorded in the capability manifest. What
+replaces the human review is verification rather than trust:
+
+- the entry is **rebuilt from the files on disk**, not accepted from the caller,
+- every exported frame's digest and byte length must still match what the
+  artifact manifest recorded at ingest, so an asset whose pixels changed after
+  ingest cannot be published at all,
+- any ingest gate that did not pass blocks the publish,
+- and every promotion is appended to `assets/catalog/approvals.jsonl`, which a
+  republish cannot rewrite.
+
+The catalog header is written rather than carried through, so a publish can
+never leave an index the bridge is unable to read.
 
 **RGBA8888 only.** Indexed and greyscale sources are refused with a clear
 message rather than silently converted, because the GameMaker sprite gate

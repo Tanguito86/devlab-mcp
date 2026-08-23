@@ -4,7 +4,7 @@
   "title": "DevLab Aseprite ingest MCP server v1",
   "type": "object",
   "$defs": {
-    "tool": { "enum": ["aseprite_status", "aseprite_inspect", "aseprite_ingest"] },
+    "tool": { "enum": ["aseprite_status", "aseprite_inspect", "aseprite_ingest", "aseprite_publish"] },
     "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "sourcePath": {
       "type": "string",

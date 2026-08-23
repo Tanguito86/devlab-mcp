@@ -85,16 +85,19 @@ const body = (result, label) => {
   return result.structuredContent;
 };
 
-test("MCP E2E: exactly three tools and no other surface", { timeout: 30_000 }, async () => {
+test("MCP E2E: exactly four tools and no other surface", { timeout: 30_000 }, async () => {
   const ws = workspace();
   const session = await connect(ws, {});
   try {
     const tools = (await session.client.listTools()).tools;
-    assert.deepEqual(tools.map(({ name }) => name), ["aseprite_status", "aseprite_inspect", "aseprite_ingest"]);
+    assert.deepEqual(tools.map(({ name }) => name), ["aseprite_status", "aseprite_inspect", "aseprite_ingest", "aseprite_publish"]);
     // Inspection starts Aseprite, so it must not claim to be read-only.
     assert.equal(tools.find(({ name }) => name === "aseprite_inspect").annotations.readOnlyHint, false);
     assert.equal(tools.find(({ name }) => name === "aseprite_ingest").annotations.readOnlyHint, false);
     assert.equal(tools.find(({ name }) => name === "aseprite_status").annotations.readOnlyHint, true);
+    // Publishing writes the catalog index and can grant APPROVED.
+    assert.equal(tools.find(({ name }) => name === "aseprite_publish").annotations.readOnlyHint, false);
+    assert.equal(tools.find(({ name }) => name === "aseprite_publish").annotations.destructiveHint, true);
     for (const surface of [() => session.client.listResources(), () => session.client.listPrompts()]) {
       await assert.rejects(surface);
     }

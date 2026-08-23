@@ -7,7 +7,10 @@ import {
   asepriteInspectWireOutputSchema,
   asepriteStatusInputSchema,
   asepriteStatusWireOutputSchema,
+  asepritePublishInputSchema,
+  asepritePublishWireOutputSchema,
   INGEST_ANNOTATIONS,
+  PUBLISH_ANNOTATIONS,
   PROBE_ANNOTATIONS,
   READ_ONLY_ANNOTATIONS,
   type ToolOutput,
@@ -78,6 +81,25 @@ export function createAsepriteIngestMcpServer(
     async (input, extra) => {
       try {
         return response(await service.ingest(input, extra.requestId));
+      } catch (error) {
+        return response(mapToolError(error, extra.requestId));
+      }
+    },
+  );
+
+  server.registerTool(
+    "aseprite_publish",
+    {
+      title: "Publish an ingested asset into the catalog index",
+      description:
+        "Register an already-ingested asset in the Asset Forge catalog index at the requested status. APPROVED is what the Asset-GM bridge requires before an import. The entry is rebuilt from the spec and artifact manifest on disk rather than accepted from the caller, and every exported frame is re-checked against the digest and byte length recorded at ingest: an asset whose bytes changed cannot be published. Defaults to a dry run.",
+      inputSchema: asepritePublishInputSchema,
+      outputSchema: asepritePublishWireOutputSchema,
+      annotations: PUBLISH_ANNOTATIONS,
+    },
+    async (input, extra) => {
+      try {
+        return response(await service.publish(input, extra.requestId));
       } catch (error) {
         return response(mapToolError(error, extra.requestId));
       }

@@ -12,8 +12,9 @@ sprite the asset-gm-bridge can import.
   --origin   ${ORIGIN_PRESET_NAMES.join(" | ")}   (default: centre)
 
 The Aseprite executable is read from DEVLAB_ASEPRITE and never from an argument.
-The catalog entry is emitted with status DRAFT; promotion to APPROVED, which the
-bridge requires before an import, stays a human decision.`;
+The catalog entry is emitted with status DRAFT and is not registered in the
+index; publishing it there, at DRAFT or at the APPROVED the bridge requires
+before an import, is a separate step.`;
 
 function flag(name: string): string | undefined {
   const index = process.argv.indexOf(`--${name}`);

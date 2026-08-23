@@ -4,6 +4,7 @@ export const TOOL_NAMES = Object.freeze([
   "aseprite_status",
   "aseprite_inspect",
   "aseprite_ingest",
+  "aseprite_publish",
 ] as const);
 
 export const READ_ONLY_ANNOTATIONS = Object.freeze({
@@ -17,6 +18,18 @@ export const READ_ONLY_ANNOTATIONS = Object.freeze({
 export const PROBE_ANNOTATIONS = Object.freeze({
   readOnlyHint: false,
   destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+});
+
+/**
+ * Publishing writes the catalog index and can grant the APPROVED status the
+ * bridge requires before an import. It replaces an entry in place, so it is
+ * idempotent, but it is emphatically not read-only.
+ */
+export const PUBLISH_ANNOTATIONS = Object.freeze({
+  readOnlyHint: false,
+  destructiveHint: true,
   idempotentHint: true,
   openWorldHint: false,
 });
@@ -54,6 +67,33 @@ export const asepriteIngestInputSchema = z.object({
   assetId: assetIdSchema,
   version: versionSchema,
   origin: originSchema.optional().describe("Defaults to centre"),
+}).strict();
+
+export const asepritePublishInputSchema = z.object({
+  assetId: assetIdSchema,
+  version: versionSchema,
+  status: z.enum(["DRAFT", "APPROVED"]).describe(
+    "APPROVED is the status the Asset-GM bridge requires before an import",
+  ),
+  confirm: z.literal(true).describe("Must be true; the server refuses to write otherwise"),
+  dryRun: z.boolean().optional().describe("Defaults to true; pass false to actually write the catalog"),
+}).strict();
+
+export const asepritePublishSuccessSchema = z.object({
+  ok: z.literal(true),
+  schemaVersion: z.literal(1),
+  requestId: requestIdSchema,
+  serverGate: z.literal("CATALOG_WRITE"),
+  assetId: assetIdSchema,
+  version: versionSchema,
+  status: z.enum(["DRAFT", "APPROVED"]),
+  published: z.boolean(),
+  dryRun: z.boolean(),
+  replaced: z.boolean().describe("True when an entry for this assetId and version was already indexed"),
+  catalogPath: z.string().min(1),
+  verifiedOutputs: z.number().int().positive().describe("Frames whose bytes were re-checked against the ingest manifest"),
+  catalogSha256: digestSchema,
+  entry: z.record(z.string(), z.unknown()),
 }).strict();
 
 const errorBodySchema = z.object({
@@ -125,6 +165,7 @@ export const asepriteIngestSuccessSchema = z.object({
 export const asepriteStatusOutputSchema = z.discriminatedUnion("ok", [asepriteStatusSuccessSchema, errorSchema]);
 export const asepriteInspectOutputSchema = z.discriminatedUnion("ok", [asepriteInspectSuccessSchema, errorSchema]);
 export const asepriteIngestOutputSchema = z.discriminatedUnion("ok", [asepriteIngestSuccessSchema, errorSchema]);
+export const asepritePublishOutputSchema = z.discriminatedUnion("ok", [asepritePublishSuccessSchema, errorSchema]);
 
 const wireFields = {
   ok: z.boolean(),
@@ -135,11 +176,14 @@ const wireFields = {
 export const asepriteStatusWireOutputSchema = asepriteStatusSuccessSchema.partial().extend(wireFields).strict();
 export const asepriteInspectWireOutputSchema = asepriteInspectSuccessSchema.partial().extend(wireFields).strict();
 export const asepriteIngestWireOutputSchema = asepriteIngestSuccessSchema.partial().extend(wireFields).strict();
+export const asepritePublishWireOutputSchema = asepritePublishSuccessSchema.partial().extend(wireFields).strict();
 
 export type AsepriteStatusInput = z.infer<typeof asepriteStatusInputSchema>;
 export type AsepriteInspectInput = z.infer<typeof asepriteInspectInputSchema>;
 export type AsepriteIngestInput = z.infer<typeof asepriteIngestInputSchema>;
+export type AsepritePublishInput = z.infer<typeof asepritePublishInputSchema>;
 export type ToolOutput =
   | z.infer<typeof asepriteStatusOutputSchema>
   | z.infer<typeof asepriteInspectOutputSchema>
-  | z.infer<typeof asepriteIngestOutputSchema>;
+  | z.infer<typeof asepriteIngestOutputSchema>
+  | z.infer<typeof asepritePublishOutputSchema>;

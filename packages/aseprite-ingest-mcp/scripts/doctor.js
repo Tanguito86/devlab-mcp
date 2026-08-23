@@ -14,7 +14,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(__dirname, "..");
 const binPath = join(packageRoot, "dist", "index.js");
-const EXPECTED_TOOLS = ["aseprite_ingest", "aseprite_inspect", "aseprite_status"];
+const EXPECTED_TOOLS = ["aseprite_ingest", "aseprite_inspect", "aseprite_publish", "aseprite_status"];
 
 const ok = [];
 const warn = [];

@@ -8,6 +8,7 @@ import {
   ASEPRITE_ENV,
   ingestAsepriteSprite,
   ORIGIN_PRESET_NAMES,
+  publishAsepriteAsset,
   probeSource,
   resolveAsepriteExecutable,
   type OriginPreset,
@@ -17,11 +18,20 @@ import { resolveInsideRoot, resolveRealRoot, safeRelativePath } from "@tanguito/
 import type {
   AsepriteIngestInput,
   AsepriteInspectInput,
+  AsepritePublishInput,
   ToolOutput,
 } from "./contracts.js";
 
 export const SOURCE_ROOT_ENV = "DEVLAB_ASEPRITE_SOURCE_ROOT";
 export const REPO_ROOT_ENV = "DEVLAB_ASEPRITE_REPO_ROOT";
+/**
+ * The catalog index, relative to the repository root. It is fixed rather than
+ * configurable for the same reason the spec and artifact paths are: a caller
+ * that could name the index could point a publish at any JSON file.
+ */
+export const CATALOG_INDEX_PATH = "assets/catalog/asset-catalog.json";
+/** Recorded in an approved entry's provenance so the grant is attributable. */
+export const APPROVED_BY = "aseprite-ingest-mcp";
 export const WRITE_ENV = "DEVLAB_ASEPRITE_WRITE";
 export { ASEPRITE_ENV };
 
@@ -203,6 +213,48 @@ export class GovernedAsepriteIngestService {
       asepriteVersion: result.asepriteVersion,
       catalogStatus: "DRAFT" as const,
       catalogEntry: { ...result.catalogEntry },
+    };
+  }
+
+  /**
+   * Registers an ingested asset in the catalog index, at the status the caller
+   * asks for.
+   *
+   * Nothing previously wrote this file, so an ingested sprite could not reach a
+   * project without someone editing JSON by hand. Granting APPROVED here is
+   * deliberate and was asked for; the safety that replaces the human review is
+   * in the library, which rebuilds the entry from the files on disk and refuses
+   * to publish an asset whose frames changed since ingest.
+   */
+  async publish(input: AsepritePublishInput, requestId: PublicRequestId) {
+    if (!writeEnabled(this.env)) {
+      throw new GmIngestError("GM_INGEST_WRITE_NOT_ENABLED", `Set ${WRITE_ENV}=1 to allow this server to write into the asset catalog.`, true);
+    }
+    const repoRoot = await resolveRoot(this.env, REPO_ROOT_ENV);
+    const result = await publishAsepriteAsset({
+      repoRoot,
+      catalogPath: CATALOG_INDEX_PATH,
+      assetId: input.assetId,
+      version: input.version,
+      status: input.status,
+      approvedBy: APPROVED_BY,
+      dryRun: input.dryRun ?? true,
+    });
+    return {
+      ok: true as const,
+      schemaVersion: 1 as const,
+      requestId,
+      serverGate: "CATALOG_WRITE" as const,
+      assetId: result.assetId,
+      version: result.version,
+      status: result.status,
+      published: result.published,
+      dryRun: result.dryRun,
+      replaced: result.replaced,
+      catalogPath: result.catalogPath,
+      verifiedOutputs: result.verifiedOutputs,
+      catalogSha256: result.catalogSha256,
+      entry: { ...result.entry },
     };
   }
 }

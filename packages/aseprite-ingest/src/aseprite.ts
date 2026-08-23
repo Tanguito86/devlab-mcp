@@ -15,7 +15,8 @@ export type AsepriteErrorCode =
   | "ASEPRITE_NOT_FOUND"
   | "ASEPRITE_FAILED"
   | "ASEPRITE_TIMEOUT"
-  | "ASEPRITE_METADATA_INVALID";
+  | "ASEPRITE_METADATA_INVALID"
+  | "ASEPRITE_PUBLISH_REFUSED";
 
 export class AsepriteError extends Error {
   constructor(readonly code: AsepriteErrorCode, message: string, readonly recoverable = false) {

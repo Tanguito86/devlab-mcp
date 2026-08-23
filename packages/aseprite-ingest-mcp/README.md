@@ -24,7 +24,37 @@ enable running Aseprite.
 - `aseprite_ingest` — export the frames and write a spec, artifact manifest and
   PNGs into the catalog layout, returning a **DRAFT** catalog entry.
 
-Exactly these three. No resources, no prompts.
+- `aseprite_publish` — register an already-ingested asset in the catalog
+  **index** at the status you ask for, `DRAFT` or `APPROVED`. Defaults to a dry
+  run.
+
+Exactly these four. No resources, no prompts.
+
+## Approval is autonomous, and bounded by verification
+
+Promotion to `APPROVED` — the status the Asset-GM bridge requires before an
+import — used to be a human decision, and the code said so. The repository
+owner asked for it to be available without one, so it is. The change is
+recorded in `capabilities/aseprite-ingest-mcp-v1.json` and asserted by the
+registry test, so it shows up in a diff rather than drifting quietly.
+
+What replaces the human review is verification, not trust:
+
+- the catalog entry is **rebuilt from the spec and artifact manifest on disk**,
+  never accepted from the caller;
+- every exported frame's digest and byte length must still match what the
+  manifest recorded at ingest, so an asset whose pixels changed after ingest
+  cannot be published at all — the check a person skimming a JSON file would
+  not have performed;
+- any ingest gate that did not pass blocks the publish;
+- the catalog header is rewritten to what the bridge's validator demands, so a
+  publish can never leave an index that fails to load and takes every other
+  asset down with it;
+- and every promotion is appended to `assets/catalog/approvals.jsonl`, which a
+  republish cannot rewrite.
+
+Ingest itself is unchanged: it still emits `DRAFT` and still does not register
+its own entry.
 
 ## Sources are confined, and that is new here
 
