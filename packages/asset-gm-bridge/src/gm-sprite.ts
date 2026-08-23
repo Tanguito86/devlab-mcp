@@ -79,10 +79,18 @@ export function insertIntoGmArray(text: string, openMarker: string, entryPath: s
   // entry is spliced right after the last element (before any trailing
   // whitespace of the closing bracket line) so the patch is a minimal,
   // parseable insertion that preserves every other byte.
+  //
+  // An empty array needs no separator at all: the entry becomes its first
+  // element, and emitting one produced `[,` -- a file GameMaker cannot load.
+  // Nothing hit it until a sprite was imported into a project created from
+  // nothing, because every fixture already had resources. The same defect
+  // existed in gm-authoring's copy of this function; consolidating the two is
+  // still outstanding, and this is what the duplication cost.
   const before = text.slice(0, close);
-  const separator = /,\s*$/.test(before) ? "" : ",";
-  const insertionPoint = before.trimEnd().length;
-  return `${before.slice(0, insertionPoint)}${separator}\n${indent}${entryLine},${before.slice(insertionPoint)}${text.slice(close)}`;
+  const trimmed = before.trimEnd();
+  const isEmpty = trimmed.length - 1 === arrayOpen;
+  const separator = isEmpty || trimmed.endsWith(",") ? "" : ",";
+  return `${trimmed}${separator}\n${indent}${entryLine},${before.slice(trimmed.length)}${text.slice(close)}`;
 }
 
 export function parseGmJson(text: string): unknown {
