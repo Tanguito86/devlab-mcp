@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "sprint": "DEVLAB-AB04-ISOLATION-TOKEN-03",
+  "parentSprint": "DEVLAB-AB04-ISOLATION-PROVISION-02",
+  "mode": "PREPARATION_ONLY",
+  "applyAuthorized": false,
+  "architectureDisposition": {
+    "status": "REJECTED_BY_STATIC_FEASIBILITY_GATE",
+    "localUserRestrictedTokenApproved": false,
+    "requiresOutOfScopeHostAclChanges": true,
+    "reasonCodes": [
+      "BUILTIN_USERS_STILL_AUTHORIZES_H_READ_IF_ENABLED",
+      "WINDOWS_AND_CHROMIUM_RUNTIME_BREAKS_IF_BUILTIN_USERS_DISABLED",
+      "NO_TRAVERSE_CHAIN_AFTER_SE_CHANGE_NOTIFY_REMOVAL",
+      "STANDARD_USER_PROCESS_CREATION_PRIVILEGES_UNPROVEN",
+      "DESCENDANT_TOKEN_ATTESTATION_INCOMPLETE",
+      "GUIDANCE_BUNDLE_CONTRACT_V3_NOT_RECONCILED"
+    ],
+    "requiredFallback": "DISPOSABLE_VM_OR_WINDOWS_SANDBOX_WITH_GPU",
+    "decision": "DO_NOT_APPLY"
+  },
+  "resourcePrefix": "DevLab AB04",
+  "baselineHead": "787748cc0927315e5372af5929b5dfc0ca8714cb",
+  "accounts": {
+    "legA": "DevLabAb04LegA",
+    "legB": "DevLabAb04LegB",
+    "standardUsersOnly": true,
+    "forbiddenGroups": [
+      "S-1-5-32-544",
+      "S-1-5-32-555"
+    ],
+    "interactiveLogonEnabledByProvisioner": false,
+    "rdpEnabledByProvisioner": false
+  },
+  "paths": {
+    "runRoot": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04",
+    "legA": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-a",
+    "legB": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-b",
+    "coordinatorPrivate": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/coordinator/private",
+    "coordinatorRestrictedLauncher": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/coordinator/private/runtime/RestrictedTokenLauncher.exe",
+    "legABrowserProfile": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-a/profiles/chromium",
+    "legBBrowserProfile": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-b/profiles/chromium",
+    "legAChromium": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-a/runtime/chromium",
+    "legBChromium": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-b/runtime/chromium",
+    "legANode": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-a/runtime/node/node.exe",
+    "legBNode": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-b/runtime/node/node.exe",
+    "legARestrictedLauncher": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-a/runtime/restricted-token/RestrictedTokenLauncher.exe",
+    "legBRestrictedLauncher": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-b/runtime/restricted-token/RestrictedTokenLauncher.exe",
+    "legBGuidanceReadonly": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04/leg-b/guidance-readonly",
+    "externalSource": "H:/UserData/Deposito/Documents/threejs-game-skills-intake/source",
+    "devlabCheckout": "H:/UserData/Deposito/Documents/devlab-mcp",
+    "protectedHostPaths": [
+      "H:/UserData/Deposito/Documents/threejs-game-skills-intake/source",
+      "H:/UserData/Deposito/Documents/devlab-mcp",
+      "H:/UserData/Deposito/Documents/r3f-intake",
+      "H:/UserData/Deposito/Documents/img2threejs-intake",
+      "H:/DEV/AGENTE/GalaxyRaidersPixelGMS",
+      "H:/DEV/AGENTE/game-visual-forge",
+      "H:/DEV/AGENTE/galaxy raiders en three",
+      "H:/DEV/AGENTE/Hellbullet",
+      "C:/Users/Deposito/.codex",
+      "C:/Users/Deposito/.claude",
+      "C:/Users/Deposito/.agents"
+    ]
+  },
+  "runtime": {
+    "chromiumSource": "C:/Users/Deposito/AppData/Local/ms-playwright/chromium-1223/chrome-win64",
+    "chromiumVersion": "148.0.7778.96",
+    "chromiumExecutableSha256": "290fa7018fda22c52ada5eddb0113baf3ebc41fd0fde6085eddb19793606c635",
+    "chromiumDistributionFileCount": 308,
+    "chromiumDistributionByteLength": 432272872,
+    "chromiumDistributionTreeSha256": "bfd9c556552c637ceee2cf808aa1b5984da29f874965f0fd99b42326b3110fa0",
+    "nodeSource": "C:/Program Files/nodejs/node.exe",
+    "nodeVersion": "v24.13.0",
+    "nodeExecutableSha256": "d14ba95cdce1ef7dc9ad3ac74949ca5db38b27378ee30f30a23cf26f9e875a11",
+    "adapterVendor": "nvidia",
+    "adapterArchitecture": "turing",
+    "adapterPciDeviceId": "10DE:1E89",
+    "executableInventory": [
+      { "path": "chrome.exe", "sha256": "290fa7018fda22c52ada5eddb0113baf3ebc41fd0fde6085eddb19793606c635", "bytes": 4011008 },
+      { "path": "chrome_proxy.exe", "sha256": "a508d07283320546a0fe59a42dbe92307e65feabce52a435691295c38144df4a", "bytes": 2481664 },
+      { "path": "chrome_pwa_launcher.exe", "sha256": "42aca65b52baae1c10ddab89136a3c6940f985bd0b850bdfb7fa6df8db33ac7b", "bytes": 2764288 },
+      { "path": "elevated_tracing_service.exe", "sha256": "aec23ab52cf76a66a4397733bf7c1678597213f8fa5e9e367565f55b23c17f70", "bytes": 4377088 },
+      { "path": "elevation_service.exe", "sha256": "6c9a4784bc54747684ce4876d6266df29d48f9be9729512ca91683527aa68f23", "bytes": 3694080 },
+      { "path": "notification_helper.exe", "sha256": "24a77c8f16d65e234e1e87baef37acd805bd8328684b8d43e1bd9f74776edc26", "bytes": 2706432 },
+      { "path": "setup.exe", "sha256": "b613a80f7c828ffece1fb352c4bd74acf08232d69e5c34e8109578ae15b61d49", "bytes": 5795328 }
+    ]
+  },
+  "network": {
+    "policy": "LOOPBACK_IPV4_IPV6_ONLY",
+    "firewallGroup": "DevLab AB04 Isolation",
+    "programScope": "ALL_PROCESSES_FOR_DEDICATED_USER_SID",
+    "blockedRemoteAddressRanges": [
+      "0.0.0.0-127.0.0.0",
+      "127.0.0.2-255.255.255.255",
+      "::",
+      "::2-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
+    ],
+    "allowedLoopback": ["127.0.0.1", "::1"],
+    "normalUserRulesModified": false
+  },
+  "filesystem": {
+    "legAOwnRoot": "MODIFY",
+    "legBOwnRoot": "MODIFY",
+    "crossLegAccess": "DENY_BY_PROTECTED_DACL",
+    "coordinatorPrivateAccess": "COORDINATOR_SYSTEM_ADMINISTRATORS_ONLY",
+    "externalSourceDirectAccess": "DENIED_TO_BOTH_LEGS",
+    "legBGuidanceAccess": "PREMATERIALIZED_HASHED_BUNDLE_READ_ONLY",
+    "unexpectedExistingResourcePolicy": "FAIL_CLOSED",
+    "matchingReceiptPolicy": "NO_CHANGE",
+    "currentHostParentAclStatus": "UNSAFE_GENERIC_AUTHENTICATED_USERS_MODIFY"
+  },
+  "aclTemplates": [
+    {
+      "pathKey": "runRoot",
+      "inheritanceProtected": true,
+      "aces": [
+        { "principal": "SYSTEM", "rights": "FullControl" },
+        { "principal": "BUILTIN_ADMINISTRATORS", "rights": "FullControl" },
+        { "principal": "COORDINATOR_SID", "rights": "FullControl" }
+      ]
+    },
+    {
+      "pathKey": "legA",
+      "inheritanceProtected": true,
+      "aces": [
+        { "principal": "SYSTEM", "rights": "FullControl" },
+        { "principal": "BUILTIN_ADMINISTRATORS", "rights": "FullControl" },
+        { "principal": "COORDINATOR_SID", "rights": "FullControl" },
+        { "principal": "LEG_A_SID", "rights": "Modify" }
+      ]
+    },
+    {
+      "pathKey": "legB",
+      "inheritanceProtected": true,
+      "aces": [
+        { "principal": "SYSTEM", "rights": "FullControl" },
+        { "principal": "BUILTIN_ADMINISTRATORS", "rights": "FullControl" },
+        { "principal": "COORDINATOR_SID", "rights": "FullControl" },
+        { "principal": "LEG_B_SID", "rights": "Modify" }
+      ]
+    },
+    {
+      "pathKey": "coordinatorPrivate",
+      "inheritanceProtected": true,
+      "aces": [
+        { "principal": "SYSTEM", "rights": "FullControl" },
+        { "principal": "BUILTIN_ADMINISTRATORS", "rights": "FullControl" },
+        { "principal": "COORDINATOR_SID", "rights": "FullControl" }
+      ]
+    }
+  ],
+  "executor": {
+    "builderSurface": "MCP_EXECUTOR_ONLY",
+    "shellExposedToBuilder": false,
+    "allowedLaunchers": [
+      "leg-runtime-node",
+      "leg-runtime-chromium"
+    ],
+    "forbiddenBuilderLaunchers": [
+      "powershell.exe",
+      "pwsh.exe",
+      "cmd.exe",
+      "curl.exe",
+      "git.exe",
+      "msedge.exe",
+      "firefox.exe"
+    ],
+    "childProcessesInheritPerUserFirewall": true,
+    "childProcessesInheritRestrictedToken": true,
+    "normalTokenExecution": "PROHIBITED",
+    "trustedBootstrapOnly": true
+  },
+  "tokenHardening": {
+    "restrictedLauncherRequired": true,
+    "launcherSource": "scripts/ab04-isolation/RestrictedTokenLauncher.cs",
+    "launcherSourceSha256": "30733a71531e52c16a0b5e40e1bca2243befe6fc82ad271e6add2673075c8fd5",
+    "startWrapper": "scripts/ab04-isolation/Start-Ab04RestrictedProcess.ps1",
+    "disableAuthorizationSids": [
+      "S-1-5-11",
+      "S-1-5-32-545",
+      "S-1-5-32-544"
+    ],
+    "authenticatedUsersState": ["DISABLED", "DENY_ONLY"],
+    "builtinUsersState": ["DISABLED", "DENY_ONLY"],
+    "seChangeNotifyPrivilegeState": ["REMOVED", "DISABLED"],
+    "remainingPrivileges": [],
+    "integrity": "MEDIUM",
+    "administratorsMember": false,
+    "childTokenPolicy": "SAME_RESTRICTIONS",
+    "childConfinement": "JOB_OBJECT_KILL_ON_CLOSE_NO_BREAKAWAY",
+    "normalTokenExposure": "H_EXPOSURE_RECOGNIZED",
+    "normalProcessExecution": "PROHIBITED",
+    "credentialPersistence": false,
+    "staticFeasibility": "FAILED",
+    "runtimeExecutionAuthorized": false
+  },
+  "guidanceBundle": {
+    "status": "PREPARED_PENDING_AB04_V3_CONTRACT_RECONCILIATION",
+    "sourceManifest": "benchmarks/threejs-game-skills-ab/selected-guidance-manifest.json",
+    "sourceManifestSha256": "443f510cd4021cc43f0a0d0a53a6f40faad34f45767d6137c6d1ef23c93037ee",
+    "fileCount": 25,
+    "byteLength": 128391,
+    "bundleTreeSha256": "316359c4eb750d156113791927651c45982fcd21c6d91ec8f402a680d2ddc5f3",
+    "textEncoding": "UTF8_NO_BOM_CANONICAL_LF",
+    "legAAccess": "ABSENT",
+    "legBAccess": "READ_ONLY",
+    "externalCheckoutAccess": "DENIED",
+    "builderExecutionAuthorized": false
+  },
+  "audit": {
+    "algorithm": "HMAC-SHA256",
+    "keyLocation": "coordinator-private-only",
+    "passwordsInOutput": false,
+    "receiptFile": "provision-receipt.json",
+    "auditLogFile": "provision-audit.jsonl"
+  },
+  "reviewGate": {
+    "required": true,
+    "independentApprovalStatus": "UNSET",
+    "currentDecision": "DO_NOT_APPLY",
+    "blockingFinding": "Static feasibility failed: leaving BUILTIN Users enabled preserves read access to protected H: checkouts, while disabling it and removing SeChangeNotifyPrivilege removes the Windows/Chromium and ancestor traversal grants needed to reach the leg runtime. Resolving this requires host-wide ancestor or protected-checkout ACL mutations outside the authorized AB04-owned roots. The local-user architecture is rejected; do not apply."
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "status": "PROPOSED_NOT_APPLIED",
+  "targetContractVersion": "ab04-v3",
+  "runIdentity": {
+    "materializerRunRoot": "H:/UserData/Deposito/Documents/devlab-runs/threejs-game-skills-ab-04",
+    "materializerRootMode": "FIXED_DIRECT_CHILD_OF_ALLOWED_BASE",
+    "nestedRunIdDirectory": false,
+    "runIdRecordedIn": [
+      "coordinator/private/run-manifest.json",
+      "coordinator/private/orchestration-ledger.jsonl",
+      "heavy-evidence-directory-name"
+    ]
+  },
+  "orderSelection": {
+    "method": "CSPRNG_UINT32_PARITY",
+    "outcomes": [
+      "LEG_A_THEN_LEG_B",
+      "LEG_B_THEN_LEG_A"
+    ],
+    "selectedBeforeAnyBuilder": true,
+    "recordPath": "coordinator/private/order-selection.json",
+    "signedWith": "COORDINATOR_PRIVATE_HMAC_SHA256_KEY",
+    "buildersCanReadRecord": false,
+    "evaluatorCanReadRecordBeforeReveal": false,
+    "changeAfterFirstBuilder": "INVALID_BENCHMARK"
+  },
+  "guidanceDelivery": {
+    "currentV2Mode": "HASH_AT_OPEN_BROKER",
+    "proposedV3Mode": "PREMATERIALIZED_CANONICAL_HASHED_READ_ONLY_BUNDLE",
+    "bundleRelativePath": "leg-b/guidance-readonly",
+    "fileCount": 25,
+    "byteLength": 128391,
+    "treeSha256": "316359c4eb750d156113791927651c45982fcd21c6d91ec8f402a680d2ddc5f3",
+    "externalCheckoutVisibleToLegB": false,
+    "requiredCanonicalUpdates": [
+      "benchmark-contract.json",
+      "leg-b-policy.json",
+      "result-schema.json",
+      "runbook.md",
+      "scripts/threejs-game-skills-ab04.mjs",
+      "canonical tests"
+    ],
+    "status": "PROPOSED_NOT_APPLIED",
+    "builderExecutionAuthorized": false
+  }
+}
